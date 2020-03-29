@@ -1,0 +1,32 @@
+{
+    "name": "esphome-ts",
+    "version": "1.0.0",
+    "description": "A client library for use with the esphome project",
+    "main": "dist/index.ts",
+    "type": "dist/export.d.ts",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "build": "tsc"
+    },
+    "prepublish": "npm run build",
+    "keywords": [
+        "esphome"
+    ],
+    "author": "Luca Becker",
+    "license": "GPL-3.0",
+    "dependencies": {
+        "@types/eventsource": "^1.1.2",
+        "@types/node": "^13.9.5",
+        "@types/superagent": "^4.1.7",
+        "eventsource": "^1.0.7",
+        "rxjs": "^6.5.4",
+        "superagent": "^5.2.2",
+        "typescript": "^3.8.3"
+    },
+    "devDependencies": {
+        "@typescript-eslint/eslint-plugin": "^2.25.0",
+        "@typescript-eslint/parser": "^2.25.0",
+        "eslint": "^6.8.0",
+        "eslint-config-google": "^0.14.0"
+    }
+}
