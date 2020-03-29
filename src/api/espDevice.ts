@@ -1,10 +1,11 @@
 import request, {get, post} from 'superagent';
-import {ApiTypes, OptionalArguments, Transition} from './apiTypes';
+import {ApiActions, ApiTypes, OptionalArguments, Transition} from './apiTypes';
 import {Observable, Subject, Subscriber} from 'rxjs';
 import {DefaultState} from '../components/states';
 import EventSource from 'eventsource';
 import {filter} from 'rxjs/operators';
 import {convertObjectToParameters} from '../util';
+import {EspEvent} from './espEvents';
 
 const defaultCallbackHandler = (subscriber: Subscriber<unknown>) => {
     return (err: Error, res: request.Response) => {
@@ -45,18 +46,18 @@ export class EspDevice {
     }
 
     public turnOff(type: ApiTypes, id: string, transition?: Transition): Observable<Error | null> {
-        return this.post(type, id, 'turn_off', transition ?? {});
+        return this.post(type, id, ApiActions.TURN_OFF, transition ?? {});
     }
 
     public turnOn(apiType: ApiTypes, id: string, optionalArguments?: OptionalArguments): Observable<Error | null> {
-        return this.post(apiType, id, 'turn_on', optionalArguments ?? {});
+        return this.post(apiType, id, ApiActions.TURN_ON, optionalArguments ?? {});
     }
 
     public toggle(apiType: ApiTypes, id: string, optionalArguments?: OptionalArguments): Observable<Error | null> {
-        return this.post(apiType, id, 'toggle', optionalArguments ?? {});
+        return this.post(apiType, id, ApiActions.TOGGLE, optionalArguments ?? {});
     }
 
-    private post(apiType: ApiTypes, id: string, action: string, optionalArguments: OptionalArguments): Observable<Error | null> {
+    private post(apiType: ApiTypes, id: string, action: ApiActions, optionalArguments: OptionalArguments): Observable<Error | null> {
         const args: string = convertObjectToParameters(optionalArguments);
         return new Observable((subscriber) => {
             post(`http://${this.host}:${this.port}/${apiType}/${id}/${action}?${args}`).end(
@@ -75,7 +76,7 @@ export class EspDevice {
     private setupEventStream(): void {
         this.eventSource = new EventSource(`http://${this.host}:${this.port}/events`);
         this.eventSource.addEventListener('state', (evt: any) => {
-            this.events.next(JSON.parse(evt.data));
+            this.events.next(JSON.parse((evt as EspEvent).data));
         });
     }
 }

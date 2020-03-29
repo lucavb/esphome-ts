@@ -7,6 +7,12 @@ export enum ApiTypes {
     LIGHT = 'light'
 }
 
+export enum ApiActions {
+    TURN_ON = 'turn_on',
+    TURN_OFF = 'turn_off',
+    TOGGLE = 'toggle'
+}
+
 export interface Transition {
     transition: number;
 }
