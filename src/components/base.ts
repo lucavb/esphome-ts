@@ -2,19 +2,21 @@ import {EspDevice} from '../api/espDevice';
 import {DefaultState} from './states';
 import {ApiTypes} from '../api/apiTypes';
 import {BehaviorSubject, Observable} from 'rxjs';
-import {tap} from 'rxjs/operators';
+import {filter, tap} from 'rxjs/operators';
 
 
 export abstract class BaseComponent<T extends DefaultState = DefaultState> {
 
     protected apiType: ApiTypes;
 
-    public state$: Observable<T | undefined>;
+    public state$: Observable<T>;
     protected readonly state: BehaviorSubject<T | undefined>;
 
     constructor(public readonly id: string, protected readonly device: EspDevice) {
         this.state = new BehaviorSubject<T | undefined>(undefined);
-        this.state$ = this.state.asObservable();
+        this.state$ = this.state.asObservable().pipe(
+            filter((state) => !!state),
+        ) as Observable<T>;
         this.apiType = this.getType();
         this.getState();
         this.device.subscribeStateChanges<T>(this.id).pipe(
