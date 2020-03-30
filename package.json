@@ -1,6 +1,6 @@
 {
     "name": "esphome-ts",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "description": "A client library for use with the esphome project",
     "main": "dist/index.ts",
     "type": "dist/export.d.ts",
