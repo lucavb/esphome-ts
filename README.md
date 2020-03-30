@@ -17,7 +17,7 @@ espSwitch.state$.subscribe((state) => {
 
 ## Contribution
 
-Please, feel free to make a PR and contribute to this project. Esphome is a good project, and this expands there
+Please, feel free to make a PR and contribute to this project. Esphome is a good project, and this expands their
 ecosystem.
 
 ## Caveats
