@@ -31,6 +31,8 @@
         "eslint-config-google": "^0.14.0",
         "@types/eventsource": "^1.1.2",
         "@types/node": "^13.9.5",
-        "@types/superagent": "^4.1.7"
+        "@types/superagent": "^4.1.7",
+        "@types/jest": "^25.1.4",
+        "ts-proto": "^1.15.0"
     }
 }
