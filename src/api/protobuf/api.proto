@@ -1,3 +1,7 @@
+// This file was taken from https://github.com/esphome/esphome/blob/dev/esphome/components/api/api.proto
+// It is licensed under the MIT license. You can see a copy of this license in the licenses folder in the root
+// of this project (esphome-ts)
+
 syntax = "proto3";
 
 import "api_options.proto";

@@ -24,3 +24,9 @@ ecosystem.
 
 Esphome provides and eventsource endpoint, that should provide a way for receiving updates without
 polling every so often. This feature is enabled, but the connection appears to abort every so often.
+
+## License
+
+While this project in general and my contributions (Luca Becker) are licensed under the GPLv3, the `.proto`
+files are licensed under different licenses. Please see those files for their respective licenses. Copies
+of their licenses have been saved in the `licenses` folder.

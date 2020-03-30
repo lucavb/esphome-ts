@@ -1,3 +1,7 @@
+// This file was taken from https://github.com/esphome/esphome/blob/dev/esphome/components/api/api_options.proto
+// It is licensed under the MIT license. You can see a copy of this license in the licenses folder in the root
+// of this project (esphome-ts)
+
 syntax = "proto2";
 import "google_descriptor.proto";
 
