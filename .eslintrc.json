@@ -44,6 +44,7 @@
             "error",
             4
         ],
-        "padded-blocks": "off"
+        "padded-blocks": "off",
+        "no-invalid-this": "off"
     }
 }
