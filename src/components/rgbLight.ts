@@ -1,9 +1,9 @@
-import {LightState, Rgb} from './states';
+import {Rgb} from './states';
 import {ApiTypes} from '../api/apiTypes';
-import {OnOffComponent} from './onOff';
 import {jsonCopy} from '../util';
+import {Light} from './light';
 
-export class RgbLight extends OnOffComponent<LightState> {
+export class RgbLight extends Light {
 
     protected getType(): ApiTypes {
         return ApiTypes.LIGHT;
