@@ -3,9 +3,9 @@ import {BehaviorSubject, Observable, Subject} from 'rxjs';
 import {BytePositions} from './bytePositions';
 import {MessageTypes} from './requestResponseMatching';
 
-const TIMEOUT = 240 * 1000;
+const TIMEOUT = 120 * 1000;
 
-interface ReadData {
+export interface ReadData {
     type: number;
     payload: Uint8Array;
 }
@@ -76,18 +76,19 @@ export class NativeApiConnection {
     };
 
     private onData = (buffer: Buffer): void => {
+        if (buffer.length < 3) {
+            return;
+        }
         const zero = buffer.readUInt8(BytePositions.ZERO);
         if (zero !== 0) {
             return;
         }
         const length: number = buffer.readUInt8(BytePositions.LENGTH);
-        if (length > 0) {
-            const type = buffer.readUInt8(BytePositions.TYPE);
-            this.data.next({
-                type,
-                payload: buffer.slice(BytePositions.PAYLOAD, BytePositions.PAYLOAD + length),
-            });
-        }
+        const type = buffer.readUInt8(BytePositions.TYPE);
+        this.data.next({
+            type,
+            payload: buffer.slice(BytePositions.PAYLOAD, BytePositions.PAYLOAD + length),
+        });
     };
 
 }
