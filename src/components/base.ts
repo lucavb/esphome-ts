@@ -1,35 +1,31 @@
-import {EspDevice} from '../api/espDevice';
-import {DefaultState} from './states';
-import {ApiTypes} from '../api/apiTypes';
-import {BehaviorSubject, Observable} from 'rxjs';
-import {filter, tap} from 'rxjs/operators';
+import {ListEntity} from './entities';
+import {StateEvent} from './states';
+import {Observable} from 'rxjs';
+import {tap} from 'rxjs/operators';
+import {CommandInterface} from './commandInterface';
 
+export abstract class BaseComponent<L extends ListEntity = ListEntity, S extends StateEvent = StateEvent> {
 
-export abstract class BaseComponent<T extends DefaultState = DefaultState> {
+    protected state?: S;
 
-    protected apiType: ApiTypes;
-
-    public state$: Observable<T>;
-    protected readonly state: BehaviorSubject<T | undefined>;
-
-    constructor(public readonly id: string, protected readonly device: EspDevice) {
-        this.state = new BehaviorSubject<T | undefined>(undefined);
-        this.state$ = this.state.asObservable().pipe(
-            filter((state) => !!state),
-        ) as Observable<T>;
-        this.apiType = this.getType();
-        this.getState();
-        this.device.subscribeStateChanges<T>(this.id).pipe(
-            tap((state) => this.state.next(state)),
+    constructor(protected readonly listEntity: L,
+                public readonly state$: Observable<S>,
+                protected readonly commandInterface: CommandInterface) {
+        this.state$.pipe(
+            tap((state: S) => this.state = state),
         ).subscribe();
     }
 
-    protected abstract getType(): ApiTypes;
+    public get ready(): boolean {
+        return this.state !== undefined;
+    }
 
-    protected getState() {
-        this.device.getState<T>(this.apiType, this.id).pipe(
-            tap((state) => this.state.next(state)),
-        ).subscribe();
+    public get key(): number {
+        return this.listEntity.key;
+    }
+
+    public toString(): string {
+        return this.listEntity.name;
     }
 
 }

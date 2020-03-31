@@ -198,6 +198,10 @@ message SubscribeStatesRequest {
   // Empty
 }
 
+message ListEntity {
+  fixed32 key = 1;
+}
+
 // ==================== BINARY SENSOR ====================
 message ListEntitiesBinarySensorResponse {
   option (id) = 12;

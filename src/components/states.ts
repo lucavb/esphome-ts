@@ -1,32 +1,19 @@
-export interface DefaultState {
-    id: string;
-    state: string;
+export interface StateEvent {
+    key: number;
 }
 
-export interface SwitchState extends DefaultState {
-    state: 'ON' | 'OFF';
-    value: boolean;
+export interface SensorStateEvent extends StateEvent {
+    state: number;
 }
 
-export type BinarySensor = SwitchState;
-
-export interface SensorState extends DefaultState {
-    state: 'ON' | 'OFF';
-    value: number;
+export interface BinarySensorStateEvent extends StateEvent {
+    state?: boolean;
 }
 
-export interface Rgb {
-    r: number;
-    g: number;
-    b: number;
-}
-
-export interface Light {
+export interface LightStateEvent extends StateEvent {
+    state?: boolean;
     brightness?: number;
-    color?: Rgb,
-    effect?: string;
-    // eslint-disable-next-line camelcase
-    white_value?: number;
+    red?: number;
+    green?: number;
+    blue?: number;
 }
-
-export type LightState = Light & DefaultState;

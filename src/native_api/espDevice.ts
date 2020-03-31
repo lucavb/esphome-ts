@@ -1,15 +1,27 @@
 import {NativeApiConnection, ReadData} from './connection';
-import {filter, flatMap, skip, take, tap} from 'rxjs/operators';
-import {NativeApiWrapper} from './wrapper';
+import {filter, flatMap, map, skip, take, tap} from 'rxjs/operators';
+import {decode, NativeApiClient} from './client';
 import {
     BinarySensorStateResponse,
-    ConnectResponse,
-    HelloResponse,
+    DeviceInfoRequest,
+    DeviceInfoResponse,
+    LightStateResponse,
     ListEntitiesBinarySensorResponse,
     ListEntitiesLightResponse,
+    ListEntitiesSensorResponse,
+    ListEntitiesSwitchResponse,
+    SensorStateResponse,
+    SwitchStateResponse,
 } from '../api/protobuf/api';
 import {MessageTypes} from './requestResponseMatching';
-import {Reader} from 'protobufjs/minimal';
+import {BaseComponent} from '../components/base';
+import {BinarySensorComponent} from '../components/binarySensor';
+import {BehaviorSubject, Observable} from 'rxjs';
+import {emptyCommandInterface, stateParser, transformStates} from './helpers';
+import {StateResponses} from './interfaces';
+import {SwitchComponent} from '../components/switch';
+import {LightComponent} from '../components/light';
+import {SensorComponent} from '../components/sensor';
 
 const listResponses: Set<MessageTypes> = new Set([
     MessageTypes.ListEntitiesBinarySensorResponse,
@@ -35,46 +47,91 @@ const stateResponses: Set<MessageTypes> = new Set([
 export class NativeApiEspDevice {
 
     private readonly connection: NativeApiConnection;
-    private readonly client: NativeApiWrapper;
+    private readonly client: NativeApiClient;
 
-    constructor(private readonly host: string, private readonly password: string = '', private readonly port: number = 6053) {
+    private readonly stateEvents$: Observable<StateResponses>;
+
+    public deviceInfo?: DeviceInfoRequest;
+
+    public readonly components: {[key: string]: BaseComponent} = {};
+
+    private readonly discovery: BehaviorSubject<boolean>;
+    public readonly discovery$: Observable<boolean>;
+
+    constructor(private readonly host: string,
+                private readonly password: string = '',
+                private readonly port: number = 6053) {
+
+        this.discovery = new BehaviorSubject<boolean>(false);
+        this.discovery$ = this.discovery.asObservable();
         this.connection = new NativeApiConnection(host, port);
-        this.client = new NativeApiWrapper(this.connection);
+        this.client = new NativeApiClient(this.connection);
         this.connection.open().pipe(
             skip(1), // behaviour subject, very first call
             take(1),
             filter((connected: boolean) => connected),
             flatMap(() => this.client.hello({clientInfo: 'esphome-ts'})),
-            flatMap((response: HelloResponse) => this.client.connect({password})),
-            flatMap((response: ConnectResponse) => this.client.listEntities({})),
-            flatMap(() => this.client.subscribeStateChange({})),
+            flatMap(() => this.client.connect({password})),
+            flatMap(() => this.client.deviceInfo()),
+            flatMap(() => this.client.listEntities()),
+            flatMap(() => this.client.subscribeStateChange()),
         ).subscribe();
-        this.connection.data$.pipe(
-            filter((data) => listResponses.has(data.type)),
-            tap((data: ReadData) => {
-                switch (data.type) {
-                case MessageTypes.ListEntitiesBinarySensorResponse: {
-                    console.log(ListEntitiesBinarySensorResponse.decode(new Reader(data.payload)));
-                    break;
-                }
-                case MessageTypes.ListEntitiesLightResponse: {
-                    console.log(ListEntitiesLightResponse.decode(new Reader(data.payload)));
-                    break;
-                }
-                }
-            }),
-        ).subscribe();
-        this.connection.data$.pipe(
+        this.stateEvents$ = this.connection.data$.pipe(
             filter((data: ReadData) => stateResponses.has(data.type)),
+            map((data: ReadData) => stateParser(data)),
+        );
+        this.connection.data$.pipe(
             tap((data: ReadData) => {
-                switch (data.type) {
-                case MessageTypes.BinarySensorStateResponse: {
-                    console.log('state binary', BinarySensorStateResponse.decode(new Reader(data.payload)));
-                }
+                if (listResponses.has(data.type)) {
+                    this.parseListResponse(data);
+                } else if (stateResponses.has(data.type)) {
+                    stateParser(data);
+                } else if (data.type === MessageTypes.DeviceInfoResponse) {
+                    this.deviceInfo = decode(DeviceInfoResponse, data);
                 }
             }),
         ).subscribe();
     }
 
+    private parseListResponse = (data: ReadData) => {
+        switch (data.type) {
+            case MessageTypes.ListEntitiesBinarySensorResponse: {
+                const response: ListEntitiesBinarySensorResponse = decode(ListEntitiesBinarySensorResponse, data);
+                this.components[response.objectId] = new BinarySensorComponent(response,
+                    transformStates<BinarySensorStateResponse>(this.stateEvents$, response),
+                    emptyCommandInterface,
+                );
+                break;
+            }
+            case MessageTypes.ListEntitiesSwitchResponse: {
+                const response: ListEntitiesSwitchResponse = decode(ListEntitiesSwitchResponse, data);
+                this.components[response.objectId] = new SwitchComponent(response,
+                    transformStates<SwitchStateResponse>(this.stateEvents$, response),
+                    this.connection,
+                );
+                break;
+            }
+            case MessageTypes.ListEntitiesLightResponse: {
+                const response: ListEntitiesLightResponse = decode(ListEntitiesLightResponse, data);
+                this.components[response.objectId] = new LightComponent(response,
+                    transformStates<LightStateResponse>(this.stateEvents$, response),
+                    this.connection,
+                );
+                break;
+            }
+            case MessageTypes.ListEntitiesSensorResponse: {
+                const response: ListEntitiesSensorResponse = decode(ListEntitiesSensorResponse, data);
+                this.components[response.objectId] = new SensorComponent(response,
+                    transformStates<SensorStateResponse>(this.stateEvents$, response),
+                    this.connection,
+                );
+                break;
+            }
+            case MessageTypes.ListEntitiesDoneResponse: {
+                this.discovery.next(true);
+                break;
+            }
+        }
+    };
 
 }

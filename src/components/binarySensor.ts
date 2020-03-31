@@ -1,15 +1,11 @@
 import {BaseComponent} from './base';
-import {BinarySensor} from './states';
-import {ApiTypes} from '../api/apiTypes';
+import {BinarySensorEntity} from './entities';
+import {BinarySensorStateEvent} from './states';
 
-export class BinarySensorComponent extends BaseComponent<BinarySensor> {
+export class BinarySensorComponent extends BaseComponent<BinarySensorEntity, BinarySensorStateEvent> {
 
-    public get value(): boolean {
-        return this.state.getValue()?.value ?? false;
-    }
-
-    protected getType(): ApiTypes {
-        return ApiTypes.BINARY_SENSOR;
+    get status(): boolean {
+        return !!this.state?.state;
     }
 
 }

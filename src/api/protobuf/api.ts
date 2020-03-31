@@ -112,6 +112,10 @@ export interface ListEntitiesDoneResponse {
 export interface SubscribeStatesRequest {
 }
 
+export interface ListEntity {
+  key: number;
+}
+
 /**
  *  ==================== BINARY SENSOR ====================
  */
@@ -531,6 +535,10 @@ const baseListEntitiesDoneResponse: object = {
 };
 
 const baseSubscribeStatesRequest: object = {
+};
+
+const baseListEntity: object = {
+  key: 0,
 };
 
 const baseListEntitiesBinarySensorResponse: object = {
@@ -2115,6 +2123,52 @@ export const SubscribeStatesRequest = {
   },
   toJSON(message: SubscribeStatesRequest): unknown {
     const obj: any = {};
+    return obj;
+  },
+};
+
+export const ListEntity = {
+  encode(message: ListEntity, writer: Writer = Writer.create()): Writer {
+    writer.uint32(13).fixed32(message.key);
+    return writer;
+  },
+  decode(reader: Reader, length?: number): ListEntity {
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = Object.create(baseListEntity) as ListEntity;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.key = reader.fixed32();
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+  fromJSON(object: any): ListEntity {
+    const message = Object.create(baseListEntity) as ListEntity;
+    if (object.key !== undefined && object.key !== null) {
+      message.key = Number(object.key);
+    } else {
+      message.key = 0;
+    }
+    return message;
+  },
+  fromPartial(object: DeepPartial<ListEntity>): ListEntity {
+    const message = Object.create(baseListEntity) as ListEntity;
+    if (object.key !== undefined && object.key !== null) {
+      message.key = object.key;
+    } else {
+      message.key = 0;
+    }
+    return message;
+  },
+  toJSON(message: ListEntity): unknown {
+    const obj: any = {};
+    obj.key = message.key || 0;
     return obj;
   },
 };

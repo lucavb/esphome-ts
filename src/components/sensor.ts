@@ -1,15 +1,11 @@
 import {BaseComponent} from './base';
-import {SensorState} from './states';
-import {ApiTypes} from '../api/apiTypes';
+import {SensorEntity} from './entities';
+import {SensorStateEvent} from './states';
 
-export class SensorComponent extends BaseComponent<SensorState> {
+export class SensorComponent extends BaseComponent<SensorEntity, SensorStateEvent> {
 
-    public get value(): number {
-        return this.state.getValue()?.value ?? -1;
-    }
-
-    protected getType(): ApiTypes {
-        return ApiTypes.SENSOR;
+    public get value(): number | undefined {
+        return this.state?.state;
     }
 
 }

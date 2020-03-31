@@ -1,17 +1,21 @@
-import {OnOffComponent} from './onOff';
-import {SwitchState} from './states';
-import {ApiTypes} from '../api/apiTypes';
+import {BaseComponent} from './base';
+import {MessageTypes} from '../native_api/requestResponseMatching';
+import {SwitchCommandRequest} from '../api/protobuf/api';
 
-export class SwitchComponent extends OnOffComponent<SwitchState> {
+export class SwitchComponent extends BaseComponent {
 
-    public toggle(): void {
-        this.device.toggle(this.apiType, this.id).subscribe((val) => {
-
-        });
+    public turnOn(): void {
+        this.commandInterface.send(MessageTypes.SwitchCommandRequest, SwitchCommandRequest.encode({
+            state: true,
+            key: this.key,
+        }).finish());
     }
 
-    protected getType(): ApiTypes {
-        return ApiTypes.SWITCH;
+    public turnOff(): void {
+        this.commandInterface.send(MessageTypes.SwitchCommandRequest, SwitchCommandRequest.encode({
+            state: false,
+            key: this.key,
+        }).finish());
     }
 
 }
