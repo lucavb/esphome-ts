@@ -76,6 +76,8 @@ export class NativeApiConnection {
     };
 
     private onData = (buffer: Buffer): void => {
+        // this assumes that every time there is only one message
+        // we might want to fix this some day
         if (buffer.length < 3) {
             return;
         }
