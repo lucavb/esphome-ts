@@ -84,8 +84,6 @@ export class NativeApiEspDevice {
             tap((data: ReadData) => {
                 if (listResponses.has(data.type)) {
                     this.parseListResponse(data);
-                } else if (stateResponses.has(data.type)) {
-                    stateParser(data);
                 } else if (data.type === MessageTypes.DeviceInfoResponse) {
                     this.deviceInfo = decode(DeviceInfoResponse, data);
                 }
