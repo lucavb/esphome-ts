@@ -20,19 +20,19 @@
     "license": "GPL-3.0",
     "dependencies": {
         "eventsource": "^1.0.7",
-        "rxjs": "^6.5.4",
+        "rxjs": "^6.5.5",
         "superagent": "^5.2.2"
     },
     "devDependencies": {
-        "typescript": "^3.8.3",
-        "@typescript-eslint/eslint-plugin": "^2.25.0",
-        "@typescript-eslint/parser": "^2.25.0",
+        "@types/eventsource": "^1.1.2",
+        "@types/jest": "^25.2.1",
+        "@types/node": "^13.11.0",
+        "@types/superagent": "^4.1.7",
+        "@typescript-eslint/eslint-plugin": "^2.26.0",
+        "@typescript-eslint/parser": "^2.26.0",
         "eslint": "^6.8.0",
         "eslint-config-google": "^0.14.0",
-        "@types/eventsource": "^1.1.2",
-        "@types/node": "^13.9.5",
-        "@types/superagent": "^4.1.7",
-        "@types/jest": "^25.1.4",
-        "ts-proto": "^1.15.0"
+        "ts-proto": "^1.15.0",
+        "typescript": "^3.8.3"
     }
 }
