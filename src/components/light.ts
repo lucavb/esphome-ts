@@ -50,10 +50,15 @@ export class LightComponent extends BaseComponent<LightEntity, LightStateEvent> 
         };
     }
 
-    public setRgb(rgb: Rgb) {
+    public setRgb({red, green, blue}: Rgb) {
         if (!this.listEntity.supportsRgb) {
             return undefined;
         }
+        const rgb = {
+            red: convertNumbers(red, false),
+            green: convertNumbers(green, false),
+            blue: convertNumbers(blue, false),
+        };
         this.commandInterface.send(MessageTypes.LightCommandRequest, LightCommandRequest.encode(
             Object.assign(this.generateState(1), rgb)).finish());
     }
