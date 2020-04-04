@@ -19,3 +19,6 @@ export interface LightEntity extends ListEntity {
     supportsBrightness: boolean;
     supportsRgb: boolean;
 }
+
+export type ComponentType = 'light' | 'binarySensor' | 'sensor' | 'switch';
+

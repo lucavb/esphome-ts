@@ -1,4 +1,4 @@
-import {ListEntity} from './entities';
+import {ComponentType, ListEntity} from './entities';
 import {StateEvent} from './states';
 import {Observable} from 'rxjs';
 import {tap} from 'rxjs/operators';
@@ -20,6 +20,10 @@ export abstract class BaseComponent<L extends ListEntity = ListEntity, S extends
         return this.state !== undefined;
     }
 
+    public get name(): string {
+        return this.listEntity.name;
+    }
+
     public get key(): number {
         return this.listEntity.key;
     }
@@ -27,5 +31,7 @@ export abstract class BaseComponent<L extends ListEntity = ListEntity, S extends
     public toString(): string {
         return this.listEntity.name;
     }
+
+    public abstract get getType(): ComponentType;
 
 }

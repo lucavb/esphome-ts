@@ -1,6 +1,7 @@
 import {BaseComponent} from './base';
 import {MessageTypes} from '../native_api/requestResponseMatching';
 import {SwitchCommandRequest} from '../api/protobuf/api';
+import {ComponentType} from "./entities";
 
 export class SwitchComponent extends BaseComponent {
 
@@ -16,6 +17,10 @@ export class SwitchComponent extends BaseComponent {
             state: false,
             key: this.key,
         }).finish());
+    }
+
+    public get getType(): ComponentType {
+        return 'switch';
     }
 
 }

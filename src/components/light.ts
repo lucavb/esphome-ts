@@ -1,10 +1,15 @@
-import {LightEntity} from './entities';
+import {ComponentType, LightEntity} from './entities';
 import {LightStateEvent} from './states';
 import {convertNumbers} from './helpers';
 import {MessageTypes} from '../native_api/requestResponseMatching';
 import {LightCommandRequest} from '../api/protobuf/api';
-import {Rgb} from '../../dist/components/states';
 import {BaseComponent} from './base';
+
+export interface Rgb {
+    red: number;
+    green: number;
+    blue: number;
+}
 
 export class LightComponent extends BaseComponent<LightEntity, LightStateEvent> {
 
@@ -51,6 +56,18 @@ export class LightComponent extends BaseComponent<LightEntity, LightStateEvent> 
         }
         this.commandInterface.send(MessageTypes.LightCommandRequest, LightCommandRequest.encode(
             Object.assign(this.generateState(1), rgb)).finish());
+    }
+
+    public get getType(): ComponentType {
+        return 'light';
+    }
+
+    public get supportsRgb(): boolean {
+        return this.listEntity.supportsRgb;
+    }
+
+    public get supportsBrightness(): boolean {
+        return this.listEntity.supportsBrightness;
     }
 
     private generateState(num: number, turnOn: boolean = true): LightCommandRequest {
