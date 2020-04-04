@@ -1,4 +1,5 @@
 /* eslint-disable */
+// @ts-nocheck
 import * as Long from 'long';
 import { Writer, Reader } from 'protobufjs/minimal';
 
