@@ -10,7 +10,9 @@
     ],
     "scripts": {
         "build": "tsc",
-        "test": "jest"
+        "test": "jest",
+        "clean": "rm -rf dist",
+        "cbuild": "npm run clean && npm run build"
     },
     "prepare": "npm run build",
     "keywords": [
