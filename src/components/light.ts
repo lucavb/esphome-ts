@@ -4,12 +4,8 @@ import {convertNumbers} from './helpers';
 import {MessageTypes} from '../native_api/requestResponseMatching';
 import {LightCommandRequest} from '../api/protobuf/api';
 import {BaseComponent} from './base';
-
-export interface Rgb {
-    red: number;
-    green: number;
-    blue: number;
-}
+import {rgb as rgbConvert, hsv as hsvConvert} from 'color-convert';
+import {Hsv, Rgb} from './interfaces';
 
 export class LightComponent extends BaseComponent<LightEntity, LightStateEvent> {
 
@@ -39,9 +35,46 @@ export class LightComponent extends BaseComponent<LightEntity, LightStateEvent> 
         this.commandInterface.send(MessageTypes.LightCommandRequest, LightCommandRequest.encode(prepareState).finish());
     }
 
-    public getRgb(): Rgb | undefined {
+    public get hsv(): Hsv {
+        const rgbState = this.rgb;
+        if (!rgbState) {
+            return {
+                hue: 0,
+                saturation: 0,
+                value: 0,
+            };
+        }
+        const [hue, saturation, value] = rgbConvert.hsv([rgbState.red, rgbState.green, rgbState.blue]);
+        const brightness = this.getBrightness();
+        return {
+            hue,
+            saturation,
+            value: brightness ?? value,
+        };
+    }
+
+    public set hsv(hsv: Hsv) {
         if (!this.listEntity.supportsRgb) {
-            return undefined;
+            return;
+        }
+        const [red, green, blue] = hsvConvert.rgb([hsv.hue, hsv.saturation, 100]);
+        const newState = {
+            red: convertNumbers(red, false),
+            green: convertNumbers(green, false),
+            blue: convertNumbers(blue, false),
+            brightness: convertNumbers(hsv.value, false),
+        };
+        this.commandInterface.send(MessageTypes.LightCommandRequest, LightCommandRequest.encode(
+            Object.assign(this.generateState(1), newState)).finish());
+    }
+
+    public get rgb(): Rgb {
+        if (!this.listEntity.supportsRgb) {
+            return {
+                red: 0,
+                green: 0,
+                blue: 0,
+            };
         }
         return {
             red: convertNumbers(this.state?.red ?? 0, true),
@@ -50,9 +83,9 @@ export class LightComponent extends BaseComponent<LightEntity, LightStateEvent> 
         };
     }
 
-    public setRgb({red, green, blue}: Rgb) {
+    public set rgb({red, green, blue}: Rgb) {
         if (!this.listEntity.supportsRgb) {
-            return undefined;
+            return;
         }
         const rgb = {
             red: convertNumbers(red, false),
