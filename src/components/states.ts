@@ -10,6 +10,8 @@ export interface BinarySensorStateEvent extends StateEvent {
     state?: boolean;
 }
 
+export type SwitchStateEvent = BinarySensorStateEvent;
+
 export interface LightStateEvent extends StateEvent {
     state?: boolean;
     brightness?: number;
