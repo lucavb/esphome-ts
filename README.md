@@ -22,15 +22,12 @@ device.discovery$.pipe(
 
 ```
 
+Please see more [here](docs/index.md)
+
 ## Contribution
 
 Please, feel free to make a PR and contribute to this project. Esphome is a good project, and this expands their
 ecosystem.
-
-## Caveats
-
-Esphome provides and eventsource endpoint, that should provide a way for receiving updates without
-polling every so often. This feature is enabled, but the connection appears to abort every so often.
 
 ## License
 
