@@ -7,13 +7,15 @@ import {CommandInterface} from './commandInterface';
 export abstract class BaseComponent<L extends ListEntity = ListEntity, S extends StateEvent = StateEvent> {
 
     protected state?: S;
+    public readonly state$: Observable<S>;
 
     constructor(protected readonly listEntity: L,
-                public readonly state$: Observable<S>,
+                state$: Observable<S>,
                 protected readonly commandInterface: CommandInterface) {
-        this.state$.pipe(
+        this.state$ = state$.pipe(
             tap((state: S) => this.state = state),
-        ).subscribe();
+        );
+        this.state$.subscribe();
     }
 
     public get ready(): boolean {
