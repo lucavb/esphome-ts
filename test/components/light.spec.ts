@@ -1,7 +1,6 @@
-import {LightComponent} from '../../src/components/light';
+import {LightComponent, LightStateEvent} from '../../src';
 import {CommandInterface} from '../../src/components/commandInterface';
 import {Subject} from 'rxjs';
-import {LightStateEvent} from '../../src/components/states';
 import {LightCommandRequest, ListEntitiesLightResponse} from '../../src/api/protobuf/api';
 import {Reader} from 'protobufjs/minimal';
 
@@ -120,4 +119,3 @@ describe('LightComponent', () => {
     });
 
 });
-
