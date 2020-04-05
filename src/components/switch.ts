@@ -1,5 +1,5 @@
 import {BaseComponent} from './base';
-import {MessageTypes} from '../native_api/requestResponseMatching';
+import {MessageTypes} from '../api/requestResponseMatching';
 import {SwitchCommandRequest} from '../api/protobuf/api';
 import {ComponentType} from "./entities";
 

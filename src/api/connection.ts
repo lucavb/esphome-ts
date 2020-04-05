@@ -10,7 +10,7 @@ export interface ReadData {
     payload: Uint8Array;
 }
 
-export class NativeApiConnection {
+export class Connection {
 
     private dead: boolean = false;
 

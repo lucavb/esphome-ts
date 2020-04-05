@@ -9,13 +9,13 @@ import {
     PingRequest,
     PingResponse,
     SubscribeStatesRequest,
-} from '../api/protobuf/api';
-import {NativeApiConnection, ReadData} from './connection';
+} from './protobuf/api';
+import {Connection, ReadData} from './connection';
 import {Observable, of} from 'rxjs';
 import {MessageTypes} from './requestResponseMatching';
 import {filter, switchMap, take, tap} from 'rxjs/operators';
 import {Reader} from 'protobufjs/minimal';
-import {voidMessage} from '../api/protobuf/api_options';
+import {voidMessage} from './protobuf/api_options';
 
 export interface Decoder<T> {
     decode: (reader: Reader, length?: number) => T;
@@ -25,9 +25,9 @@ export const decode = <T>(decoder: Decoder<T>, data: ReadData): T => {
     return decoder.decode(new Reader(data.payload));
 };
 
-export class NativeApiClient {
+export class Client {
 
-    constructor(private readonly connection: NativeApiConnection) {
+    constructor(private readonly connection: Connection) {
         this.connection.data$.pipe(
             tap((data) => {
                 if (data.type === MessageTypes.PingRequest) {

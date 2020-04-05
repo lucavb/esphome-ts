@@ -17,7 +17,7 @@ import {
     SwitchCommandRequest,
     SwitchStateResponse,
     TextSensorStateResponse,
-} from '../api/protobuf/api';
+} from './protobuf/api';
 
 export type ListEntityResponses = ListEntitiesBinarySensorResponse
     | ListEntitiesCoverResponse

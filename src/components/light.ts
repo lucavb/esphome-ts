@@ -1,7 +1,7 @@
 import {ComponentType, LightEntity} from './entities';
 import {LightStateEvent} from './states';
 import {convertNumbers} from './helpers';
-import {MessageTypes} from '../native_api/requestResponseMatching';
+import {MessageTypes} from '../api/requestResponseMatching';
 import {LightCommandRequest} from '../api/protobuf/api';
 import {BaseComponent} from './base';
 import {hsv as hsvConvert, rgb as rgbConvert} from 'color-convert';

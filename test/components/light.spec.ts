@@ -4,11 +4,6 @@ import {Subject} from 'rxjs';
 import {LightStateEvent} from '../../src/components/states';
 import {LightCommandRequest, ListEntitiesLightResponse} from '../../src/api/protobuf/api';
 import {Reader} from 'protobufjs/minimal';
-import {hsv as hsvConvert} from 'color-convert';
-
-const round = (value: number) => {
-    return Math.round(value * 100) / 100;
-};
 
 describe('LightComponent', () => {
 

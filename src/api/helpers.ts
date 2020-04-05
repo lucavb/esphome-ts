@@ -4,7 +4,7 @@ import {
     LightStateResponse,
     SensorStateResponse,
     SwitchStateResponse,
-} from '../api/protobuf/api';
+} from './protobuf/api';
 import {MessageTypes} from './requestResponseMatching';
 import {decode} from './client';
 import {ListEntityResponses, StateResponses} from './interfaces';

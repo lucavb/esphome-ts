@@ -1,6 +1,6 @@
-import {NativeApiConnection, ReadData} from './connection';
+import {Connection, ReadData} from './connection';
 import {filter, flatMap, map, skip, take, tap} from 'rxjs/operators';
-import {decode, NativeApiClient} from './client';
+import {Client, decode} from './client';
 import {
     BinarySensorStateResponse,
     DeviceInfoRequest,
@@ -12,7 +12,7 @@ import {
     ListEntitiesSwitchResponse,
     SensorStateResponse,
     SwitchStateResponse,
-} from '../api/protobuf/api';
+} from './protobuf/api';
 import {MessageTypes} from './requestResponseMatching';
 import {BaseComponent} from '../components/base';
 import {BinarySensorComponent} from '../components/binarySensor';
@@ -44,10 +44,10 @@ const stateResponses: Set<MessageTypes> = new Set([
     MessageTypes.TextSensorStateResponse,
 ]);
 
-export class NativeApiEspDevice {
+export class EspDevice {
 
-    private readonly connection: NativeApiConnection;
-    private readonly client: NativeApiClient;
+    private readonly connection: Connection;
+    private readonly client: Client;
 
     private readonly stateEvents$: Observable<StateResponses>;
 
@@ -64,8 +64,8 @@ export class NativeApiEspDevice {
 
         this.discovery = new BehaviorSubject<boolean>(false);
         this.discovery$ = this.discovery.asObservable();
-        this.connection = new NativeApiConnection(host, port);
-        this.client = new NativeApiClient(this.connection);
+        this.connection = new Connection(host, port);
+        this.client = new Client(this.connection);
         this.connection.open().pipe(
             skip(1), // behaviour subject, very first call
             take(1),

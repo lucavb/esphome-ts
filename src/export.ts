@@ -5,6 +5,6 @@ export * from './components/light';
 export * from './components/states';
 export * from './components/switch';
 
-export * from './native_api/espDevice';
-export * from './native_api/connection';
-export * from './native_api/client';
+export * from './api/espDevice';
+export * from './api/connection';
+export * from './api/client';
