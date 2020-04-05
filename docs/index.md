@@ -6,9 +6,8 @@ and RxJS based interface to it.
 ## Getting started
 
 ```typescript
-import {EspDevice} from './api/espDevice';
+import {EspDevice, SwitchComponent} from 'esphome-ts/dist';
 import {filter, tap} from 'rxjs/operators';
-import {SwitchComponent} from './components/switch';
 
 const device = new EspDevice('my_esp.local');
 device.discovery$.pipe(
