@@ -4,6 +4,7 @@
     "description": "A client library for use with the esphome project",
     "main": "dist/index.ts",
     "type": "dist/export.d.ts",
+    "repository": "https://github.com/lucavb/esphome-ts",
     "files": [
         "dist/*"
     ],
