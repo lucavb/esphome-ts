@@ -1,7 +1,7 @@
-export const convertNumbers = (num: number, fromEsp: boolean): number => {
+export const convertNumbers = (num: number, max: number = 255, fromEsp: boolean = false): number => {
     if (fromEsp) {
-        return Math.floor(num * 100.0);
+        return Math.floor(num * max);
     } else {
-        return Math.min(Math.max(num, 0), 100) / 100.0;
+        return Math.min(Math.max(num, 0), max) / max;
     }
 };
