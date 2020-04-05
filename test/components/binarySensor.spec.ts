@@ -1,4 +1,4 @@
-import {BinarySensorComponent, BinarySensorStateEvent, LightComponent} from '../../src';
+import {BinarySensorComponent, BinarySensorStateEvent} from '../../src';
 import {CommandInterface} from '../../src/components/commandInterface';
 import {Subject} from 'rxjs';
 import {ListEntitiesBinarySensorResponse} from '../../src/api/protobuf/api';

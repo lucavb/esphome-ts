@@ -118,4 +118,25 @@ describe('LightComponent', () => {
         });
     });
 
+    it('setbrightness test', () => {
+        stateObservable.next({
+            blue: 0, brightness: 1, green: 1, key: 0, red: 0, state: true,
+        });
+        component.setBrightness(75);
+        if (lastSendMessage) {
+            expect(lastSendMessage.red).toBe(0);
+            expect(lastSendMessage.green).toBe(1);
+            expect(lastSendMessage.brightness).toBe(0.75);
+        } else {
+            throw new Error('Should have had an expect call');
+        }
+    });
+
+    it('get brightness test', () => {
+        stateObservable.next({
+            blue: 0, brightness: 0.64, green: 1, key: 0, red: 0, state: true,
+        });
+        expect(component.getBrightness()).toBe(64);
+    });
+
 });

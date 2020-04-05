@@ -30,19 +30,19 @@ export class LightComponent extends BaseComponent<LightEntity, LightStateEvent> 
     }
 
     public setBrightness(brightness: number): void {
-        const bright = convertNumbers(brightness, 100, false);
-        if (this.listEntity.supportsBrightness) {
-            const state = this.generateState(1);
-            state.brightness = bright;
-            this.commandInterface.send(MessageTypes.LightCommandRequest, LightCommandRequest.encode(state).finish());
-        } else if (this.listEntity.supportsRgb) {
+
+        if (this.listEntity.supportsRgb) {
             const {hue, saturation} = this.hsv;
             this.hsv = {
                 hue, saturation,
-                value: bright,
+                value: brightness,
             };
+        } else if (this.listEntity.supportsBrightness) {
+            const bright = convertNumbers(brightness, 100, false);
+            const state = this.generateState(1);
+            state.brightness = bright;
+            this.commandInterface.send(MessageTypes.LightCommandRequest, LightCommandRequest.encode(state).finish());
         }
-
     }
 
     public get hsv(): Hsv {
