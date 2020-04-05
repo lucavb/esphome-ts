@@ -5,13 +5,20 @@ This is a client library for use with [esphome](https://esphome.io).
 ## Example use
 
 ```typescript
-const device = new EspDevice('192.168.0.20');
-const espSwitch = new SwitchComponent('living_room_dehumidifier', device);
-espSwitch.turnOn();
-espSwitch.toggle();
-espSwitch.state$.subscribe((state) => {
-    console.log(`${state.id} is ${state.value ? 'on' : 'off'}`);
-});
+import {EspDevice} from './api/espDevice';
+import {filter, tap} from 'rxjs/operators';
+import {SwitchComponent} from './components/switch';
+
+const device = new EspDevice('my_esp.local');
+device.discovery$.pipe(
+    filter((value) => value),
+    tap(() => {
+        const sw = device.components['test_switch'] as SwitchComponent;
+        sw.state$.subscribe((value) => {
+            console.log(sw.status);
+        });
+    }),
+).subscribe();
 
 ```
 
