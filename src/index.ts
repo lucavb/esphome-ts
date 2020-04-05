@@ -1,18 +1,10 @@
-import {filter, take, tap} from 'rxjs/operators';
-import {BinarySensorComponent} from './components/binarySensor';
-import {EspDevice} from './api/espDevice';
+export * from './components/base';
+export * from './components/binarySensor';
+export * from './components/sensor';
+export * from './components/light';
+export * from './components/states';
+export * from './components/switch';
 
-
-const device = new EspDevice('10.0.0.118', '');
-device.discovery$.pipe(
-    filter((done) => done),
-    take(1),
-    tap(() => {
-        const a = device.components['test_pir'] as BinarySensorComponent;
-        // @ts-ignore
-        console.log(a.name, a.listEntity);
-        a.state$.subscribe((state) => {
-            console.log(a);
-        });
-    }),
-).subscribe();
+export * from './api/espDevice';
+export * from './api/connection';
+export * from './api/client';
