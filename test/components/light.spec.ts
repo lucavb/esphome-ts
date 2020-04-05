@@ -4,10 +4,10 @@ import {Subject} from 'rxjs';
 import {LightStateEvent} from '../../src/components/states';
 import {LightCommandRequest, ListEntitiesLightResponse} from '../../src/api/protobuf/api';
 import {Reader} from 'protobufjs/minimal';
-import {last} from "rxjs/operators";
+import {hsv as hsvConvert} from 'color-convert';
 
 const round = (value: number) => {
-    return Math.round(value * 1000) / 1000;
+    return Math.round(value * 100) / 100;
 };
 
 describe('LightComponent', () => {
@@ -16,12 +16,12 @@ describe('LightComponent', () => {
     let commandInterface: CommandInterface;
     let stateObservable: Subject<LightStateEvent>;
     let listEntity: ListEntitiesLightResponse;
-    let lastSendMessage: Uint8Array | undefined;
+    let lastSendMessage: LightCommandRequest | undefined;
 
     beforeEach(() => {
         commandInterface = {
             send: (type, array) => {
-                lastSendMessage = array;
+                lastSendMessage = LightCommandRequest.decode(new Reader(array));
             },
         };
         stateObservable = new Subject<LightStateEvent>();
@@ -40,6 +40,37 @@ describe('LightComponent', () => {
         };
         lastSendMessage = undefined;
         component = new LightComponent(listEntity, stateObservable, commandInterface);
+        stateObservable.next({
+            key: 3393925675,
+            state: true,
+            brightness: 1,
+            red: 1,
+            green: 1,
+            blue: 1,
+        });
+    });
+
+    it('get rgb works', () => {
+        stateObservable.next({
+            key: 3393925675,
+            state: true,
+            brightness: 1,
+            red: 1,
+            green: 1,
+            blue: 1,
+        });
+        const {red, green, blue} = component.rgb;
+        expect(red).toBe(255);
+        expect(green).toBe(255);
+        expect(blue).toBe(255);
+    });
+
+    it('set rgb works', () => {
+        expect(lastSendMessage).toBe(undefined);
+        component.rgb = {red: 255, green: 255, blue: 0};
+        expect(lastSendMessage?.red).toBe(1);
+        expect(lastSendMessage?.green).toBe(1);
+        expect(lastSendMessage?.blue).toBe(0);
     });
 
     it('setting hsv creates the proper command', () => {
@@ -49,7 +80,7 @@ describe('LightComponent', () => {
             value: 100,
         };
         if (lastSendMessage) {
-            const request = LightCommandRequest.decode(new Reader(lastSendMessage));
+            const request = lastSendMessage;
             expect(request.red).toBe(1);
             expect(request.green).toBe(0);
             expect(request.blue).toBe(0);
@@ -71,59 +102,26 @@ describe('LightComponent', () => {
 
     it('generates the correct hsv values considering brightness', () => {
         stateObservable.next({
-            blue: 0, brightness: 0.33, green: 0, key: 0, red: 1, state: true,
+            blue: 0, brightness: 1, green: 0, key: 0, red: 1, state: true,
         });
         const hsv = component.hsv;
         expect(hsv).toEqual({
             hue: 0,
             saturation: 100,
-            value: 33,
+            value: 100,
         });
     });
 
     it('generates the correct hsv values considering saturation', () => {
         stateObservable.next({
-            blue: 0, brightness: 0.33, green: 0, key: 0, red: 0.6, state: true,
+            blue: 0, brightness: 0.6, green: 0, key: 0, red: 1, state: true,
         });
         const hsv = component.hsv;
         expect(hsv).toEqual({
             hue: 0,
             saturation: 100,
-            value: 33,
+            value: 60,
         });
-    });
-
-    it('setting hsv creates the proper brightness', () => {
-        component.hsv = {
-            hue: 0,
-            saturation: 100,
-            value: 25,
-        };
-        if (lastSendMessage) {
-            const request = LightCommandRequest.decode(new Reader(lastSendMessage));
-            expect(request.red).toBe(1);
-            expect(request.green).toBe(0);
-            expect(request.blue).toBe(0);
-            expect(request.brightness).toBe(0.25);
-        }
-    });
-
-    it('setting rgb does not influence brightness', () => {
-        stateObservable.next({
-            blue: 0, brightness: 0.33, green: 0, key: 0, red: 1, state: true,
-        });
-        component.rgb = {
-            red: 60,
-            green: 50,
-            blue: 0,
-        };
-        if (lastSendMessage) {
-            const request = LightCommandRequest.decode(new Reader(lastSendMessage));
-            expect(round(request.red)).toBe(0.6);
-            expect(round(request.green)).toBe(0.5);
-            expect(round(request.blue)).toBe(0);
-            expect(round(request.brightness)).toBe(0.33);
-        }
     });
 
 });
