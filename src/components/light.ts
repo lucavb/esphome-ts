@@ -10,7 +10,6 @@ import {Hsv, Rgb} from './interfaces';
 export class LightComponent extends BaseComponent<LightEntity, LightStateEvent> {
 
     public turnOn(): void {
-        console.log('18.39');
         this.commandInterface.send(MessageTypes.LightCommandRequest, LightCommandRequest
             .encode(this.generateState(1)).finish());
     }
@@ -47,7 +46,6 @@ export class LightComponent extends BaseComponent<LightEntity, LightStateEvent> 
     }
 
     public get hsv(): Hsv {
-        console.log('gethsv', this.state);
         if (!this.state) {
             return {
                 hue: 0,
@@ -87,9 +85,7 @@ export class LightComponent extends BaseComponent<LightEntity, LightStateEvent> 
             };
         }
         const {hue, saturation, value} = this.hsv;
-        console.log(hue, saturation, value);
         const [red, green, blue] = hsvConvert.rgb([hue, saturation, value]);
-        console.log(red, green, blue);
         return {
             red,
             green,
