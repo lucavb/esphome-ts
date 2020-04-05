@@ -64,8 +64,10 @@ export class Connection {
     }
 
     send(type: MessageTypes, payload: Uint8Array): void {
-        const final = new Uint8Array([0x00, payload.length, type, ...payload]);
-        this.socket.write(final);
+        if (this.connected.getValue()) {
+            const final = new Uint8Array([0x00, payload.length, type, ...payload]);
+            this.socket.write(final);
+        }
     }
 
     private onClose = (hadError: boolean) => {
