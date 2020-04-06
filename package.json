@@ -19,7 +19,7 @@
         "esphome",
         "typescript"
     ],
-    "author": "Luca Becker",
+    "author": "Luca Becker <luca.becker@sunbury.xyz> (https://sunbury.xyz/)",
     "license": "GPL-3.0",
     "dependencies": {
         "color-convert": "^2.0.1",
