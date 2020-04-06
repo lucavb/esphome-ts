@@ -1,7 +1,7 @@
 # esphome-ts Documentation
 
 This project implements the esphome native API in Typescript and provides
-and RxJS based interface to it.
+a RxJS based interface to it.
 
 ## Getting started
 
