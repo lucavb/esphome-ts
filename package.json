@@ -9,8 +9,8 @@
         "dist/*"
     ],
     "scripts": {
-        "build": "tsc",
-        "test": "jest",
+        "build": "npx tsc",
+        "test": "npx jest",
         "clean": "rm -rf dist",
         "cbuild": "npm run clean && npm run build"
     },
