@@ -8,6 +8,7 @@ export interface ListEntity {
 export interface SensorEntity extends ListEntity {
     unitOfMeasurement: string;
     accuracyDecimals: number;
+    icon: string;
 }
 
 export interface BinarySensorEntity extends ListEntity {
@@ -21,4 +22,3 @@ export interface LightEntity extends ListEntity {
 }
 
 export type ComponentType = 'light' | 'binarySensor' | 'sensor' | 'switch';
-
