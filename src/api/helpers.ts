@@ -44,3 +44,6 @@ export const transformStates = <T extends StateResponses>(stateEvents$: Observab
     ) as Observable<T>;
 };
 
+export const isTrue = (val: unknown) => val === true;
+export const isTruthy = (val: unknown) => !!val;
+

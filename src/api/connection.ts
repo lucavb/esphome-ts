@@ -2,8 +2,12 @@ import {Socket} from 'net';
 import {BehaviorSubject, Observable, Subject} from 'rxjs';
 import {BytePositions} from './bytePositions';
 import {MessageTypes} from './requestResponseMatching';
+import {filter, take, tap, timeout} from 'rxjs/operators';
+import {isTrue} from './helpers';
 
-const TIMEOUT = 120 * 1000;
+const TIMEOUT: number = 120 * 1000;
+const DEFAULT_API_PORT_NUMBER: number = 6053;
+const FIRST_BYTE: number = 0x00;
 
 export interface ReadData {
     type: number;
@@ -12,10 +16,8 @@ export interface ReadData {
 
 export class Connection {
 
-    private dead: boolean = false;
-
     private readonly connected: BehaviorSubject<boolean>;
-    private connectTimeout: NodeJS.Timeout | undefined;
+    private connectTimeout?: NodeJS.Timeout;
     public readonly connected$: Observable<boolean>;
 
     private readonly data: Subject<ReadData>;
@@ -23,7 +25,9 @@ export class Connection {
 
     private readonly socket: Socket;
 
-    constructor(private readonly host: string, private readonly port: number = 6053) {
+    constructor(private readonly host: string,
+                private readonly port: number = DEFAULT_API_PORT_NUMBER,
+                private readonly connectOnSend: boolean = true) {
         this.data = new Subject<ReadData>();
         this.data$ = this.data.asObservable();
         this.socket = new Socket();
@@ -35,9 +39,6 @@ export class Connection {
     }
 
     open(): Observable<boolean> {
-        if (this.dead) {
-            return this.connected$;
-        }
         if (this.connectTimeout) {
             clearTimeout(this.connectTimeout);
         }
@@ -54,9 +55,6 @@ export class Connection {
     }
 
     close(): Observable<boolean> {
-        if (this.dead) {
-            return this.connected$;
-        }
         if (this.connected.getValue()) {
             this.socket.end();
         }
@@ -65,15 +63,22 @@ export class Connection {
 
     send(type: MessageTypes, payload: Uint8Array): void {
         if (this.connected.getValue()) {
-            const final = new Uint8Array([0x00, payload.length, type, ...payload]);
+            const final = new Uint8Array([FIRST_BYTE, payload.length, type, ...payload]);
             this.socket.write(final);
+        } else if (this.connectOnSend) {
+            this.open().pipe(
+                timeout(5000),
+                filter(isTrue),
+                take(1),
+                tap(() => {
+                    const final = new Uint8Array([FIRST_BYTE, payload.length, type, ...payload]);
+                    this.socket.write(final);
+                }),
+            ).subscribe();
         }
     }
 
     private onClose = (hadError: boolean) => {
-        if (hadError) {
-            this.dead = true;
-        }
         this.connected.next(false);
     };
 
