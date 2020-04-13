@@ -1,5 +1,5 @@
 import {Connection, ReadData} from './connection';
-import {filter, flatMap, map, skip, take, tap} from 'rxjs/operators';
+import {filter, map, skip, switchMap, take, tap} from 'rxjs/operators';
 import {Client, decode} from './client';
 import {
     BinarySensorStateResponse,
@@ -70,11 +70,11 @@ export class EspDevice {
             skip(1), // behaviour subject, very first call
             take(1),
             filter((connected: boolean) => connected),
-            flatMap(() => this.client.hello({clientInfo: 'esphome-ts'})),
-            flatMap(() => this.client.connect({password})),
-            flatMap(() => this.client.deviceInfo()),
-            flatMap(() => this.client.listEntities()),
-            flatMap(() => this.client.subscribeStateChange()),
+            switchMap(() => this.client.hello({clientInfo: 'esphome-ts'})),
+            switchMap(() => this.client.connect({password})),
+            switchMap(() => this.client.deviceInfo()),
+            switchMap(() => this.client.listEntities()),
+            switchMap(() => this.client.subscribeStateChange()),
         ).subscribe();
         this.stateEvents$ = this.connection.data$.pipe(
             filter((data: ReadData) => stateResponses.has(data.type)),
