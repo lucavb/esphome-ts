@@ -11,14 +11,14 @@ export class SwitchComponent extends BaseComponent<ListEntity, SwitchStateEvent>
     }
 
     public turnOn(): void {
-        this.commandInterface.send(MessageTypes.SwitchCommandRequest, SwitchCommandRequest.encode({
+        this.queueCommand(MessageTypes.SwitchCommandRequest, () => SwitchCommandRequest.encode({
             state: true,
             key: this.key,
         }).finish());
     }
 
     public turnOff(): void {
-        this.commandInterface.send(MessageTypes.SwitchCommandRequest, SwitchCommandRequest.encode({
+        this.queueCommand(MessageTypes.SwitchCommandRequest, () => SwitchCommandRequest.encode({
             state: false,
             key: this.key,
         }).finish());

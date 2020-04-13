@@ -10,12 +10,12 @@ import {Hsv, Rgb} from './interfaces';
 export class LightComponent extends BaseComponent<LightEntity, LightStateEvent> {
 
     public turnOn(): void {
-        this.commandInterface.send(MessageTypes.LightCommandRequest, LightCommandRequest
+        this.queueCommand(MessageTypes.LightCommandRequest, () => LightCommandRequest
             .encode(this.generateState(1)).finish());
     }
 
     public turnOff(): void {
-        this.commandInterface.send(MessageTypes.LightCommandRequest, LightCommandRequest
+        this.queueCommand(MessageTypes.LightCommandRequest, () => LightCommandRequest
             .encode(this.generateState(0, false)).finish());
     }
 
@@ -41,7 +41,7 @@ export class LightComponent extends BaseComponent<LightEntity, LightStateEvent> 
             const bright = convertNumbers(brightness, 100, false);
             const state = this.generateState(1);
             state.brightness = bright;
-            this.commandInterface.send(MessageTypes.LightCommandRequest, LightCommandRequest.encode(state).finish());
+            this.queueCommand(MessageTypes.LightCommandRequest, () => LightCommandRequest.encode(state).finish());
         }
     }
 
@@ -72,7 +72,7 @@ export class LightComponent extends BaseComponent<LightEntity, LightStateEvent> 
             blue: convertNumbers(blue, 255, false),
             brightness: convertNumbers(hsv.value, 100, false),
         };
-        this.commandInterface.send(MessageTypes.LightCommandRequest, LightCommandRequest.encode(
+        this.queueCommand(MessageTypes.LightCommandRequest, () => LightCommandRequest.encode(
             Object.assign(this.generateState(1), newState)).finish());
     }
 

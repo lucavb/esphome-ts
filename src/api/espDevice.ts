@@ -91,6 +91,13 @@ export class EspDevice {
         ).subscribe();
     }
 
+    public terminate(): void {
+        Object.values(this.components).forEach((component) => {
+            component.terminate();
+        });
+        this.connection.close();
+    }
+
     private parseListResponse = (data: ReadData) => {
         switch (data.type) {
             case MessageTypes.ListEntitiesBinarySensorResponse: {
