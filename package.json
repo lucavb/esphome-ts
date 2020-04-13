@@ -1,7 +1,7 @@
 {
     "name": "esphome-ts",
-    "version": "2.0.1",
-    "description": "A client library for use with the esphome project",
+    "version": "2.1.0",
+    "description": "A TypeScript client for the Esphome Native API interface",
     "main": "dist/index.js",
     "type": "dist/index.d.ts",
     "repository": "https://github.com/lucavb/esphome-ts",
@@ -12,9 +12,9 @@
         "build": "npx tsc",
         "test": "npx jest",
         "clean": "rm -rf dist",
-        "cbuild": "npm run clean && npm run build"
+        "cbuild": "npm run clean && npm run build",
+        "prepare": "npm run cbuild"
     },
-    "prepare": "npm run build",
     "keywords": [
         "esphome",
         "typescript"
