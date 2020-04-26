@@ -1,6 +1,7 @@
 import {ReadData} from './connection';
 import {
-    BinarySensorStateResponse, CoverStateResponse,
+    BinarySensorStateResponse,
+    CoverStateResponse,
     LightStateResponse,
     SensorStateResponse,
     SwitchStateResponse,
@@ -47,3 +48,4 @@ export const transformStates = <T extends StateResponses>(stateEvents$: Observab
 export const isTrue = (val: unknown) => val === true;
 export const isTruthy = (val: unknown) => !!val;
 
+export const isFalse = (val: unknown) => val === false;

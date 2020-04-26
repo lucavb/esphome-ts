@@ -11,7 +11,7 @@ import {
     SubscribeStatesRequest,
 } from './protobuf/api';
 import {Connection, ReadData} from './connection';
-import {Observable, of} from 'rxjs';
+import {Observable, of, Subscription} from 'rxjs';
 import {MessageTypes} from './requestResponseMatching';
 import {filter, switchMap, take, tap} from 'rxjs/operators';
 import {Reader} from 'protobufjs/minimal';
@@ -27,14 +27,21 @@ export const decode = <T>(decoder: Decoder<T>, data: ReadData): T => {
 
 export class Client {
 
+    private readonly subscription: Subscription;
+
     constructor(private readonly connection: Connection) {
-        this.connection.data$.pipe(
+        this.subscription = new Subscription();
+        this.subscription.add(this.connection.data$.pipe(
             tap((data) => {
                 if (data.type === MessageTypes.PingRequest) {
                     connection.send(MessageTypes.PingResponse, PingResponse.encode({}).finish());
                 }
             }),
-        ).subscribe();
+        ).subscribe());
+    }
+
+    public terminate(): void {
+        this.subscription.unsubscribe();
     }
 
     hello(request: HelloRequest): Observable<HelloResponse> {
@@ -88,6 +95,5 @@ export class Client {
         this.connection.send(MessageTypes.SubscribeStatesRequest, data);
         return of(voidMessage.decode(new Reader(new Uint8Array())));
     }
-
 
 }

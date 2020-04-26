@@ -1,5 +1,5 @@
 import {Connection, ReadData} from './connection';
-import {filter, map, skip, switchMap, take, tap} from 'rxjs/operators';
+import {delay, filter, map, switchMap, tap} from 'rxjs/operators';
 import {Client, decode} from './client';
 import {
     BinarySensorStateResponse,
@@ -16,8 +16,8 @@ import {
 import {MessageTypes} from './requestResponseMatching';
 import {BaseComponent} from '../components/base';
 import {BinarySensorComponent} from '../components/binarySensor';
-import {BehaviorSubject, Observable} from 'rxjs';
-import {emptyCommandInterface, stateParser, transformStates} from './helpers';
+import {BehaviorSubject, Observable, Subscription} from 'rxjs';
+import {emptyCommandInterface, isFalse, stateParser, transformStates} from './helpers';
 import {StateResponses} from './interfaces';
 import {SwitchComponent} from '../components/switch';
 import {LightComponent} from '../components/light';
@@ -53,34 +53,26 @@ export class EspDevice {
 
     public deviceInfo?: DeviceInfoRequest;
 
-    public readonly components: {[key: string]: BaseComponent} = {};
+    public readonly components: { [key: string]: BaseComponent } = {};
 
     private readonly discovery: BehaviorSubject<boolean>;
     public readonly discovery$: Observable<boolean>;
 
+    private readonly subscription: Subscription;
+
     constructor(private readonly host: string,
                 private readonly password: string = '',
                 private readonly port: number = 6053) {
-
+        this.subscription = new Subscription();
         this.discovery = new BehaviorSubject<boolean>(false);
         this.discovery$ = this.discovery.asObservable();
         this.connection = new Connection(host, port);
         this.client = new Client(this.connection);
-        this.connection.open().pipe(
-            skip(1), // behaviour subject, very first call
-            take(1),
-            filter((connected: boolean) => connected),
-            switchMap(() => this.client.hello({clientInfo: 'esphome-ts'})),
-            switchMap(() => this.client.connect({password})),
-            switchMap(() => this.client.deviceInfo()),
-            switchMap(() => this.client.listEntities()),
-            switchMap(() => this.client.subscribeStateChange()),
-        ).subscribe();
         this.stateEvents$ = this.connection.data$.pipe(
             filter((data: ReadData) => stateResponses.has(data.type)),
             map((data: ReadData) => stateParser(data)),
         );
-        this.connection.data$.pipe(
+        this.subscription.add(this.connection.data$.pipe(
             tap((data: ReadData) => {
                 if (listResponses.has(data.type)) {
                     this.parseListResponse(data);
@@ -88,14 +80,27 @@ export class EspDevice {
                     this.deviceInfo = decode(DeviceInfoResponse, data);
                 }
             }),
-        ).subscribe();
+        ).subscribe());
+
+        this.subscription.add(this.connection.connected$.pipe(
+            filter(isFalse),
+            delay(2 * 1000),
+            switchMap(() => this.connection.open()),
+            switchMap(() => this.client.hello({clientInfo: 'esphome-ts'})),
+            switchMap(() => this.client.connect({password})),
+            switchMap(() => this.client.deviceInfo()),
+            switchMap(() => this.client.listEntities()),
+            switchMap(() => this.client.subscribeStateChange()),
+        ).subscribe());
     }
 
     public terminate(): void {
         Object.values(this.components).forEach((component) => {
             component.terminate();
         });
+        this.client.terminate();
         this.connection.close();
+        this.subscription.unsubscribe();
     }
 
     private parseListResponse = (data: ReadData) => {
