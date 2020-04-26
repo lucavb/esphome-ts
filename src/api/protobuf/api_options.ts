@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { Writer, Reader } from 'protobufjs/minimal';
+import {Reader, Writer} from 'protobufjs/minimal';
 
 
 export interface voidMessage {

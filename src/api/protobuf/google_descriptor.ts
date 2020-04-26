@@ -1,7 +1,7 @@
 /* eslint-disable */
 // @ts-nocheck
 import * as Long from 'long';
-import { Writer, Reader } from 'protobufjs/minimal';
+import {Reader, Writer} from 'protobufjs/minimal';
 
 
 /**

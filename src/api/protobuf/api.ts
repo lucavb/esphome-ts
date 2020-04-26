@@ -1,6 +1,6 @@
 /* eslint-disable */
-import { voidMessage } from './api_options';
-import { Reader, Writer } from 'protobufjs/minimal';
+import {voidMessage} from './api_options';
+import {Reader, Writer} from 'protobufjs/minimal';
 
 
 /**
