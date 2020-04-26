@@ -133,7 +133,7 @@ export class EspDevice {
                 const response: ListEntitiesSensorResponse = decode(ListEntitiesSensorResponse, data);
                 this.components[response.objectId] = new SensorComponent(response,
                     transformStates<SensorStateResponse>(this.stateEvents$, response),
-                    this.connection,
+                    emptyCommandInterface,
                 );
                 break;
             }
