@@ -107,7 +107,7 @@ export class EspDevice {
         switch (data.type) {
             case MessageTypes.ListEntitiesBinarySensorResponse: {
                 const response: ListEntitiesBinarySensorResponse = decode(ListEntitiesBinarySensorResponse, data);
-                this.components[response.objectId] = new BinarySensorComponent(response,
+                this.components[response.objectId] = this.components[response.objectId] ?? new BinarySensorComponent(response,
                     transformStates<BinarySensorStateResponse>(this.stateEvents$, response),
                     emptyCommandInterface,
                 );
@@ -115,7 +115,7 @@ export class EspDevice {
             }
             case MessageTypes.ListEntitiesSwitchResponse: {
                 const response: ListEntitiesSwitchResponse = decode(ListEntitiesSwitchResponse, data);
-                this.components[response.objectId] = new SwitchComponent(response,
+                this.components[response.objectId] = this.components[response.objectId] ?? new SwitchComponent(response,
                     transformStates<SwitchStateResponse>(this.stateEvents$, response),
                     this.connection,
                 );
@@ -123,7 +123,7 @@ export class EspDevice {
             }
             case MessageTypes.ListEntitiesLightResponse: {
                 const response: ListEntitiesLightResponse = decode(ListEntitiesLightResponse, data);
-                this.components[response.objectId] = new LightComponent(response,
+                this.components[response.objectId] = this.components[response.objectId] ?? new LightComponent(response,
                     transformStates<LightStateResponse>(this.stateEvents$, response),
                     this.connection,
                 );
@@ -131,7 +131,7 @@ export class EspDevice {
             }
             case MessageTypes.ListEntitiesSensorResponse: {
                 const response: ListEntitiesSensorResponse = decode(ListEntitiesSensorResponse, data);
-                this.components[response.objectId] = new SensorComponent(response,
+                this.components[response.objectId] = this.components[response.objectId] ?? new SensorComponent(response,
                     transformStates<SensorStateResponse>(this.stateEvents$, response),
                     emptyCommandInterface,
                 );
