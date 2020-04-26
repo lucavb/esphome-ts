@@ -34,11 +34,6 @@ export class Connection {
             tap((connected: boolean) => connected ? noop() : this.subscription.unsubscribe()),
             shareReplay(1),
         );
-        fromEvent<Error>(this.socket, 'error').pipe(
-            tap((error) => {
-                console.log(error);
-            }),
-        ).subscribe();
         this.data$ = fromEvent<Buffer>(this.socket, 'data').pipe(
             filter((buffer: Buffer) => buffer.length >= 3),
             filter((buffer: Buffer) => buffer.readUInt8(BytePositions.ZERO) === FIRST_BYTE),
@@ -51,6 +46,7 @@ export class Connection {
 
     open(): Observable<boolean> {
         this.subscription = new Subscription();
+        this.subscription.add(fromEvent<Error>(this.socket, 'error').subscribe());
         this.socket.connect(this.port, this.host);
         return this.connected$;
     }
