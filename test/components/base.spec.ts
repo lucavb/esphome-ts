@@ -2,11 +2,17 @@ import {BaseComponent, LightStateEvent} from '../../src';
 import {ComponentType, LightEntity} from '../../src/components/entities';
 import {Subject} from 'rxjs';
 import {emptyCommandInterface} from '../../src/api/helpers';
+import {MessageTypes} from '../../src/api/requestResponseMatching';
+import {DebugConnection} from "../testHelpers/debugConnection";
 
 class DemoComponent extends BaseComponent {
 
     get type(): ComponentType {
         return 'light';
+    }
+
+    sendSomething(): void {
+        this.queueCommand(MessageTypes.ConnectRequest, () => new Uint8Array([]));
     }
 
 }
@@ -23,12 +29,12 @@ describe('BaseComponent', () => {
         supportsRgb: false,
     };
 
-    let component: BaseComponent;
-
+    let component: DemoComponent;
     const states = new Subject<LightStateEvent>();
+    const debugConnection = new DebugConnection();
 
     beforeEach(() => {
-        component = new DemoComponent(listEntity, states, emptyCommandInterface);
+        component = new DemoComponent(listEntity, states, debugConnection);
     });
 
     it('responds with the name', () => {
@@ -58,6 +64,16 @@ describe('BaseComponent', () => {
     it('supports legacy getType call', () => {
         expect(component.getType).toBe(component.type);
     });
+
+    it('unblock after timeout', (done) => {
+        component.sendSomething();
+        component.sendSomething();
+        expect(debugConnection.calls.length).toBe(1);
+        setTimeout(() => {
+            expect(debugConnection.calls.length).toBe(2);
+            done();
+        }, 33 * 1000);
+    }, 40 * 1000);
 
 
 });
