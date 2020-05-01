@@ -24,12 +24,12 @@ export abstract class BaseComponent<L extends ListEntity = ListEntity, S extends
             tap((state: S) => this.state = state),
             tap(() => this.commandInPipeline.next(false)),
         );
-        this.state$.subscribe();
         this.subscriptions.add(this.commandInPipeline.pipe(
             debounceTime(30 * 1000),
             filter(isTrue),
             tap(() => this.commandInPipeline.next(false)),
         ).subscribe());
+        this.subscriptions.add(this.state$.subscribe());
     }
 
     public get ready(): boolean {

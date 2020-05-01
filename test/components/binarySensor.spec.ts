@@ -3,6 +3,7 @@ import {CommandInterface} from '../../src/components/commandInterface';
 import {Subject} from 'rxjs';
 import {ListEntitiesBinarySensorResponse} from '../../src/api/protobuf/api';
 import {emptyCommandInterface} from '../../src/api/helpers';
+import {BinarySensorTypes} from "../../src/components/binarySensorTypes";
 
 describe('LightComponent', () => {
 
@@ -35,6 +36,16 @@ describe('LightComponent', () => {
         stateObservable.next({key: listEntity.key, state: true});
         const status = component.status;
         expect(status).toBe(true);
+    });
+
+    it('getType responds with binary sensor', () => {
+        expect(component.getType).toEqual('binarySensor');
+    });
+
+    it('returns the deviceClass from listEntity or NONE', () => {
+        expect(component.deviceClass).toEqual(listEntity.deviceClass);
+        delete listEntity.deviceClass;
+        expect(component.deviceClass).toEqual(BinarySensorTypes.NONE);
     });
 
 });
