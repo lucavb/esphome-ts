@@ -3,7 +3,7 @@ import {CommandInterface} from '../../src/components/commandInterface';
 import {Subject} from 'rxjs';
 import {ListEntitiesBinarySensorResponse} from '../../src/api/protobuf/api';
 import {emptyCommandInterface} from '../../src/api/helpers';
-import {BinarySensorTypes} from "../../src/components/binarySensorTypes";
+import {BinarySensorTypes} from '../../src/components/binarySensorTypes';
 
 describe('LightComponent', () => {
 
