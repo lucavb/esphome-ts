@@ -46,7 +46,7 @@ export class LightComponent extends BaseComponent<LightEntity, LightStateEvent> 
     }
 
     public get hsv(): Hsv {
-        if (!this.state) {
+        if (!this.state || !this.supportsRgb) {
             return {
                 hue: 0,
                 saturation: 0,
