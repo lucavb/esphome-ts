@@ -1,9 +1,10 @@
 import {ComponentType, ListEntity} from './entities';
 import {StateEvent} from './states';
 import {BehaviorSubject, Observable, Subscription} from 'rxjs';
-import {filter, take, tap} from 'rxjs/operators';
+import {debounceTime, filter, take, tap} from 'rxjs/operators';
 import {CommandInterface} from './commandInterface';
 import {MessageTypes} from '../api/requestResponseMatching';
+import {isTrue} from '../api/helpers';
 
 export abstract class BaseComponent<L extends ListEntity = ListEntity, S extends StateEvent = StateEvent> {
 
@@ -24,6 +25,11 @@ export abstract class BaseComponent<L extends ListEntity = ListEntity, S extends
             tap(() => this.commandInPipeline.next(false)),
         );
         this.state$.subscribe();
+        this.subscriptions.add(this.commandInPipeline.pipe(
+            debounceTime(30 * 1000),
+            filter(isTrue),
+            tap(() => this.commandInPipeline.next(false)),
+        ).subscribe());
     }
 
     public get ready(): boolean {
