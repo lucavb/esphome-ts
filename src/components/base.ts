@@ -63,6 +63,13 @@ export abstract class BaseComponent<L extends ListEntity = ListEntity, S extends
         ).subscribe());
     }
 
-    public abstract get getType(): ComponentType;
+    public abstract get type(): ComponentType;
+
+    /*
+     * @deprecated please use type instead
+     */
+    public get getType(): ComponentType {
+        return this.type;
+    };
 
 }

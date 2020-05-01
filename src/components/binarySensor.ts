@@ -13,7 +13,7 @@ export class BinarySensorComponent extends BaseComponent<BinarySensorEntity, Bin
         return !!this.state?.state;
     }
 
-    public get getType(): ComponentType {
+    public get type(): ComponentType {
         return 'binarySensor';
     }
 

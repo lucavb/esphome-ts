@@ -24,7 +24,7 @@ export class SwitchComponent extends BaseComponent<ListEntity, SwitchStateEvent>
         }).finish(), true);
     }
 
-    public get getType(): ComponentType {
+    public get type(): ComponentType {
         return 'switch';
     }
 

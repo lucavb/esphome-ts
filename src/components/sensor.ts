@@ -8,7 +8,7 @@ export class SensorComponent extends BaseComponent<SensorEntity, SensorStateEven
         return this.state?.state;
     }
 
-    public get getType(): ComponentType {
+    public get type(): ComponentType {
         return 'sensor';
     }
 

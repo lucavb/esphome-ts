@@ -105,7 +105,7 @@ export class LightComponent extends BaseComponent<LightEntity, LightStateEvent> 
         };
     }
 
-    public get getType(): ComponentType {
+    public get type(): ComponentType {
         return 'light';
     }
 

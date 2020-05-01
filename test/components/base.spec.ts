@@ -5,7 +5,7 @@ import {emptyCommandInterface} from '../../src/api/helpers';
 
 class DemoComponent extends BaseComponent {
 
-    get getType(): ComponentType {
+    get type(): ComponentType {
         return 'light';
     }
 
@@ -55,6 +55,9 @@ describe('BaseComponent', () => {
         expect(component.ready).toBe(false);
     });
 
+    it('supports legacy getType call', () => {
+        expect(component.getType).toBe(component.type);
+    });
 
 
 });

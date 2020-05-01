@@ -39,7 +39,7 @@ describe('LightComponent', () => {
     });
 
     it('getType responds with binary sensor', () => {
-        expect(component.getType).toEqual('binarySensor');
+        expect(component.type).toEqual('binarySensor');
     });
 
     it('returns the deviceClass from listEntity or NONE', () => {
