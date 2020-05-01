@@ -41,4 +41,8 @@ describe('LightComponent', () => {
         expect(component.icon).toBe(listEntity.icon);
     });
 
+    it('should says that it is a sensor', () => {
+        expect(component.type).toBe('sensor');
+    });
+
 });
