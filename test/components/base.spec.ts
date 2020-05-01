@@ -65,7 +65,7 @@ describe('BaseComponent', () => {
         expect(component.getType).toBe(component.type);
     });
 
-    it('unblock after timeout', (done) => {
+    xit('unblock after timeout', (done) => {
         component.sendSomething();
         component.sendSomething();
         expect(debugConnection.calls.length).toBe(1);
