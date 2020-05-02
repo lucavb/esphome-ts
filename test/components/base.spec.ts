@@ -1,9 +1,8 @@
 import {BaseComponent, LightStateEvent} from '../../src';
 import {ComponentType, LightEntity} from '../../src/components/entities';
 import {Subject} from 'rxjs';
-import {emptyCommandInterface} from '../../src/api/helpers';
 import {MessageTypes} from '../../src/api/requestResponseMatching';
-import {DebugConnection} from "../testHelpers/debugConnection";
+import {DebugConnection} from '../testHelpers/debugConnection';
 
 class DemoComponent extends BaseComponent {
 
