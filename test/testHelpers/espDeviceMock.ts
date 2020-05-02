@@ -1,8 +1,14 @@
 import {Server, Socket} from 'net';
-import {fromEvent, Subscription} from 'rxjs';
+import {fromEvent, Subject, Subscription} from 'rxjs';
 import {take, tap} from 'rxjs/operators';
 import {MessageTypes} from '../../src/api/requestResponseMatching';
-import {ConnectResponse, DeviceInfoResponse, HelloResponse, ListEntitiesDoneResponse} from '../../src/api/protobuf/api';
+import {
+    ConnectResponse,
+    DeviceInfoResponse,
+    HelloResponse,
+    ListEntitiesDoneResponse,
+    PingRequest,
+} from '../../src/api/protobuf/api';
 
 const sendOverSocket = (socket: Socket, type: MessageTypes, payload: Uint8Array): void => {
     const final = new Uint8Array([0x0, payload.length, type, ...payload]);
@@ -15,17 +21,26 @@ export class EspDeviceMock {
     server: Server;
     subscription: Subscription;
     private isPasswordInvalid: boolean = false;
+    currentSocket?: Socket;
+    types$: Subject<MessageTypes>;
+    connected$: Subject<boolean> = new Subject<boolean>();
+
+    listEntities?: { data: Uint8Array, type: MessageTypes }[] = [];
 
     constructor(private readonly portNumber: number) {
         this.subscription = new Subscription();
+        this.types$ = new Subject<MessageTypes>();
         this.server = new Server();
         this.server.listen(portNumber);
         this.subscription.add(fromEvent<Socket>(this.server, 'connection').pipe(
+            tap(() => this.connected$.next(true)),
             tap((socket) => {
                 const innerSubscription = new Subscription();
                 this.subscription.add(innerSubscription);
+                this.currentSocket = socket;
                 innerSubscription.add(fromEvent<Uint8Array>(socket, 'data').pipe(
                     tap(([zero, length, type]) => this.receivedTypes.push(type)),
+                    tap(([zero, length, type]) => this.types$.next(type)),
                     tap(([zero, length, type, ...payload]) => {
                         switch (type) {
                             case MessageTypes.HelloRequest: {
@@ -55,6 +70,9 @@ export class EspDeviceMock {
                                 break;
                             }
                             case MessageTypes.ListEntitiesRequest: {
+                                this.listEntities?.forEach((listEntity) => {
+                                    sendOverSocket(socket, listEntity.type, listEntity.data);
+                                });
                                 sendOverSocket(socket, MessageTypes.ListEntitiesDoneResponse, ListEntitiesDoneResponse.encode({}).finish());
                                 break;
                             }
@@ -67,6 +85,7 @@ export class EspDeviceMock {
 
                 fromEvent(socket, 'close').pipe(
                     take(1),
+                    tap(() => this.connected$.next(false)),
                     tap(() => innerSubscription.unsubscribe()),
                 ).subscribe();
             }),
@@ -77,7 +96,15 @@ export class EspDeviceMock {
         this.isPasswordInvalid = val;
     }
 
+    ping(): void {
+        if (this.currentSocket) {
+            sendOverSocket(this.currentSocket, MessageTypes.PingRequest, PingRequest.encode({}).finish());
+        }
+    }
+
     terminate(): void {
+        this.currentSocket = undefined;
+        this.connected$.next(false);
         this.server.close();
     }
 
