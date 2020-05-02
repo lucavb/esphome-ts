@@ -61,6 +61,30 @@ describe('Native API Connection', () => {
         ).subscribe();
     }, 2000);
 
+    it('should be able to handle two messages in the same event', (done) => {
+        const exampleData = [0xDE, 0xAD, 0xBE, 0xEF];
+        server.on('connection', (socket) => {
+            socket.write(new Uint8Array([0x0, exampleData.length, MessageTypes.HelloResponse, ...exampleData]));
+            socket.write(new Uint8Array([0x0, exampleData.length, MessageTypes.PingResponse, ...exampleData]));
+        });
+        connection.open();
+        let firstCall = true;
+        connection.data$.pipe(
+            take(2),
+            tap(({type, payload}: ReadData) => {
+                if (firstCall) {
+                    expect(type).toBe(MessageTypes.HelloResponse);
+                    expect([...payload]).toEqual(exampleData);
+                    firstCall = false;
+                } else {
+                    expect(type).toBe(MessageTypes.PingResponse);
+                    expect([...payload]).toEqual(exampleData);
+                    done();
+                }
+            }),
+        ).subscribe();
+    }, 2000);
+
     afterEach(() => {
         connection.close();
         server.close();

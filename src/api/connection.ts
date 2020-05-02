@@ -1,8 +1,8 @@
 import {Socket} from 'net';
-import {fromEvent, merge, noop, Observable, of, Subscription} from 'rxjs';
+import {from, fromEvent, merge, noop, Observable, of, Subscription} from 'rxjs';
 import {BytePositions} from './bytePositions';
 import {MessageTypes} from './requestResponseMatching';
-import {distinctUntilChanged, filter, map, mapTo, shareReplay, take, tap, timeout} from 'rxjs/operators';
+import {distinctUntilChanged, filter, map, mapTo, shareReplay, switchMap, take, tap, timeout} from 'rxjs/operators';
 import {isTrue} from './helpers';
 
 const DEFAULT_API_PORT_NUMBER: number = 6053;
@@ -35,6 +35,16 @@ export class Connection {
             shareReplay(1),
         );
         this.data$ = fromEvent<Buffer>(this.socket, 'data').pipe(
+            switchMap((buffer: Buffer) => {
+                let bytesTaken = 0;
+                const result: Buffer[] = [];
+                while (bytesTaken < buffer.length) {
+                    const subBuffer = buffer.slice(bytesTaken, bytesTaken + 3 + buffer[bytesTaken + BytePositions.LENGTH]);
+                    result.push(subBuffer);
+                    bytesTaken += 3 + buffer[bytesTaken + BytePositions.LENGTH];
+                }
+                return from(result);
+            }),
             filter((buffer: Buffer) => buffer.length >= 3),
             filter((buffer: Buffer) => buffer.readUInt8(BytePositions.ZERO) === FIRST_BYTE),
             map((buffer: Buffer) => ({
