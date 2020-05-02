@@ -1,6 +1,5 @@
 import {Connection, ReadData} from '../../src';
 import {Server} from 'net';
-import {BehaviorSubject} from 'rxjs';
 import {MessageTypes} from '../../src/api/requestResponseMatching';
 import {filter, take, tap} from 'rxjs/operators';
 
