@@ -1,12 +1,11 @@
 import {Socket} from 'net';
 import {from, fromEvent, merge, noop, Observable, of, Subscription} from 'rxjs';
-import {BytePositions} from './bytePositions';
+import {BytePositions, HEADER_FIRST_BYTE} from './bytePositions';
 import {MessageTypes} from './requestResponseMatching';
 import {distinctUntilChanged, filter, map, mapTo, shareReplay, switchMap, take, tap, timeout} from 'rxjs/operators';
 import {isTrue} from './helpers';
 
 const DEFAULT_API_PORT_NUMBER: number = 6053;
-const FIRST_BYTE: number = 0x00;
 
 export interface ReadData {
     type: number;
@@ -46,7 +45,7 @@ export class Connection {
                 return from(result);
             }),
             filter((buffer: Buffer) => buffer.length >= 3),
-            filter((buffer: Buffer) => buffer.readUInt8(BytePositions.ZERO) === FIRST_BYTE),
+            filter((buffer: Buffer) => buffer.readUInt8(BytePositions.ZERO) === HEADER_FIRST_BYTE),
             map((buffer: Buffer) => ({
                 type: buffer.readUInt8(BytePositions.TYPE),
                 payload: buffer.slice(BytePositions.PAYLOAD, BytePositions.PAYLOAD + buffer.readUInt8(BytePositions.LENGTH)),
@@ -73,7 +72,7 @@ export class Connection {
             filter(isTrue),
             take(1),
             tap(() => {
-                const final = new Uint8Array([FIRST_BYTE, payload.length, type, ...payload]);
+                const final = new Uint8Array([HEADER_FIRST_BYTE, payload.length, type, ...payload]);
                 this.socket.write(final);
             }),
         ).subscribe());
