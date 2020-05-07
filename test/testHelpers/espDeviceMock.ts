@@ -103,6 +103,7 @@ export class EspDeviceMock {
     }
 
     terminate(): void {
+        this.currentSocket?.end();
         this.currentSocket = undefined;
         this.connected$.next(false);
         this.server.close();

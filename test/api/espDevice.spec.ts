@@ -1,9 +1,10 @@
 import {EspDevice} from '../../src';
 import {EspDeviceMock} from '../testHelpers/espDeviceMock';
-import {filter, take, tap} from 'rxjs/operators';
-import {isTrue} from '../../src/api/helpers';
+import {catchError, filter, switchMapTo, take, tap, timeout} from 'rxjs/operators';
+import {isFalse, isTrue} from '../../src/api/helpers';
 import {MessageTypes} from '../../src/api/requestResponseMatching';
 import {ListEntitiesSwitchResponse} from '../../src/api/protobuf/api';
+import {of} from "rxjs";
 
 const listEntitySwitch = {
     key: 1337,
@@ -56,5 +57,35 @@ describe('espDevice', () => {
             }),
         ).subscribe();
     });
+
+    it('alive$ returns false on close', (done) => {
+        device = new EspDevice('localhost', '', portNumber);
+        device.discovery$.pipe(
+            filter(isTrue),
+            tap(() => deviceMock.terminate()),
+            switchMapTo(device.alive$),
+            filter(isFalse),
+            timeout(3000),
+            catchError(() => of('timeout')),
+            tap((val) => {
+                expect(val).toBe(false);
+                done();
+            }),
+        ).subscribe();
+    });
+
+    xit('alive$ runs out after 90s', (done) => {
+        device = new EspDevice('localhost', '', portNumber);
+        device.discovery$.pipe(
+            filter(isTrue),
+            tap(() => deviceMock.ping()),
+            switchMapTo(device.alive$),
+            filter((val: boolean) => !val),
+            tap((val: boolean) => {
+                expect(val).toBe(false);
+                done();
+            }),
+        ).subscribe();
+    }, 90 * 1000 + 5 * 1000);
 
 });

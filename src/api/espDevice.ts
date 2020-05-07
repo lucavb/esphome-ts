@@ -1,27 +1,26 @@
 import {Connection, ReadData} from './connection';
-import {delay, filter, map, switchMap, tap} from 'rxjs/operators';
-import {Client, decode} from './client';
 import {
-    BinarySensorStateResponse,
-    DeviceInfoRequest,
-    DeviceInfoResponse,
-    LightStateResponse,
-    ListEntitiesBinarySensorResponse,
-    ListEntitiesLightResponse,
-    ListEntitiesSensorResponse,
-    ListEntitiesSwitchResponse,
-    SensorStateResponse,
-    SwitchStateResponse,
-} from './protobuf/api';
+    catchError,
+    delay,
+    distinctUntilChanged,
+    filter,
+    map,
+    mapTo,
+    shareReplay,
+    switchMap,
+    take,
+    tap,
+    timeout
+} from 'rxjs/operators';
+import {Client, decode} from './client';
+import {DeviceInfoRequest, DeviceInfoResponse,} from './protobuf/api';
 import {MessageTypes} from './requestResponseMatching';
 import {BaseComponent} from '../components/base';
-import {BinarySensorComponent} from '../components/binarySensor';
-import {BehaviorSubject, Observable, Subscription} from 'rxjs';
-import {emptyCommandInterface, isFalse, stateParser, transformStates} from './helpers';
+import {BehaviorSubject, concat, merge, Observable, of, Subscription} from 'rxjs';
+import {createComponents, isFalse, stateParser} from './helpers';
 import {StateResponses} from './interfaces';
-import {SwitchComponent} from '../components/switch';
-import {LightComponent} from '../components/light';
-import {SensorComponent} from '../components/sensor';
+
+const PING_TIMEOUT = 90 * 1000;
 
 const listResponses: Set<MessageTypes> = new Set([
     MessageTypes.ListEntitiesBinarySensorResponse,
@@ -60,6 +59,8 @@ export class EspDevice {
 
     private readonly subscription: Subscription;
 
+    public readonly alive$: Observable<boolean>;
+
     constructor(private readonly host: string,
                 private readonly password: string = '',
                 private readonly port: number = 6053) {
@@ -92,6 +93,20 @@ export class EspDevice {
             switchMap(() => this.client.listEntities()),
             switchMap(() => this.client.subscribeStateChange()),
         ).subscribe());
+
+        this.alive$ = merge(this.connection.connected$, this.connection.data$.pipe(
+            switchMap(() => {
+                return concat(of(true), this.connection.data$.pipe(
+                    mapTo(true),
+                    timeout(PING_TIMEOUT),
+                    catchError(() => of(false)),
+                    take(1),
+                ));
+            }),
+        )).pipe(
+            distinctUntilChanged(),
+            shareReplay(1),
+        );
     }
 
     public terminate(): void {
@@ -104,42 +119,12 @@ export class EspDevice {
     }
 
     private parseListResponse = (data: ReadData) => {
-        switch (data.type) {
-            case MessageTypes.ListEntitiesBinarySensorResponse: {
-                const response: ListEntitiesBinarySensorResponse = decode(ListEntitiesBinarySensorResponse, data);
-                this.components[response.objectId] = this.components[response.objectId] ?? new BinarySensorComponent(response,
-                    transformStates<BinarySensorStateResponse>(this.stateEvents$, response),
-                    emptyCommandInterface,
-                );
-                break;
-            }
-            case MessageTypes.ListEntitiesSwitchResponse: {
-                const response: ListEntitiesSwitchResponse = decode(ListEntitiesSwitchResponse, data);
-                this.components[response.objectId] = this.components[response.objectId] ?? new SwitchComponent(response,
-                    transformStates<SwitchStateResponse>(this.stateEvents$, response),
-                    this.connection,
-                );
-                break;
-            }
-            case MessageTypes.ListEntitiesLightResponse: {
-                const response: ListEntitiesLightResponse = decode(ListEntitiesLightResponse, data);
-                this.components[response.objectId] = this.components[response.objectId] ?? new LightComponent(response,
-                    transformStates<LightStateResponse>(this.stateEvents$, response),
-                    this.connection,
-                );
-                break;
-            }
-            case MessageTypes.ListEntitiesSensorResponse: {
-                const response: ListEntitiesSensorResponse = decode(ListEntitiesSensorResponse, data);
-                this.components[response.objectId] = this.components[response.objectId] ?? new SensorComponent(response,
-                    transformStates<SensorStateResponse>(this.stateEvents$, response),
-                    emptyCommandInterface,
-                );
-                break;
-            }
-            case MessageTypes.ListEntitiesDoneResponse: {
-                this.discovery.next(true);
-                break;
+        if (data.type === MessageTypes.ListEntitiesDoneResponse) {
+            this.discovery.next(true);
+        } else {
+            const {id, component} = createComponents(data, this.stateEvents$, this.connection);
+            if (component) {
+                this.components[id] = this.components[id] ?? component;
             }
         }
     };
