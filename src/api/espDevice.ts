@@ -10,10 +10,10 @@ import {
     switchMap,
     take,
     tap,
-    timeout
+    timeout,
 } from 'rxjs/operators';
 import {Client, decode} from './client';
-import {DeviceInfoRequest, DeviceInfoResponse,} from './protobuf/api';
+import {DeviceInfoRequest, DeviceInfoResponse} from './protobuf/api';
 import {MessageTypes} from './requestResponseMatching';
 import {BaseComponent} from '../components/base';
 import {BehaviorSubject, concat, merge, Observable, of, Subscription} from 'rxjs';

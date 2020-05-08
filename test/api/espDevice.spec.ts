@@ -4,7 +4,7 @@ import {catchError, filter, switchMapTo, take, tap, timeout} from 'rxjs/operator
 import {isFalse, isTrue} from '../../src/api/helpers';
 import {MessageTypes} from '../../src/api/requestResponseMatching';
 import {ListEntitiesSwitchResponse} from '../../src/api/protobuf/api';
-import {of} from "rxjs";
+import {of} from 'rxjs';
 
 const listEntitySwitch = {
     key: 1337,
