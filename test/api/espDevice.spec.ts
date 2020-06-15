@@ -88,4 +88,23 @@ describe('espDevice', () => {
         ).subscribe();
     }, 90 * 1000 + 5 * 1000);
 
+    it('should not crash on a non existent esphome device abc', (done) => {
+        device = new EspDevice('localhost', '', 33333);
+        device.discovery$.pipe(
+            filter(isTrue),
+            timeout(10 * 1000),
+            catchError((err) => {
+                if (err.name === 'TimeoutError') {
+                    return of('timeout');
+                } else {
+                    return of('other');
+                }
+            }),
+            tap((val) => {
+                expect(val).toBe('timeout');
+                done();
+            }),
+        ).subscribe();
+    }, 11 * 1000);
+
 });
