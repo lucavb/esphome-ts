@@ -14,7 +14,7 @@
         "clean": "rm -rf dist",
         "cbuild": "npm run clean && npm run build",
         "format": "npx eslint --fix src/**/*.ts test/**/*.ts",
-        "prepare": "npm run format && npm run cbuild"
+        "prepack": "npm run format && npm run cbuild"
     },
     "keywords": [
         "esphome",
