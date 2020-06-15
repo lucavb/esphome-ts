@@ -58,7 +58,7 @@ describe('espDevice', () => {
         ).subscribe();
     });
 
-    it('alive$ returns false on close', (done) => {
+    it('alive$ returns false on close', async (done) => {
         device = new EspDevice('localhost', '', portNumber);
         device.discovery$.pipe(
             filter(isTrue),
@@ -67,6 +67,7 @@ describe('espDevice', () => {
             filter(isFalse),
             timeout(3000),
             catchError(() => of('timeout')),
+            take(1),
             tap((val) => {
                 expect(val).toBe(false);
                 done();
