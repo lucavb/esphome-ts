@@ -17,7 +17,7 @@ import {DeviceInfoRequest, DeviceInfoResponse} from './protobuf/api';
 import {MessageTypes} from './requestResponseMatching';
 import {BaseComponent} from '../components/base';
 import {BehaviorSubject, concat, merge, Observable, of, Subscription} from 'rxjs';
-import {createComponents, isFalse, stateParser} from './helpers';
+import {createComponents, isFalse, isTrue, stateParser} from './helpers';
 import {StateResponses} from './interfaces';
 
 const PING_TIMEOUT = 90 * 1000;
@@ -84,9 +84,11 @@ export class EspDevice {
         ).subscribe());
 
         this.subscription.add(this.connection.connected$.pipe(
+            distinctUntilChanged(),
             filter(isFalse),
             delay(2 * 1000),
             switchMap(() => this.connection.open()),
+            filter(isTrue),
             switchMap(() => this.client.hello({clientInfo: 'esphome-ts'})),
             switchMap(() => this.client.connect({password})),
             switchMap(() => this.client.deviceInfo()),

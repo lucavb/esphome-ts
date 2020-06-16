@@ -58,7 +58,7 @@ describe('espDevice', () => {
         ).subscribe();
     });
 
-    it('alive$ returns false on close', (done) => {
+    it('alive$ returns false on close', async (done) => {
         device = new EspDevice('localhost', '', portNumber);
         device.discovery$.pipe(
             filter(isTrue),
@@ -67,6 +67,7 @@ describe('espDevice', () => {
             filter(isFalse),
             timeout(3000),
             catchError(() => of('timeout')),
+            take(1),
             tap((val) => {
                 expect(val).toBe(false);
                 done();
@@ -87,5 +88,24 @@ describe('espDevice', () => {
             }),
         ).subscribe();
     }, 90 * 1000 + 5 * 1000);
+
+    it('should not crash on a non existent esphome device abc', (done) => {
+        device = new EspDevice('localhost', '', 33333);
+        device.discovery$.pipe(
+            filter(isTrue),
+            timeout(10 * 1000),
+            catchError((err) => {
+                if (err.name === 'TimeoutError') {
+                    return of('timeout');
+                } else {
+                    return of('other');
+                }
+            }),
+            tap((val) => {
+                expect(val).toBe('timeout');
+                done();
+            }),
+        ).subscribe();
+    }, 11 * 1000);
 
 });
