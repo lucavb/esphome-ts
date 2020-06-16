@@ -1,6 +1,6 @@
 {
     "name": "esphome-ts",
-    "version": "2.1.4",
+    "version": "2.1.5",
     "description": "A TypeScript client for the Esphome Native API interface",
     "main": "dist/index.js",
     "type": "dist/index.d.ts",
