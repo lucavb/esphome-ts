@@ -1,9 +1,11 @@
-import {BaseComponent} from './base';
-import {ComponentType, SensorEntity} from './entities';
-import {SensorStateEvent} from './states';
+import { BaseComponent } from './base';
+import { ComponentType, SensorEntity } from './entities';
+import { SensorStateEvent } from './states';
 
-export class SensorComponent extends BaseComponent<SensorEntity, SensorStateEvent> {
-
+export class SensorComponent extends BaseComponent<
+    SensorEntity,
+    SensorStateEvent
+> {
     public get value(): number | undefined {
         return this.state?.state;
     }
@@ -19,5 +21,4 @@ export class SensorComponent extends BaseComponent<SensorEntity, SensorStateEven
     public get icon(): string {
         return this.listEntity.icon;
     }
-
 }

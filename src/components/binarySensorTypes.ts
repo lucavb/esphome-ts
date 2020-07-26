@@ -22,5 +22,5 @@ export enum BinarySensorTypes {
     SMOKE = 'smoke',
     SOUND = 'sound',
     VIBRATION = 'vibration',
-    WINDOW = 'window'
+    WINDOW = 'window',
 }

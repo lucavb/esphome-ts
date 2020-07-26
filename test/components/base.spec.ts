@@ -1,23 +1,23 @@
-import {BaseComponent, LightStateEvent} from '../../src';
-import {ComponentType, LightEntity} from '../../src/components/entities';
-import {Subject} from 'rxjs';
-import {MessageTypes} from '../../src/api/requestResponseMatching';
-import {DebugConnection} from '../testHelpers/debugConnection';
+import { BaseComponent, LightStateEvent } from '../../src';
+import { ComponentType, LightEntity } from '../../src/components/entities';
+import { Subject } from 'rxjs';
+import { MessageTypes } from '../../src/api/requestResponseMatching';
+import { DebugConnection } from '../testHelpers/debugConnection';
 
 class DemoComponent extends BaseComponent {
-
     get type(): ComponentType {
         return 'light';
     }
 
     sendSomething(): void {
-        this.queueCommand(MessageTypes.ConnectRequest, () => new Uint8Array([]));
+        this.queueCommand(
+            MessageTypes.ConnectRequest,
+            () => new Uint8Array([]),
+        );
     }
-
 }
 
 describe('BaseComponent', () => {
-
     const listEntity: LightEntity = {
         key: 28934,
         name: 'my name',
@@ -64,15 +64,17 @@ describe('BaseComponent', () => {
         expect(component.getType).toBe(component.type);
     });
 
-    it('unblock after timeout', (done) => {
-        component.sendSomething();
-        component.sendSomething();
-        expect(debugConnection.calls.length).toBe(1);
-        setTimeout(() => {
-            expect(debugConnection.calls.length).toBe(2);
-            done();
-        }, 33 * 1000);
-    }, 40 * 1000);
-
-
+    it(
+        'unblock after timeout',
+        (done) => {
+            component.sendSomething();
+            component.sendSomething();
+            expect(debugConnection.calls.length).toBe(1);
+            setTimeout(() => {
+                expect(debugConnection.calls.length).toBe(2);
+                done();
+            }, 33 * 1000);
+        },
+        40 * 1000,
+    );
 });

@@ -1,11 +1,10 @@
-import {SensorComponent, SensorStateEvent} from '../../src';
-import {CommandInterface} from '../../src/components/commandInterface';
-import {Subject} from 'rxjs';
-import {emptyCommandInterface} from '../../src/api/helpers';
-import {SensorEntity} from '../../src/components/entities';
+import { SensorComponent, SensorStateEvent } from '../../src';
+import { CommandInterface } from '../../src/components/commandInterface';
+import { Subject } from 'rxjs';
+import { emptyCommandInterface } from '../../src/api/helpers';
+import { SensorEntity } from '../../src/components/entities';
 
 describe('LightComponent', () => {
-
     let component: SensorComponent;
     const commandInterface: CommandInterface = emptyCommandInterface;
     let stateObservable: Subject<SensorStateEvent>;
@@ -22,13 +21,17 @@ describe('LightComponent', () => {
             unitOfMeasurement: '°C',
             accuracyDecimals: 1,
         };
-        component = new SensorComponent(listEntity, stateObservable, commandInterface);
-        stateObservable.next({key: listEntity.key, state: 21.5});
+        component = new SensorComponent(
+            listEntity,
+            stateObservable,
+            commandInterface,
+        );
+        stateObservable.next({ key: listEntity.key, state: 21.5 });
     });
 
     it('should work with a state', () => {
         const value = 23;
-        stateObservable.next({key: listEntity.key, state: 23});
+        stateObservable.next({ key: listEntity.key, state: 23 });
         const status = component.value;
         expect(status).toBe(value);
     });
@@ -44,5 +47,4 @@ describe('LightComponent', () => {
     it('should says that it is a sensor', () => {
         expect(component.type).toBe('sensor');
     });
-
 });

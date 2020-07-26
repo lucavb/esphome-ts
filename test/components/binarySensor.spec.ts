@@ -1,12 +1,11 @@
-import {BinarySensorComponent, BinarySensorStateEvent} from '../../src';
-import {CommandInterface} from '../../src/components/commandInterface';
-import {Subject} from 'rxjs';
-import {ListEntitiesBinarySensorResponse} from '../../src/api/protobuf/api';
-import {emptyCommandInterface} from '../../src/api/helpers';
-import {BinarySensorTypes} from '../../src/components/binarySensorTypes';
+import { BinarySensorComponent, BinarySensorStateEvent } from '../../src';
+import { CommandInterface } from '../../src/components/commandInterface';
+import { Subject } from 'rxjs';
+import { ListEntitiesBinarySensorResponse } from '../../src/api/protobuf/api';
+import { emptyCommandInterface } from '../../src/api/helpers';
+import { BinarySensorTypes } from '../../src/components/binarySensorTypes';
 
 describe('LightComponent', () => {
-
     let component: BinarySensorComponent;
     const commandInterface: CommandInterface = emptyCommandInterface;
     let stateObservable: Subject<BinarySensorStateEvent>;
@@ -22,18 +21,22 @@ describe('LightComponent', () => {
             uniqueId: 'unique',
             isStatusBinarySensor: false,
         };
-        component = new BinarySensorComponent(listEntity, stateObservable, commandInterface);
-        stateObservable.next({key: listEntity.key});
+        component = new BinarySensorComponent(
+            listEntity,
+            stateObservable,
+            commandInterface,
+        );
+        stateObservable.next({ key: listEntity.key });
     });
 
     it('should work with a state that has no state key', () => {
-        stateObservable.next({key: listEntity.key});
+        stateObservable.next({ key: listEntity.key });
         const status = component.status;
         expect(status).toBe(false);
     });
 
     it('should work with a state that has a state key', () => {
-        stateObservable.next({key: listEntity.key, state: true});
+        stateObservable.next({ key: listEntity.key, state: true });
         const status = component.status;
         expect(status).toBe(true);
     });
@@ -47,5 +50,4 @@ describe('LightComponent', () => {
         delete listEntity.deviceClass;
         expect(component.deviceClass).toEqual(BinarySensorTypes.NONE);
     });
-
 });

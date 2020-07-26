@@ -10,12 +10,12 @@ import {
     PingResponse,
     SubscribeStatesRequest,
 } from './protobuf/api';
-import {Connection, ReadData} from './connection';
-import {Observable, of, Subscription} from 'rxjs';
-import {MessageTypes} from './requestResponseMatching';
-import {filter, switchMap, take, tap} from 'rxjs/operators';
-import {Reader} from 'protobufjs/minimal';
-import {voidMessage} from './protobuf/api_options';
+import { Connection, ReadData } from './connection';
+import { Observable, of, Subscription } from 'rxjs';
+import { MessageTypes } from './requestResponseMatching';
+import { filter, switchMap, take, tap } from 'rxjs/operators';
+import { Reader } from 'protobufjs/minimal';
+import { voidMessage } from './protobuf/api_options';
 
 export interface Decoder<T> {
     decode: (reader: Reader, length?: number) => T;
@@ -26,18 +26,24 @@ export const decode = <T>(decoder: Decoder<T>, data: ReadData): T => {
 };
 
 export class Client {
-
     private readonly subscription: Subscription;
 
     constructor(private readonly connection: Connection) {
         this.subscription = new Subscription();
-        this.subscription.add(this.connection.data$.pipe(
-            tap((data) => {
-                if (data.type === MessageTypes.PingRequest) {
-                    connection.send(MessageTypes.PingResponse, PingResponse.encode({}).finish());
-                }
-            }),
-        ).subscribe());
+        this.subscription.add(
+            this.connection.data$
+                .pipe(
+                    tap((data) => {
+                        if (data.type === MessageTypes.PingRequest) {
+                            connection.send(
+                                MessageTypes.PingResponse,
+                                PingResponse.encode({}).finish(),
+                            );
+                        }
+                    }),
+                )
+                .subscribe(),
+        );
     }
 
     public terminate(): void {
@@ -50,7 +56,9 @@ export class Client {
         return this.connection.data$.pipe(
             filter((value) => value.type === MessageTypes.HelloResponse),
             take(1),
-            switchMap((data) => of(HelloResponse.decode(new Reader(data.payload)))),
+            switchMap((data) =>
+                of(HelloResponse.decode(new Reader(data.payload))),
+            ),
         );
     }
 
@@ -60,7 +68,9 @@ export class Client {
         return this.connection.data$.pipe(
             filter((value) => value.type === MessageTypes.ConnectResponse),
             take(1),
-            switchMap((data) => of(ConnectResponse.decode(new Reader(data.payload)))),
+            switchMap((data) =>
+                of(ConnectResponse.decode(new Reader(data.payload))),
+            ),
         );
     }
 
@@ -70,7 +80,9 @@ export class Client {
         return this.connection.data$.pipe(
             filter((value) => value.type === MessageTypes.PingResponse),
             take(1),
-            switchMap((data) => of(PingResponse.decode(new Reader(data.payload)))),
+            switchMap((data) =>
+                of(PingResponse.decode(new Reader(data.payload))),
+            ),
         );
     }
 
@@ -80,7 +92,9 @@ export class Client {
         return this.connection.data$.pipe(
             filter((value) => value.type === MessageTypes.DeviceInfoResponse),
             take(1),
-            switchMap((data) => of(DeviceInfoResponse.decode(new Reader(data.payload)))),
+            switchMap((data) =>
+                of(DeviceInfoResponse.decode(new Reader(data.payload))),
+            ),
         );
     }
 
@@ -95,5 +109,4 @@ export class Client {
         this.connection.send(MessageTypes.SubscribeStatesRequest, data);
         return of(voidMessage.decode(new Reader(new Uint8Array())));
     }
-
 }

@@ -19,7 +19,8 @@ import {
     TextSensorStateResponse,
 } from './protobuf/api';
 
-export type ListEntityResponses = ListEntitiesBinarySensorResponse
+export type ListEntityResponses =
+    | ListEntitiesBinarySensorResponse
     | ListEntitiesCoverResponse
     | ListEntitiesFanResponse
     | ListEntitiesLightResponse
@@ -27,7 +28,8 @@ export type ListEntityResponses = ListEntitiesBinarySensorResponse
     | ListEntitiesSwitchResponse
     | ListEntitiesTextSensorResponse;
 
-export type StateResponses = BinarySensorStateResponse
+export type StateResponses =
+    | BinarySensorStateResponse
     | CoverStateResponse
     | FanStateResponse
     | LightStateResponse
@@ -35,7 +37,8 @@ export type StateResponses = BinarySensorStateResponse
     | SwitchStateResponse
     | TextSensorStateResponse;
 
-export type CommandRequests = CoverCommandRequest
+export type CommandRequests =
+    | CoverCommandRequest
     | FanCommandRequest
     | LightCommandRequest
-    | SwitchCommandRequest
+    | SwitchCommandRequest;

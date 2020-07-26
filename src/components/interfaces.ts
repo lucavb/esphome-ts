@@ -1,4 +1,3 @@
-
 export interface Rgb {
     red: number;
     green: number;

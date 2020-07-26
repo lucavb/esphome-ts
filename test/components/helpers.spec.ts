@@ -1,9 +1,7 @@
-import {convertNumbers} from '../../src/components/helpers';
+import { convertNumbers } from '../../src/components/helpers';
 
 describe('esphome-ts helpers', () => {
-
     describe('convert-numbers', () => {
-
         it('should convert towards the esp scale', () => {
             const input = 5;
             const max = 100;
@@ -31,6 +29,5 @@ describe('esphome-ts helpers', () => {
             const result = convertNumbers(input, max, false);
             expect(result).toBe(1);
         });
-
     });
 });

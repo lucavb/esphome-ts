@@ -1,4 +1,4 @@
-import {Connection, ReadData} from './connection';
+import { Connection, ReadData } from './connection';
 import {
     catchError,
     delay,
@@ -12,13 +12,20 @@ import {
     tap,
     timeout,
 } from 'rxjs/operators';
-import {Client, decode} from './client';
-import {DeviceInfoRequest, DeviceInfoResponse} from './protobuf/api';
-import {MessageTypes} from './requestResponseMatching';
-import {BaseComponent} from '../components/base';
-import {BehaviorSubject, concat, merge, Observable, of, Subscription} from 'rxjs';
-import {createComponents, isFalse, isTrue, stateParser} from './helpers';
-import {StateResponses} from './interfaces';
+import { Client, decode } from './client';
+import { DeviceInfoRequest, DeviceInfoResponse } from './protobuf/api';
+import { MessageTypes } from './requestResponseMatching';
+import { BaseComponent } from '../components/base';
+import {
+    BehaviorSubject,
+    concat,
+    merge,
+    Observable,
+    of,
+    Subscription,
+} from 'rxjs';
+import { createComponents, isFalse, isTrue, stateParser } from './helpers';
+import { StateResponses } from './interfaces';
 
 const PING_TIMEOUT = 90 * 1000;
 
@@ -44,7 +51,6 @@ const stateResponses: Set<MessageTypes> = new Set([
 ]);
 
 export class EspDevice {
-
     private readonly connection: Connection;
     private readonly client: Client;
 
@@ -61,9 +67,11 @@ export class EspDevice {
 
     public readonly alive$: Observable<boolean>;
 
-    constructor(private readonly host: string,
-                private readonly password: string = '',
-                private readonly port: number = 6053) {
+    constructor(
+        private readonly host: string,
+        private readonly password: string = '',
+        private readonly port: number = 6053,
+    ) {
         this.subscription = new Subscription();
         this.discovery = new BehaviorSubject<boolean>(false);
         this.discovery$ = this.discovery.asObservable();
@@ -73,42 +81,57 @@ export class EspDevice {
             filter((data: ReadData) => stateResponses.has(data.type)),
             map((data: ReadData) => stateParser(data)),
         );
-        this.subscription.add(this.connection.data$.pipe(
-            tap((data: ReadData) => {
-                if (listResponses.has(data.type)) {
-                    this.parseListResponse(data);
-                } else if (data.type === MessageTypes.DeviceInfoResponse) {
-                    this.deviceInfo = decode(DeviceInfoResponse, data);
-                }
-            }),
-        ).subscribe());
-
-        this.subscription.add(this.connection.connected$.pipe(
-            distinctUntilChanged(),
-            filter(isFalse),
-            delay(2 * 1000),
-            switchMap(() => this.connection.open()),
-            filter(isTrue),
-            switchMap(() => this.client.hello({clientInfo: 'esphome-ts'})),
-            switchMap(() => this.client.connect({password})),
-            switchMap(() => this.client.deviceInfo()),
-            switchMap(() => this.client.listEntities()),
-            switchMap(() => this.client.subscribeStateChange()),
-        ).subscribe());
-
-        this.alive$ = merge(this.connection.connected$, this.connection.data$.pipe(
-            switchMap(() => {
-                return concat(of(true), this.connection.data$.pipe(
-                    mapTo(true),
-                    timeout(PING_TIMEOUT),
-                    catchError(() => of(false)),
-                    take(1),
-                ));
-            }),
-        )).pipe(
-            distinctUntilChanged(),
-            shareReplay(1),
+        this.subscription.add(
+            this.connection.data$
+                .pipe(
+                    tap((data: ReadData) => {
+                        if (listResponses.has(data.type)) {
+                            this.parseListResponse(data);
+                        } else if (
+                            data.type === MessageTypes.DeviceInfoResponse
+                        ) {
+                            this.deviceInfo = decode(DeviceInfoResponse, data);
+                        }
+                    }),
+                )
+                .subscribe(),
         );
+
+        this.subscription.add(
+            this.connection.connected$
+                .pipe(
+                    distinctUntilChanged(),
+                    filter(isFalse),
+                    delay(2 * 1000),
+                    switchMap(() => this.connection.open()),
+                    filter(isTrue),
+                    switchMap(() =>
+                        this.client.hello({ clientInfo: 'esphome-ts' }),
+                    ),
+                    switchMap(() => this.client.connect({ password })),
+                    switchMap(() => this.client.deviceInfo()),
+                    switchMap(() => this.client.listEntities()),
+                    switchMap(() => this.client.subscribeStateChange()),
+                )
+                .subscribe(),
+        );
+
+        this.alive$ = merge(
+            this.connection.connected$,
+            this.connection.data$.pipe(
+                switchMap(() => {
+                    return concat(
+                        of(true),
+                        this.connection.data$.pipe(
+                            mapTo(true),
+                            timeout(PING_TIMEOUT),
+                            catchError(() => of(false)),
+                            take(1),
+                        ),
+                    );
+                }),
+            ),
+        ).pipe(distinctUntilChanged(), shareReplay(1));
     }
 
     public terminate(): void {
@@ -124,11 +147,14 @@ export class EspDevice {
         if (data.type === MessageTypes.ListEntitiesDoneResponse) {
             this.discovery.next(true);
         } else {
-            const {id, component} = createComponents(data, this.stateEvents$, this.connection);
+            const { id, component } = createComponents(
+                data,
+                this.stateEvents$,
+                this.connection,
+            );
             if (component) {
                 this.components[id] = this.components[id] ?? component;
             }
         }
     };
-
 }
