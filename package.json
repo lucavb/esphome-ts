@@ -23,22 +23,22 @@
     "author": "Luca Becker <luca.becker@sunbury.xyz> (https://sunbury.xyz/)",
     "license": "GPL-3.0",
     "dependencies": {
-        "color-convert": "^2.0.1",
-        "rxjs": "^6.5.5"
+        "color-convert": "2.0.1",
+        "rxjs": "6.5.5"
     },
     "devDependencies": {
-        "@types/color-convert": "^1.9.0",
-        "@types/jest": "^25.2.3",
-        "@types/node": "^13.13.12",
-        "@typescript-eslint/eslint-plugin": "^2.34.0",
-        "@typescript-eslint/parser": "^2.34.0",
-        "eslint": "^6.8.0",
-        "eslint-config-google": "^0.14.0",
-        "jest": "^25.5.4",
-        "jest-junit": "^11.1.0",
-        "prettier": "^2.0.5",
-        "ts-jest": "^25.5.1",
-        "ts-proto": "^1.25.0",
-        "typescript": "^3.9.5"
+        "@types/color-convert": "1.9.0",
+        "@types/jest": "25.2.3",
+        "@types/node": "13.13.12",
+        "@typescript-eslint/eslint-plugin": "2.34.0",
+        "@typescript-eslint/parser": "2.34.0",
+        "eslint": "6.8.0",
+        "eslint-config-google": "0.14.0",
+        "jest": "25.5.4",
+        "jest-junit": "11.1.0",
+        "prettier": "2.0.5",
+        "ts-jest": "25.5.1",
+        "ts-proto": "1.25.0",
+        "typescript": "3.9.5"
     }
 }
