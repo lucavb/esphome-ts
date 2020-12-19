@@ -28,7 +28,7 @@ point. You have to supply a hostname or an IP address, and can optionally
 supply a password, if required, and a different port number. The `EspDevice`
 will automatically try to connect to your device. Once it has done so, a list
 of standard commands will be sent, authenticating the client, if required, and
-querying the device for information on its components(s).
+querying the device for information on its component(s).
 
 Once this process is done, `true` will be emmited through `discovery$` observable,
 hence the filter pipe. Afterwards, you can access the discovered components via the
