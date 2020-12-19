@@ -36,7 +36,7 @@
         "eslint-config-google": "0.14.0",
         "jest": "25.5.4",
         "jest-junit": "12.0.0",
-        "prettier": "2.0.5",
+        "prettier": "2.2.1",
         "ts-jest": "25.5.1",
         "ts-proto": "1.41.1",
         "typescript": "3.9.7"
