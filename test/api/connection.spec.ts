@@ -42,12 +42,7 @@ describe('Native API Connection', () => {
             .pipe(
                 filter((connected) => connected),
                 take(1),
-                tap(() =>
-                    connection.send(
-                        MessageTypes.ConnectRequest,
-                        new Uint8Array(exampleData),
-                    ),
-                ),
+                tap(() => connection.send(MessageTypes.ConnectRequest, new Uint8Array(exampleData))),
             )
             .subscribe();
     }, 1000);
@@ -55,14 +50,7 @@ describe('Native API Connection', () => {
     it('emits events when there is new data', (done) => {
         const exampleData = [0xde, 0xad, 0xbe, 0xef];
         server.on('connection', (socket) => {
-            socket.write(
-                new Uint8Array([
-                    0x0,
-                    exampleData.length,
-                    MessageTypes.HelloResponse,
-                    ...exampleData,
-                ]),
-            );
+            socket.write(new Uint8Array([0x0, exampleData.length, MessageTypes.HelloResponse, ...exampleData]));
         });
         connection.open();
         connection.data$
@@ -80,22 +68,8 @@ describe('Native API Connection', () => {
     it('should be able to handle two messages in the same event', (done) => {
         const exampleData = [0xde, 0xad, 0xbe, 0xef];
         server.on('connection', (socket) => {
-            socket.write(
-                new Uint8Array([
-                    0x0,
-                    exampleData.length,
-                    MessageTypes.HelloResponse,
-                    ...exampleData,
-                ]),
-            );
-            socket.write(
-                new Uint8Array([
-                    0x0,
-                    exampleData.length,
-                    MessageTypes.PingResponse,
-                    ...exampleData,
-                ]),
-            );
+            socket.write(new Uint8Array([0x0, exampleData.length, MessageTypes.HelloResponse, ...exampleData]));
+            socket.write(new Uint8Array([0x0, exampleData.length, MessageTypes.PingResponse, ...exampleData]));
         });
         connection.open();
         let firstCall = true;

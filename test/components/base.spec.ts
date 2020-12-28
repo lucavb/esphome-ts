@@ -10,10 +10,7 @@ class DemoComponent extends BaseComponent {
     }
 
     sendSomething(): void {
-        this.queueCommand(
-            MessageTypes.ConnectRequest,
-            () => new Uint8Array([]),
-        );
+        this.queueCommand(MessageTypes.ConnectRequest, () => new Uint8Array([]));
     }
 }
 

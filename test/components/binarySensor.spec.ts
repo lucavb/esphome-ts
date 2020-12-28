@@ -21,11 +21,7 @@ describe('LightComponent', () => {
             uniqueId: 'unique',
             isStatusBinarySensor: false,
         };
-        component = new BinarySensorComponent(
-            listEntity,
-            stateObservable,
-            commandInterface,
-        );
+        component = new BinarySensorComponent(listEntity, stateObservable, commandInterface);
         stateObservable.next({ key: listEntity.key });
     });
 

@@ -27,15 +27,11 @@ describe('SwitchComponent', () => {
     it('turnon/turnoff', () => {
         component.turnOn();
         expect(debugConnection.calls.length).toBe(1);
-        expect(debugConnection.calls[0][0]).toBe(
-            MessageTypes.SwitchCommandRequest,
-        );
+        expect(debugConnection.calls[0][0]).toBe(MessageTypes.SwitchCommandRequest);
         debugConnection.calls = [];
         component.turnOff();
         expect(debugConnection.calls.length).toBe(1);
-        expect(debugConnection.calls[0][0]).toBe(
-            MessageTypes.SwitchCommandRequest,
-        );
+        expect(debugConnection.calls[0][0]).toBe(MessageTypes.SwitchCommandRequest);
     });
 
     it('returns the state', () => {
