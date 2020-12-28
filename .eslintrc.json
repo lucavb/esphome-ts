@@ -1,53 +1,25 @@
 {
     "env": {
-        "es6": true,
+        "es2021": true,
         "node": true
     },
-    "extends": [
-        "google"
-    ],
-    "globals": {
-        "Atomics": "readonly",
-        "SharedArrayBuffer": "readonly"
-    },
+    "plugins": ["@typescript-eslint", "prettier", "unused-imports"],
+    "extends": ["google", "plugin:prettier/recommended"],
+    "ignorePatterns": ["dist"],
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
-        "ecmaVersion": 2018,
+        "ecmaVersion": 12,
         "sourceType": "module"
     },
-    "plugins": [
-        "@typescript-eslint"
-    ],
-    "overrides": [
-        {
-            "files": [
-                "*.ts",
-                "*.tsx"
-            ],
-            "rules": {
-                "@typescript-eslint/no-unused-vars": [
-                    2,
-                    {
-                        "args": "none"
-                    }
-                ]
-            }
-        }
-    ],
     "rules": {
-        "max-len": [
-            "error",
-            140
-        ],
+        "eqeqeq": "error",
+        "prettier/prettier": ["error"],
         "require-jsdoc": "off",
-        "indent": [
+        "@typescript-eslint/no-unused-vars": "off",
+        "unused-imports/no-unused-imports-ts": "error",
+        "unused-imports/no-unused-vars-ts": [
             "error",
-            4,
-            {
-                "SwitchCase": 1
-            }
-        ],
-        "padded-blocks": "off",
-        "no-invalid-this": "off"
+            { "vars": "all", "varsIgnorePattern": "^_", "args": "after-used", "argsIgnorePattern": "^_" }
+        ]
     }
 }
