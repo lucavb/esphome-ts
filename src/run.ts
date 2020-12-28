@@ -12,9 +12,7 @@ device.discovery$
         filter(isTrue),
         tap(() => {
             // console.log(device);
-            const rainSensor = device.components[
-                'rain_sensor'
-            ] as SensorComponent;
+            const rainSensor = device.components['rain_sensor'] as SensorComponent;
             console.log(rainSensor);
             rainSensor.state$.pipe(tap(console.log)).subscribe();
         }),

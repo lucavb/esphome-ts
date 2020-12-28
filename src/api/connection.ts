@@ -1,26 +1,8 @@
 import { Socket } from 'net';
-import {
-    from,
-    fromEvent,
-    merge,
-    noop,
-    Observable,
-    of,
-    Subscription,
-} from 'rxjs';
+import { from, fromEvent, merge, noop, Observable, of, Subscription } from 'rxjs';
 import { BytePositions, HEADER_FIRST_BYTE } from './bytePositions';
 import { MessageTypes } from './requestResponseMatching';
-import {
-    distinctUntilChanged,
-    filter,
-    map,
-    mapTo,
-    shareReplay,
-    switchMap,
-    take,
-    tap,
-    timeout,
-} from 'rxjs/operators';
+import { distinctUntilChanged, filter, map, mapTo, shareReplay, switchMap, take, tap, timeout } from 'rxjs/operators';
 import { isTrue } from './helpers';
 
 const DEFAULT_API_PORT_NUMBER: number = 6053;
@@ -37,10 +19,7 @@ export class Connection {
     private readonly socket: Socket;
     private subscription: Subscription;
 
-    constructor(
-        private readonly host: string,
-        private readonly port: number = DEFAULT_API_PORT_NUMBER,
-    ) {
+    constructor(private readonly host: string, private readonly port: number = DEFAULT_API_PORT_NUMBER) {
         this.subscription = new Subscription();
         this.socket = new Socket();
         this.connected$ = merge(
@@ -49,9 +28,7 @@ export class Connection {
             fromEvent(this.socket, 'ready').pipe(mapTo(true)),
         ).pipe(
             distinctUntilChanged(),
-            tap((connected: boolean) =>
-                connected ? noop() : this.subscription.unsubscribe(),
-            ),
+            tap((connected: boolean) => (connected ? noop() : this.subscription.unsubscribe())),
             shareReplay(1),
         );
         this.data$ = fromEvent<Buffer>(this.socket, 'data').pipe(
@@ -61,9 +38,7 @@ export class Connection {
                 while (bytesTaken < buffer.length) {
                     const subBuffer = buffer.slice(
                         bytesTaken,
-                        bytesTaken +
-                            3 +
-                            buffer[bytesTaken + BytePositions.LENGTH],
+                        bytesTaken + 3 + buffer[bytesTaken + BytePositions.LENGTH],
                     );
                     result.push(subBuffer);
                     bytesTaken += 3 + buffer[bytesTaken + BytePositions.LENGTH];
@@ -71,16 +46,12 @@ export class Connection {
                 return from(result);
             }),
             filter((buffer: Buffer) => buffer.length >= 3),
-            filter(
-                (buffer: Buffer) =>
-                    buffer.readUInt8(BytePositions.ZERO) === HEADER_FIRST_BYTE,
-            ),
+            filter((buffer: Buffer) => buffer.readUInt8(BytePositions.ZERO) === HEADER_FIRST_BYTE),
             map((buffer: Buffer) => ({
                 type: buffer.readUInt8(BytePositions.TYPE),
                 payload: buffer.slice(
                     BytePositions.PAYLOAD,
-                    BytePositions.PAYLOAD +
-                        buffer.readUInt8(BytePositions.LENGTH),
+                    BytePositions.PAYLOAD + buffer.readUInt8(BytePositions.LENGTH),
                 ),
             })),
         );
@@ -88,9 +59,7 @@ export class Connection {
 
     open(): Observable<boolean> {
         this.subscription = new Subscription();
-        this.subscription.add(
-            fromEvent<Error>(this.socket, 'error').subscribe(),
-        );
+        this.subscription.add(fromEvent<Error>(this.socket, 'error').subscribe());
         this.socket.connect(this.port, this.host);
         return this.connected$;
     }
@@ -109,12 +78,7 @@ export class Connection {
                     filter(isTrue),
                     take(1),
                     tap(() => {
-                        const final = new Uint8Array([
-                            HEADER_FIRST_BYTE,
-                            payload.length,
-                            type,
-                            ...payload,
-                        ]);
+                        const final = new Uint8Array([HEADER_FIRST_BYTE, payload.length, type, ...payload]);
                         this.socket.write(final);
                     }),
                 )

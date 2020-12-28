@@ -6,10 +6,7 @@ import { CommandInterface } from './commandInterface';
 import { MessageTypes } from '../api/requestResponseMatching';
 import { isTrue } from '../api/helpers';
 
-export abstract class BaseComponent<
-    L extends ListEntity = ListEntity,
-    S extends StateEvent = StateEvent
-> {
+export abstract class BaseComponent<L extends ListEntity = ListEntity, S extends StateEvent = StateEvent> {
     protected state?: S;
     public readonly state$: Observable<S>;
 
@@ -60,11 +57,7 @@ export abstract class BaseComponent<
         this.subscriptions.unsubscribe();
     }
 
-    protected queueCommand(
-        type: MessageTypes,
-        dataFn: () => Uint8Array,
-        disableSerialise: boolean = false,
-    ): void {
+    protected queueCommand(type: MessageTypes, dataFn: () => Uint8Array, disableSerialise: boolean = false): void {
         this.subscriptions.add(
             this.commandInPipeline
                 .pipe(
