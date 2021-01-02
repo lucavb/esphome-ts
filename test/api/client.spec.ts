@@ -1,22 +1,22 @@
 import { EspDeviceMock } from '../testHelpers/espDeviceMock';
-import { Client, Connection } from '../../src';
+import { Client, MessageTypes } from '../../src';
 import { filter, take, tap } from 'rxjs/operators';
-import { MessageTypes } from '../../src/api/requestResponseMatching';
 import { combineLatest, Subscription } from 'rxjs';
+import { EspSocket } from '../../src/api/espSocket';
 
 describe('Client', () => {
     const portNumber = 33333;
     const deviceMock = new EspDeviceMock(portNumber);
     let client: Client;
-    let connection: Connection;
+    let socket: EspSocket;
     let subscription: Subscription = new Subscription();
 
     beforeEach((done) => {
         subscription = new Subscription();
-        connection = new Connection('localhost', portNumber);
-        client = new Client(connection);
+        socket = new EspSocket('localhost', portNumber);
+        client = new Client(socket);
         subscription.add(
-            combineLatest([connection.open(), deviceMock.connected$])
+            combineLatest([socket.connected$, deviceMock.connected$])
                 .pipe(
                     filter(([first, second]) => first && second),
                     take(1),
@@ -24,13 +24,18 @@ describe('Client', () => {
                 )
                 .subscribe(),
         );
+        socket.open();
     }, 3 * 1000);
 
-    afterEach(() => {
+    afterEach((done) => {
         client.terminate();
-        connection.close();
-        deviceMock.terminate();
+        socket.close();
+
         subscription.unsubscribe();
+        deviceMock
+            .terminate()
+            .pipe(tap(() => done()))
+            .subscribe();
     });
 
     it(

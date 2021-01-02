@@ -1,7 +1,6 @@
-import { Connection, ReadData } from './connection';
+import { ReadData } from './connection';
 import {
     catchError,
-    delay,
     distinctUntilChanged,
     filter,
     map,
@@ -9,42 +8,31 @@ import {
     shareReplay,
     switchMap,
     take,
+    takeUntil,
     tap,
     timeout,
 } from 'rxjs/operators';
-import { Client, decode } from './client';
-import { DeviceInfoRequest, DeviceInfoResponse } from './protobuf/api';
-import { MessageTypes } from './requestResponseMatching';
+import {
+    Client,
+    createComponents,
+    decode,
+    isFalse,
+    isTrue,
+    listResponses,
+    MessageTypes,
+    stateParser,
+    stateResponses,
+    StateResponses,
+} from './';
 import { BaseComponent } from '../components/base';
 import { BehaviorSubject, concat, merge, Observable, of, Subscription } from 'rxjs';
-import { createComponents, isFalse, isTrue, stateParser } from './helpers';
-import { StateResponses } from './interfaces';
+import { EspSocket } from './espSocket';
+import { DeviceInfoRequest, DeviceInfoResponse } from './protobuf';
 
 const PING_TIMEOUT = 90 * 1000;
 
-const listResponses: Set<MessageTypes> = new Set([
-    MessageTypes.ListEntitiesBinarySensorResponse,
-    MessageTypes.ListEntitiesCoverResponse,
-    MessageTypes.ListEntitiesFanResponse,
-    MessageTypes.ListEntitiesLightResponse,
-    MessageTypes.ListEntitiesSensorResponse,
-    MessageTypes.ListEntitiesSwitchResponse,
-    MessageTypes.ListEntitiesTextSensorResponse,
-    MessageTypes.ListEntitiesDoneResponse,
-]);
-
-const stateResponses: Set<MessageTypes> = new Set([
-    MessageTypes.BinarySensorStateResponse,
-    MessageTypes.CoverStateResponse,
-    MessageTypes.FanStateResponse,
-    MessageTypes.LightStateResponse,
-    MessageTypes.SensorStateResponse,
-    MessageTypes.SwitchStateResponse,
-    MessageTypes.TextSensorStateResponse,
-]);
-
 export class EspDevice {
-    private readonly connection: Connection;
+    private readonly socket: EspSocket;
     private readonly client: Client;
 
     private readonly stateEvents$: Observable<StateResponses>;
@@ -68,14 +56,16 @@ export class EspDevice {
         this.subscription = new Subscription();
         this.discovery = new BehaviorSubject<boolean>(false);
         this.discovery$ = this.discovery.asObservable();
-        this.connection = new Connection(host, port);
-        this.client = new Client(this.connection);
-        this.stateEvents$ = this.connection.data$.pipe(
+        this.socket = new EspSocket(host, port, {
+            timeout: 20 * 1000,
+        });
+        this.client = new Client(this.socket);
+        this.stateEvents$ = this.socket.espData$.pipe(
             filter((data: ReadData) => stateResponses.has(data.type)),
             map((data: ReadData) => stateParser(data)),
         );
         this.subscription.add(
-            this.connection.data$
+            this.socket.espData$
                 .pipe(
                     tap((data: ReadData) => {
                         if (listResponses.has(data.type)) {
@@ -89,12 +79,14 @@ export class EspDevice {
         );
 
         this.subscription.add(
-            this.connection.connected$
+            this.socket.connected$
                 .pipe(
                     distinctUntilChanged(),
-                    filter(isFalse),
-                    delay(2 * 1000),
-                    switchMap(() => this.connection.open()),
+                    tap((connected: boolean) => {
+                        if (!connected) {
+                            this.socket.open();
+                        }
+                    }),
                     filter(isTrue),
                     switchMap(() => this.client.hello({ clientInfo: 'esphome-ts' })),
                     switchMap(() => this.client.connect({ password })),
@@ -105,13 +97,15 @@ export class EspDevice {
                 .subscribe(),
         );
 
+        this.socket.timeout$.pipe(tap(() => console.log('timeout'))).subscribe();
+
         this.alive$ = merge(
-            this.connection.connected$,
-            this.connection.data$.pipe(
+            this.socket.connected$,
+            this.socket.espData$.pipe(
                 switchMap(() => {
                     return concat(
                         of(true),
-                        this.connection.data$.pipe(
+                        this.socket.espData$.pipe(
                             mapTo(true),
                             timeout(PING_TIMEOUT),
                             catchError(() => of(false)),
@@ -123,23 +117,42 @@ export class EspDevice {
         ).pipe(distinctUntilChanged(), shareReplay(1));
     }
 
+    public provideRetryObservable(retryWhen$: Observable<unknown>): void {
+        this.subscription.add(
+            this.alive$
+                .pipe(
+                    filter(isFalse),
+                    switchMap(() =>
+                        retryWhen$.pipe(
+                            tap(() => this.socket.open()),
+                            takeUntil(this.alive$.pipe(filter(isTrue))),
+                        ),
+                    ),
+                )
+                .subscribe(),
+        );
+    }
+
     public terminate(): void {
-        Object.values(this.components).forEach((component) => {
+        Object.values(this.components).forEach((component: BaseComponent) => {
             component.terminate();
         });
         this.client.terminate();
-        this.connection.close();
+        this.socket.close(true);
         this.subscription.unsubscribe();
     }
 
-    private parseListResponse = (data: ReadData) => {
+    private parseListResponse(data: ReadData) {
         if (data.type === MessageTypes.ListEntitiesDoneResponse) {
             this.discovery.next(true);
         } else {
-            const { id, component } = createComponents(data, this.stateEvents$, this.connection);
+            const knownComponents = new Set<string>(Object.keys(this.components));
+            const { id, component, state$ } = createComponents(data, this.stateEvents$, this.socket, knownComponents);
             if (component) {
                 this.components[id] = this.components[id] ?? component;
+            } else if (state$) {
+                this.components[id].provideStateObservable(state$);
             }
         }
-    };
+    }
 }

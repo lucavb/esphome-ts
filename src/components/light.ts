@@ -1,11 +1,11 @@
 import { ComponentType, LightEntity } from './entities';
 import { LightStateEvent } from './states';
 import { convertNumbers } from './helpers';
-import { MessageTypes } from '../api/requestResponseMatching';
-import { LightCommandRequest } from '../api/protobuf/api';
 import { BaseComponent } from './base';
 import { hsv as hsvConvert, rgb as rgbConvert } from 'color-convert';
 import { Hsv, Rgb } from './interfaces';
+import { LightCommandRequest } from '../api/protobuf';
+import { MessageTypes } from '../api';
 
 export class LightComponent extends BaseComponent<LightEntity, LightStateEvent> {
     public turnOn(): void {
@@ -21,12 +21,13 @@ export class LightComponent extends BaseComponent<LightEntity, LightStateEvent> 
     }
 
     public getBrightness(): number | undefined {
-        if (this.state?.brightness === undefined || !this.listEntity.supportsBrightness) {
+        const state = this.state.getValue();
+        if (state?.brightness === undefined || !this.listEntity.supportsBrightness) {
             return undefined;
         } else if (this.listEntity.supportsRgb) {
             return this.hsv.value;
         } else if (this.listEntity.supportsBrightness) {
-            return convertNumbers(this.state.brightness, 100, true);
+            return convertNumbers(state.brightness, 100, true);
         }
     }
 
@@ -47,18 +48,19 @@ export class LightComponent extends BaseComponent<LightEntity, LightStateEvent> 
     }
 
     public get hsv(): Hsv {
-        if (!this.state || !this.supportsRgb) {
+        const state = this.state.getValue();
+        if (!state || !this.supportsRgb) {
             return {
                 hue: 0,
                 saturation: 0,
                 value: 0,
             };
         }
-        const [hue, saturation] = rgbConvert.hsv([this.state.red ?? 0, this.state.green ?? 0, this.state.blue ?? 0]);
+        const [hue, saturation] = rgbConvert.hsv([state.red ?? 0, state.green ?? 0, state.blue ?? 0]);
         return {
             hue,
             saturation,
-            value: (this.state?.brightness ?? 0) * 100,
+            value: (state.brightness ?? 0) * 100,
         };
     }
 
@@ -120,13 +122,14 @@ export class LightComponent extends BaseComponent<LightEntity, LightStateEvent> 
     }
 
     private generateState(num: number, turnOn: boolean = true): LightCommandRequest {
+        const state = this.state.getValue();
         return {
-            blue: this.state?.blue ?? num,
-            brightness: this.state?.brightness ?? num,
+            blue: state?.blue ?? num,
+            brightness: state?.brightness ?? num,
             colorTemperature: 0,
             effect: '',
             flashLength: 0,
-            green: this.state?.blue ?? num,
+            green: state?.blue ?? num,
             hasBrightness: this.listEntity.supportsBrightness,
             hasColorTemperature: false,
             hasEffect: false,
@@ -135,7 +138,7 @@ export class LightComponent extends BaseComponent<LightEntity, LightStateEvent> 
             hasState: true,
             hasTransitionLength: false,
             hasWhite: false,
-            red: this.state?.red ?? num,
+            red: state?.red ?? num,
             transitionLength: 1,
             white: 0,
             key: this.key,

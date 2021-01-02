@@ -1,10 +1,9 @@
-import { EspDevice } from '../../src';
+import { EspDevice, isFalse, isTrue, MessageTypes } from '../../src';
 import { EspDeviceMock } from '../testHelpers/espDeviceMock';
-import { catchError, filter, switchMapTo, take, tap, timeout } from 'rxjs/operators';
-import { isFalse, isTrue } from '../../src/api/helpers';
-import { MessageTypes } from '../../src/api/requestResponseMatching';
-import { ListEntitiesSwitchResponse } from '../../src/api/protobuf/api';
-import { of } from 'rxjs';
+import { catchError, delay, filter, switchMap, switchMapTo, take, tap, timeout } from 'rxjs/operators';
+import { ListEntitiesSwitchResponse } from '../../src/api/protobuf';
+import { of, Subject } from 'rxjs';
+import DoneCallback = jest.DoneCallback;
 
 const listEntitySwitch = {
     key: 1337,
@@ -18,16 +17,18 @@ const listEntitySwitch = {
 describe('espDevice', () => {
     let deviceMock: EspDeviceMock;
     let device: EspDevice;
-    let portNumber: number;
+    const portNumber = 23423;
 
     beforeEach(() => {
-        portNumber = 23423;
         deviceMock = new EspDeviceMock(portNumber);
     });
 
-    afterEach(() => {
+    afterEach((done) => {
         device.terminate();
-        deviceMock.terminate();
+        deviceMock
+            .terminate()
+            .pipe(tap(() => done()))
+            .subscribe();
     });
 
     it(
@@ -72,13 +73,13 @@ describe('espDevice', () => {
         device.discovery$
             .pipe(
                 filter(isTrue),
-                tap(() => deviceMock.terminate()),
-                switchMapTo(device.alive$),
+                switchMap(() => deviceMock.terminate()),
+                switchMap(() => device.alive$),
                 filter(isFalse),
-                timeout(3000),
+                timeout(3 * 1000),
                 catchError(() => of('timeout')),
                 take(1),
-                tap((val) => {
+                tap((val: unknown) => {
                     expect(val).toBe(false);
                     done();
                 }),
@@ -95,7 +96,7 @@ describe('espDevice', () => {
                     filter(isTrue),
                     tap(() => deviceMock.ping()),
                     switchMapTo(device.alive$),
-                    filter((val: boolean) => !val),
+                    filter(isFalse),
                     tap((val: boolean) => {
                         expect(val).toBe(false);
                         done();
@@ -130,4 +131,27 @@ describe('espDevice', () => {
         },
         11 * 1000,
     );
+
+    it('retries when it is told to', (done: DoneCallback) => {
+        const retryWhen$ = new Subject<void>();
+        device = new EspDevice('localhost', '', portNumber);
+
+        device.provideRetryObservable(retryWhen$);
+        device.alive$
+            .pipe(
+                filter(isTrue),
+                take(1),
+                switchMap(() => deviceMock.terminate()),
+                switchMap(() => device.alive$),
+                filter(isFalse),
+                take(1),
+                delay(1000),
+                tap(() => (deviceMock = new EspDeviceMock(portNumber))),
+                tap(() => retryWhen$.next()),
+                switchMap(() => device.alive$),
+                filter(isTrue),
+                tap(() => done()),
+            )
+            .subscribe();
+    });
 });

@@ -1,6 +1,6 @@
 import { Connection, ReadData } from '../../src';
 import { Server } from 'net';
-import { MessageTypes } from '../../src/api/requestResponseMatching';
+import { MessageTypes } from '../../src';
 import { filter, take, tap } from 'rxjs/operators';
 
 describe('Native API Connection', () => {
@@ -18,7 +18,7 @@ describe('Native API Connection', () => {
     });
 
     it('should try to connect to the server', (done) => {
-        server.on('connection', (socket) => {
+        server.on('connection', () => {
             expect(true).toBe(true);
             done();
         });

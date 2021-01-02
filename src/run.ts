@@ -1,20 +1,23 @@
-import { EspDevice } from './api/espDevice';
-import { filter, tap } from 'rxjs/operators';
-import { isTrue } from './api/helpers';
-import { SensorComponent } from './components/sensor';
-import { pipe } from 'rxjs';
+import { filter, take, tap } from 'rxjs/operators';
+import { LightComponent } from './components/light';
+import { EspDevice, isSwitchComponent, isTrue } from './api';
 
-const device = new EspDevice('10.0.0.128');
-const abc = pipe(tap(console.log), filter(isTrue));
+const device = new EspDevice('172.16.0.112');
 device.discovery$
     .pipe(
-        abc,
         filter(isTrue),
+        take(1),
         tap(() => {
-            // console.log(device);
-            const rainSensor = device.components['rain_sensor'] as SensorComponent;
-            console.log(rainSensor);
-            rainSensor.state$.pipe(tap(console.log)).subscribe();
+            const kitchenLights = device.components['kitchen_lights:'] as LightComponent;
+            const livingRoomDehumidifier = device.components['living_room_dehumidifier'];
+            console.log(livingRoomDehumidifier.name);
+
+            if (isSwitchComponent(livingRoomDehumidifier)) {
+                livingRoomDehumidifier.state$.pipe(tap(console.log)).subscribe();
+                livingRoomDehumidifier.turnOff();
+            }
         }),
     )
     .subscribe();
+
+device.alive$.pipe(tap((val) => console.log('alive', val))).subscribe();

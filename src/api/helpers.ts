@@ -9,7 +9,7 @@ import {
     ListEntitiesSwitchResponse,
     SensorStateResponse,
     SwitchStateResponse,
-} from './protobuf/api';
+} from './protobuf';
 import { MessageTypes } from './requestResponseMatching';
 import { decode } from './client';
 import { ListEntityResponses, StateResponses } from './interfaces';
@@ -42,58 +42,67 @@ export const createComponents = (
     data: ReadData,
     stateEvents$: Observable<StateResponses>,
     connection: CommandInterface,
-): { id: string; component?: BaseComponent } => {
+    knownComponents: Set<string>,
+): { id: string; component?: BaseComponent; state$?: Observable<StateResponses> } => {
     switch (data.type) {
         case MessageTypes.ListEntitiesBinarySensorResponse: {
             const response: ListEntitiesBinarySensorResponse = decode(ListEntitiesBinarySensorResponse, data);
-            return {
-                id: response.objectId,
-                component: new BinarySensorComponent(
-                    response,
-                    transformStates<BinarySensorStateResponse>(stateEvents$, response),
-                    emptyCommandInterface,
-                ),
-            };
+            const state$ = transformStates<BinarySensorStateResponse>(stateEvents$, response);
+            return knownComponents.has(response.objectId)
+                ? {
+                      id: response.objectId,
+                      state$,
+                  }
+                : {
+                      id: response.objectId,
+                      component: new BinarySensorComponent(response, state$, emptyCommandInterface),
+                  };
         }
         case MessageTypes.ListEntitiesSwitchResponse: {
             const response: ListEntitiesSwitchResponse = decode(ListEntitiesSwitchResponse, data);
-            return {
-                id: response.objectId,
-                component: new SwitchComponent(
-                    response,
-                    transformStates<SwitchStateResponse>(stateEvents$, response),
-                    connection,
-                ),
-            };
+            const state$ = transformStates<SwitchStateResponse>(stateEvents$, response);
+            return knownComponents.has(response.objectId)
+                ? {
+                      id: response.objectId,
+                      state$,
+                  }
+                : {
+                      id: response.objectId,
+                      component: new SwitchComponent(response, state$, connection),
+                  };
         }
         case MessageTypes.ListEntitiesLightResponse: {
             const response: ListEntitiesLightResponse = decode(ListEntitiesLightResponse, data);
-            return {
-                id: response.objectId,
-                component: new LightComponent(
-                    response,
-                    transformStates<LightStateResponse>(stateEvents$, response),
-                    connection,
-                ),
-            };
+            const state$ = transformStates<LightStateResponse>(stateEvents$, response);
+            return knownComponents.has(response.objectId)
+                ? {
+                      id: response.objectId,
+                      state$,
+                  }
+                : {
+                      id: response.objectId,
+                      component: new LightComponent(response, state$, connection),
+                  };
         }
         case MessageTypes.ListEntitiesSensorResponse: {
             const response: ListEntitiesSensorResponse = decode(ListEntitiesSensorResponse, data);
-            return {
-                id: response.objectId,
-                component: new SensorComponent(
-                    response,
-                    transformStates<SensorStateResponse>(stateEvents$, response),
-                    emptyCommandInterface,
-                ),
-            };
+            const state$ = transformStates<SensorStateResponse>(stateEvents$, response);
+            return knownComponents.has(response.objectId)
+                ? {
+                      id: response.objectId,
+                      state$,
+                  }
+                : {
+                      id: response.objectId,
+                      component: new SensorComponent(response, state$, emptyCommandInterface),
+                  };
         }
     }
     return { id: '' };
 };
 
 export const emptyCommandInterface: CommandInterface = {
-    send: () => {},
+    sendEspMessage: () => undefined,
 };
 
 export const transformStates = <T extends StateResponses>(
@@ -103,8 +112,8 @@ export const transformStates = <T extends StateResponses>(
     return stateEvents$.pipe(filter((stateEvent) => stateEvent.key === listEntityResponse.key)) as Observable<T>;
 };
 
-export const isTrue = (val: unknown) => val === true;
-export const isTruthy = (val: unknown) => !!val;
+export const isTrue = (val: unknown): val is true => val === true;
+export const isTruthy = (val: unknown): boolean => !!val;
 
-export const isFalse = (val: unknown) => val === false;
-export const isFalsy = (val: unknown) => !val;
+export const isFalse = (val: unknown): val is false => val === false;
+export const isFalsy = (val: unknown): boolean => !val;

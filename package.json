@@ -9,6 +9,7 @@
         "dist/*"
     ],
     "scripts": {
+        "start": "ts-node-dev --project tsconfig.json -r tsconfig-paths/register src/run.ts",
         "build": "npx tsc",
         "test": "npx jest --config jest.config.json",
         "clean": "rm -rf dist",
@@ -44,7 +45,9 @@
         "prettier": "2.2.1",
         "prettier-eslint": "12.0.0",
         "ts-jest": "26.4.4",
+        "ts-node-dev": "1.1.1",
         "ts-proto": "1.41.1",
+        "tsconfig-paths": "3.9.0",
         "typescript": "4.1.3"
     }
 }

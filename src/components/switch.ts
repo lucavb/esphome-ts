@@ -1,12 +1,13 @@
 import { BaseComponent } from './base';
-import { MessageTypes } from '../api/requestResponseMatching';
-import { SwitchCommandRequest } from '../api/protobuf/api';
 import { ComponentType, ListEntity } from './entities';
 import { SwitchStateEvent } from './states';
+import { MessageTypes } from '../api';
+import { SwitchCommandRequest } from '../api/protobuf';
 
 export class SwitchComponent extends BaseComponent<ListEntity, SwitchStateEvent> {
     get status(): boolean {
-        return !!this.state?.state;
+        const state = this.state.getValue();
+        return !!state?.state;
     }
 
     public turnOn(): void {

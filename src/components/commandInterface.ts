@@ -1,5 +1,5 @@
-import { MessageTypes } from '../api/requestResponseMatching';
+import { MessageTypes } from '../api';
 
 export interface CommandInterface {
-    send(type: MessageTypes, data: Uint8Array): void;
+    sendEspMessage(type: MessageTypes, data: Uint8Array): void;
 }

@@ -43,7 +43,7 @@ describe('LightComponent', () => {
 
     it('returns the deviceClass from listEntity or NONE', () => {
         expect(component.deviceClass).toEqual(listEntity.deviceClass);
-        delete listEntity.deviceClass;
+        delete (listEntity as any).deviceClass;
         expect(component.deviceClass).toEqual(BinarySensorTypes.NONE);
     });
 });

@@ -57,10 +57,6 @@ describe('BaseComponent', () => {
         expect(component.ready).toBe(false);
     });
 
-    it('supports legacy getType call', () => {
-        expect(component.getType).toBe(component.type);
-    });
-
     it(
         'unblock after timeout',
         (done) => {

@@ -3,7 +3,7 @@ export interface StateEvent {
 }
 
 export interface SensorStateEvent extends StateEvent {
-    state: number;
+    state?: number;
 }
 
 export interface BinarySensorStateEvent extends StateEvent {

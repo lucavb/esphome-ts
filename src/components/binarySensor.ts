@@ -9,7 +9,8 @@ export class BinarySensorComponent extends BaseComponent<BinarySensorEntity, Bin
     }
 
     get status(): boolean {
-        return !!this.state?.state;
+        const state = this.state.getValue();
+        return !!state?.state;
     }
 
     public get type(): ComponentType {
