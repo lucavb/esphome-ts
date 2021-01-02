@@ -57,7 +57,7 @@ export class EspDevice {
         this.discovery = new BehaviorSubject<boolean>(false);
         this.discovery$ = this.discovery.asObservable();
         this.socket = new EspSocket(host, port, {
-            timeout: 20 * 1000,
+            timeout: PING_TIMEOUT,
         });
         this.client = new Client(this.socket);
         this.stateEvents$ = this.socket.espData$.pipe(
