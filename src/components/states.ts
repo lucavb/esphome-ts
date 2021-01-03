@@ -18,4 +18,5 @@ export interface LightStateEvent extends StateEvent {
     red?: number;
     green?: number;
     blue?: number;
+    effect?: string;
 }

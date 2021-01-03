@@ -1,6 +1,6 @@
 import { LightComponent, LightStateEvent } from '../../src';
 import { Subject } from 'rxjs';
-import { LightCommandRequest, ListEntitiesLightResponse } from '../../src/api/protobuf/api';
+import { LightCommandRequest, ListEntitiesLightResponse } from '../../src/api/protobuf';
 import { DebugConnection } from '../testHelpers/debugConnection';
 import { Reader } from 'protobufjs/minimal';
 
@@ -263,6 +263,49 @@ describe('LightComponent', () => {
         it('should get the brightness value', () => {
             stateObservable.next({ key: listEntity.key, brightness: 0.66 });
             expect(component.getBrightness()).toBe(66);
+        });
+    });
+
+    describe('effects', () => {
+        beforeEach(() => {
+            stateObservable = new Subject<LightStateEvent>();
+            listEntity = {
+                objectId: 'string',
+                key: 9001,
+                name: 'string',
+                uniqueId: 'string',
+                supportsBrightness: true,
+                supportsRgb: false,
+                supportsWhiteValue: false,
+                supportsColorTemperature: false,
+                minMireds: 9001,
+                maxMireds: 9001,
+                effects: ['None', 'Strobe', 'Flicker'],
+            };
+            lastSendMessage = undefined;
+            component = new LightComponent(listEntity, stateObservable, debugConnection);
+            stateObservable.next({
+                key: 3393925675,
+                state: true,
+            });
+        });
+
+        it('tells me about the effects it has', () => {
+            expect(component.availableEffects().length).toBe(listEntity.effects.length);
+        });
+
+        it('does not do anything when requested to sent an unknown effect', () => {
+            component.effect = 'does not exist';
+            expect(debugConnection.calls.length).toBe(0);
+        });
+
+        it('communicates proper effect request', () => {
+            component.effect = listEntity.effects[1];
+            expect(debugConnection.calls.length).toBe(1);
+            lastSendMessage = LightCommandRequest.decode(new Reader(debugConnection.calls[0][1]));
+            expect(lastSendMessage.effect).toBe(listEntity.effects[1]);
+            expect(lastSendMessage.hasEffect).toBe(true);
+            expect(lastSendMessage.hasRgb).toBe(false);
         });
     });
 });

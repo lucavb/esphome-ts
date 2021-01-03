@@ -7,6 +7,8 @@ import { Hsv, Rgb } from './interfaces';
 import { LightCommandRequest } from '../api/protobuf';
 import { MessageTypes } from '../api';
 
+export const DEFAULT_NO_EFFECT = 'None';
+
 export class LightComponent extends BaseComponent<LightEntity, LightStateEvent> {
     public turnOn(): void {
         this.queueCommand(MessageTypes.LightCommandRequest, () =>
@@ -119,6 +121,28 @@ export class LightComponent extends BaseComponent<LightEntity, LightStateEvent> 
 
     public get supportsBrightness(): boolean {
         return this.listEntity.supportsBrightness;
+    }
+
+    public availableEffects(): string[] {
+        return this.listEntity.effects ?? [];
+    }
+
+    public get effect(): string {
+        const state = this.state.getValue();
+        return state?.effect ?? DEFAULT_NO_EFFECT;
+    }
+
+    public set effect(effect: string) {
+        const effects = this.listEntity.effects ?? [];
+        if (effects.includes(effect)) {
+            this.queueCommand(MessageTypes.LightCommandRequest, () => {
+                const command = this.generateState(1, true);
+                command.effect = effect;
+                command.hasRgb = false;
+                command.hasEffect = true;
+                return LightCommandRequest.encode(command).finish();
+            });
+        }
     }
 
     private generateState(num: number, turnOn: boolean = true): LightCommandRequest {
