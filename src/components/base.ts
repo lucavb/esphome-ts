@@ -36,8 +36,8 @@ export abstract class BaseComponent<L extends ListEntity = ListEntity, S extends
         this.terminatePreviousStateSubscription.next();
         state$
             .pipe(
-                tap(() => this.commandInPipeline.next(false)),
                 tap((state: S) => this.state.next(state)),
+                tap(() => this.commandInPipeline.next(false)),
                 takeUntil(this.terminatePreviousStateSubscription),
                 takeUntil(this.teardown),
             )
