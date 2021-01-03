@@ -4,10 +4,7 @@ import { SwitchCommandRequest } from '../api/protobuf/api';
 import { ComponentType, ListEntity } from './entities';
 import { SwitchStateEvent } from './states';
 
-export class SwitchComponent extends BaseComponent<
-    ListEntity,
-    SwitchStateEvent
-> {
+export class SwitchComponent extends BaseComponent<ListEntity, SwitchStateEvent> {
     get status(): boolean {
         return !!this.state?.state;
     }

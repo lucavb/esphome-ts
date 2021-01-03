@@ -1,8 +1,8 @@
-import { EspDevice } from './api/espDevice';
 import { filter, tap } from 'rxjs/operators';
-import { isTrue } from './api/helpers';
-import { SensorComponent } from './components/sensor';
 import { pipe } from 'rxjs';
+import { EspDevice } from './api/espDevice';
+import { isTrue } from './api/helpers';
+import { LightComponent } from './components/light';
 
 const device = new EspDevice('10.0.0.128');
 const abc = pipe(tap(console.log), filter(isTrue));
@@ -11,12 +11,14 @@ device.discovery$
         abc,
         filter(isTrue),
         tap(() => {
-            // console.log(device);
-            const rainSensor = device.components[
-                'rain_sensor'
-            ] as SensorComponent;
-            console.log(rainSensor);
-            rainSensor.state$.pipe(tap(console.log)).subscribe();
+            const kitchenLights = device.components['fastled_ws2811_light'] as LightComponent;
+
+            kitchenLights.state$.subscribe(console.log);
+            console.log(kitchenLights.availableEffects());
+            const flicker = 'Flicker';
+            setInterval(() => {
+                kitchenLights.effect = flicker;
+            }, 1 * 1000);
         }),
     )
     .subscribe();

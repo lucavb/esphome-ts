@@ -16,14 +16,7 @@ import { Client, decode } from './client';
 import { DeviceInfoRequest, DeviceInfoResponse } from './protobuf/api';
 import { MessageTypes } from './requestResponseMatching';
 import { BaseComponent } from '../components/base';
-import {
-    BehaviorSubject,
-    concat,
-    merge,
-    Observable,
-    of,
-    Subscription,
-} from 'rxjs';
+import { BehaviorSubject, concat, merge, Observable, of, Subscription } from 'rxjs';
 import { createComponents, isFalse, isTrue, stateParser } from './helpers';
 import { StateResponses } from './interfaces';
 
@@ -87,9 +80,7 @@ export class EspDevice {
                     tap((data: ReadData) => {
                         if (listResponses.has(data.type)) {
                             this.parseListResponse(data);
-                        } else if (
-                            data.type === MessageTypes.DeviceInfoResponse
-                        ) {
+                        } else if (data.type === MessageTypes.DeviceInfoResponse) {
                             this.deviceInfo = decode(DeviceInfoResponse, data);
                         }
                     }),
@@ -105,9 +96,7 @@ export class EspDevice {
                     delay(2 * 1000),
                     switchMap(() => this.connection.open()),
                     filter(isTrue),
-                    switchMap(() =>
-                        this.client.hello({ clientInfo: 'esphome-ts' }),
-                    ),
+                    switchMap(() => this.client.hello({ clientInfo: 'esphome-ts' })),
                     switchMap(() => this.client.connect({ password })),
                     switchMap(() => this.client.deviceInfo()),
                     switchMap(() => this.client.listEntities()),
@@ -143,18 +132,14 @@ export class EspDevice {
         this.subscription.unsubscribe();
     }
 
-    private parseListResponse = (data: ReadData) => {
+    private parseListResponse(data: ReadData) {
         if (data.type === MessageTypes.ListEntitiesDoneResponse) {
             this.discovery.next(true);
         } else {
-            const { id, component } = createComponents(
-                data,
-                this.stateEvents$,
-                this.connection,
-            );
+            const { id, component } = createComponents(data, this.stateEvents$, this.connection);
             if (component) {
                 this.components[id] = this.components[id] ?? component;
             }
         }
-    };
+    }
 }

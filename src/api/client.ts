@@ -35,10 +35,7 @@ export class Client {
                 .pipe(
                     tap((data) => {
                         if (data.type === MessageTypes.PingRequest) {
-                            connection.send(
-                                MessageTypes.PingResponse,
-                                PingResponse.encode({}).finish(),
-                            );
+                            connection.send(MessageTypes.PingResponse, PingResponse.encode({}).finish());
                         }
                     }),
                 )
@@ -56,9 +53,7 @@ export class Client {
         return this.connection.data$.pipe(
             filter((value) => value.type === MessageTypes.HelloResponse),
             take(1),
-            switchMap((data) =>
-                of(HelloResponse.decode(new Reader(data.payload))),
-            ),
+            switchMap((data) => of(HelloResponse.decode(new Reader(data.payload)))),
         );
     }
 
@@ -68,9 +63,7 @@ export class Client {
         return this.connection.data$.pipe(
             filter((value) => value.type === MessageTypes.ConnectResponse),
             take(1),
-            switchMap((data) =>
-                of(ConnectResponse.decode(new Reader(data.payload))),
-            ),
+            switchMap((data) => of(ConnectResponse.decode(new Reader(data.payload)))),
         );
     }
 
@@ -80,9 +73,7 @@ export class Client {
         return this.connection.data$.pipe(
             filter((value) => value.type === MessageTypes.PingResponse),
             take(1),
-            switchMap((data) =>
-                of(PingResponse.decode(new Reader(data.payload))),
-            ),
+            switchMap((data) => of(PingResponse.decode(new Reader(data.payload)))),
         );
     }
 
@@ -92,9 +83,7 @@ export class Client {
         return this.connection.data$.pipe(
             filter((value) => value.type === MessageTypes.DeviceInfoResponse),
             take(1),
-            switchMap((data) =>
-                of(DeviceInfoResponse.decode(new Reader(data.payload))),
-            ),
+            switchMap((data) => of(DeviceInfoResponse.decode(new Reader(data.payload)))),
         );
     }
 

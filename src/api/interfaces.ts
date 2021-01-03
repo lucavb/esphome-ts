@@ -37,8 +37,4 @@ export type StateResponses =
     | SwitchStateResponse
     | TextSensorStateResponse;
 
-export type CommandRequests =
-    | CoverCommandRequest
-    | FanCommandRequest
-    | LightCommandRequest
-    | SwitchCommandRequest;
+export type CommandRequests = CoverCommandRequest | FanCommandRequest | LightCommandRequest | SwitchCommandRequest;

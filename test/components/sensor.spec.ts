@@ -21,11 +21,7 @@ describe('LightComponent', () => {
             unitOfMeasurement: '°C',
             accuracyDecimals: 1,
         };
-        component = new SensorComponent(
-            listEntity,
-            stateObservable,
-            commandInterface,
-        );
+        component = new SensorComponent(listEntity, stateObservable, commandInterface);
         stateObservable.next({ key: listEntity.key, state: 21.5 });
     });
 

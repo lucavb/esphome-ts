@@ -1,13 +1,6 @@
 import { EspDevice } from '../../src';
 import { EspDeviceMock } from '../testHelpers/espDeviceMock';
-import {
-    catchError,
-    filter,
-    switchMapTo,
-    take,
-    tap,
-    timeout,
-} from 'rxjs/operators';
+import { catchError, filter, switchMapTo, take, tap, timeout } from 'rxjs/operators';
 import { isFalse, isTrue } from '../../src/api/helpers';
 import { MessageTypes } from '../../src/api/requestResponseMatching';
 import { ListEntitiesSwitchResponse } from '../../src/api/protobuf/api';
@@ -58,9 +51,7 @@ describe('espDevice', () => {
         deviceMock.listEntities = [
             {
                 type: MessageTypes.ListEntitiesSwitchResponse,
-                data: ListEntitiesSwitchResponse.encode(
-                    listEntitySwitch,
-                ).finish(),
+                data: ListEntitiesSwitchResponse.encode(listEntitySwitch).finish(),
             },
         ];
         device = new EspDevice('localhost', '', portNumber);
@@ -69,9 +60,7 @@ describe('espDevice', () => {
                 filter(isTrue),
                 take(1),
                 tap(() => {
-                    expect(device.components).toHaveProperty(
-                        listEntitySwitch.objectId,
-                    );
+                    expect(device.components).toHaveProperty(listEntitySwitch.objectId);
                     done();
                 }),
             )

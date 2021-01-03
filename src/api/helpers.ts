@@ -16,13 +16,7 @@ import { ListEntityResponses, StateResponses } from './interfaces';
 import { CommandInterface } from '../components/commandInterface';
 import { Observable } from 'rxjs';
 import { filter } from 'rxjs/operators';
-import {
-    BaseComponent,
-    BinarySensorComponent,
-    LightComponent,
-    SensorComponent,
-    SwitchComponent,
-} from '..';
+import { BaseComponent, BinarySensorComponent, LightComponent, SensorComponent, SwitchComponent } from '..';
 
 export const stateParser = (data: ReadData): StateResponses => {
     switch (data.type) {
@@ -51,44 +45,29 @@ export const createComponents = (
 ): { id: string; component?: BaseComponent } => {
     switch (data.type) {
         case MessageTypes.ListEntitiesBinarySensorResponse: {
-            const response: ListEntitiesBinarySensorResponse = decode(
-                ListEntitiesBinarySensorResponse,
-                data,
-            );
+            const response: ListEntitiesBinarySensorResponse = decode(ListEntitiesBinarySensorResponse, data);
             return {
                 id: response.objectId,
                 component: new BinarySensorComponent(
                     response,
-                    transformStates<BinarySensorStateResponse>(
-                        stateEvents$,
-                        response,
-                    ),
+                    transformStates<BinarySensorStateResponse>(stateEvents$, response),
                     emptyCommandInterface,
                 ),
             };
         }
         case MessageTypes.ListEntitiesSwitchResponse: {
-            const response: ListEntitiesSwitchResponse = decode(
-                ListEntitiesSwitchResponse,
-                data,
-            );
+            const response: ListEntitiesSwitchResponse = decode(ListEntitiesSwitchResponse, data);
             return {
                 id: response.objectId,
                 component: new SwitchComponent(
                     response,
-                    transformStates<SwitchStateResponse>(
-                        stateEvents$,
-                        response,
-                    ),
+                    transformStates<SwitchStateResponse>(stateEvents$, response),
                     connection,
                 ),
             };
         }
         case MessageTypes.ListEntitiesLightResponse: {
-            const response: ListEntitiesLightResponse = decode(
-                ListEntitiesLightResponse,
-                data,
-            );
+            const response: ListEntitiesLightResponse = decode(ListEntitiesLightResponse, data);
             return {
                 id: response.objectId,
                 component: new LightComponent(
@@ -99,18 +78,12 @@ export const createComponents = (
             };
         }
         case MessageTypes.ListEntitiesSensorResponse: {
-            const response: ListEntitiesSensorResponse = decode(
-                ListEntitiesSensorResponse,
-                data,
-            );
+            const response: ListEntitiesSensorResponse = decode(ListEntitiesSensorResponse, data);
             return {
                 id: response.objectId,
                 component: new SensorComponent(
                     response,
-                    transformStates<SensorStateResponse>(
-                        stateEvents$,
-                        response,
-                    ),
+                    transformStates<SensorStateResponse>(stateEvents$, response),
                     emptyCommandInterface,
                 ),
             };
@@ -127,9 +100,7 @@ export const transformStates = <T extends StateResponses>(
     stateEvents$: Observable<StateResponses>,
     listEntityResponse: ListEntityResponses,
 ): Observable<T> => {
-    return stateEvents$.pipe(
-        filter((stateEvent) => stateEvent.key === listEntityResponse.key),
-    ) as Observable<T>;
+    return stateEvents$.pipe(filter((stateEvent) => stateEvent.key === listEntityResponse.key)) as Observable<T>;
 };
 
 export const isTrue = (val: unknown) => val === true;

@@ -1,9 +1,6 @@
 import { LightComponent, LightStateEvent } from '../../src';
 import { Subject } from 'rxjs';
-import {
-    LightCommandRequest,
-    ListEntitiesLightResponse,
-} from '../../src/api/protobuf/api';
+import { LightCommandRequest, ListEntitiesLightResponse } from '../../src/api/protobuf/api';
 import { DebugConnection } from '../testHelpers/debugConnection';
 import { Reader } from 'protobufjs/minimal';
 
@@ -36,11 +33,7 @@ describe('LightComponent', () => {
                 effects: [],
             };
             lastSendMessage = undefined;
-            component = new LightComponent(
-                listEntity,
-                stateObservable,
-                debugConnection,
-            );
+            component = new LightComponent(listEntity, stateObservable, debugConnection);
             stateObservable.next({
                 key: 3393925675,
                 state: true,
@@ -64,9 +57,7 @@ describe('LightComponent', () => {
         });
 
         it('provides information based on list entity', () => {
-            expect(component.supportsBrightness).toBe(
-                listEntity.supportsBrightness,
-            );
+            expect(component.supportsBrightness).toBe(listEntity.supportsBrightness);
             expect(component.supportsRgb).toBe(listEntity.supportsRgb);
             expect(component.type).toBe('light');
         });
@@ -103,11 +94,7 @@ describe('LightComponent', () => {
                 effects: [],
             };
             lastSendMessage = undefined;
-            component = new LightComponent(
-                listEntity,
-                stateObservable,
-                debugConnection,
-            );
+            component = new LightComponent(listEntity, stateObservable, debugConnection);
             stateObservable.next({
                 key: 3393925675,
                 state: true,
@@ -136,9 +123,7 @@ describe('LightComponent', () => {
         it('set rgb works', () => {
             expect(lastSendMessage).toBe(undefined);
             component.rgb = { red: 255, green: 255, blue: 0 };
-            lastSendMessage = LightCommandRequest.decode(
-                new Reader(debugConnection.calls[0][1]),
-            );
+            lastSendMessage = LightCommandRequest.decode(new Reader(debugConnection.calls[0][1]));
             expect(lastSendMessage?.red).toBe(1);
             expect(lastSendMessage?.green).toBe(1);
             expect(lastSendMessage?.blue).toBe(0);
@@ -220,9 +205,7 @@ describe('LightComponent', () => {
                 state: true,
             });
             component.setBrightness(75);
-            lastSendMessage = LightCommandRequest.decode(
-                new Reader(debugConnection.calls[0][1]),
-            );
+            lastSendMessage = LightCommandRequest.decode(new Reader(debugConnection.calls[0][1]));
             if (lastSendMessage) {
                 expect(lastSendMessage.red).toBe(0);
                 expect(lastSendMessage.green).toBe(1);
@@ -262,11 +245,7 @@ describe('LightComponent', () => {
                 effects: [],
             };
             lastSendMessage = undefined;
-            component = new LightComponent(
-                listEntity,
-                stateObservable,
-                debugConnection,
-            );
+            component = new LightComponent(listEntity, stateObservable, debugConnection);
             stateObservable.next({
                 key: 3393925675,
                 state: true,
@@ -276,9 +255,7 @@ describe('LightComponent', () => {
         it('setting brightness works', () => {
             component.setBrightness(75);
             expect(debugConnection.calls.length).toBe(1);
-            lastSendMessage = LightCommandRequest.decode(
-                new Reader(debugConnection.calls[0][1]),
-            );
+            lastSendMessage = LightCommandRequest.decode(new Reader(debugConnection.calls[0][1]));
             expect(lastSendMessage.brightness).toBe(0.75);
             expect(lastSendMessage.state).toBe(true);
         });

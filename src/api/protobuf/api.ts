@@ -845,13 +845,9 @@ export interface APIConnection {
 
     subscribe_logs(request: SubscribeLogsRequest): Promise<voidMessage>;
 
-    subscribe_homeassistant_services(
-        request: SubscribeHomeassistantServicesRequest,
-    ): Promise<voidMessage>;
+    subscribe_homeassistant_services(request: SubscribeHomeassistantServicesRequest): Promise<voidMessage>;
 
-    subscribe_home_assistant_states(
-        request: SubscribeHomeAssistantStatesRequest,
-    ): Promise<voidMessage>;
+    subscribe_home_assistant_states(request: SubscribeHomeAssistantStatesRequest): Promise<voidMessage>;
 
     get_time(request: GetTimeRequest): Promise<GetTimeResponse>;
 
@@ -892,9 +888,7 @@ export class APIConnectionClientImpl implements APIConnection {
     disconnect(request: DisconnectRequest): Promise<DisconnectResponse> {
         const data = DisconnectRequest.encode(request).finish();
         const promise = this.rpc.request('.APIConnection', 'disconnect', data);
-        return promise.then((data) =>
-            DisconnectResponse.decode(new Reader(data)),
-        );
+        return promise.then((data) => DisconnectResponse.decode(new Reader(data)));
     }
 
     ping(request: PingRequest): Promise<PingResponse> {
@@ -906,66 +900,36 @@ export class APIConnectionClientImpl implements APIConnection {
     device_info(request: DeviceInfoRequest): Promise<DeviceInfoResponse> {
         const data = DeviceInfoRequest.encode(request).finish();
         const promise = this.rpc.request('.APIConnection', 'device_info', data);
-        return promise.then((data) =>
-            DeviceInfoResponse.decode(new Reader(data)),
-        );
+        return promise.then((data) => DeviceInfoResponse.decode(new Reader(data)));
     }
 
     list_entities(request: ListEntitiesRequest): Promise<voidMessage> {
         const data = ListEntitiesRequest.encode(request).finish();
-        const promise = this.rpc.request(
-            '.APIConnection',
-            'list_entities',
-            data,
-        );
+        const promise = this.rpc.request('.APIConnection', 'list_entities', data);
         return promise.then((data) => voidMessage.decode(new Reader(data)));
     }
 
     subscribe_states(request: SubscribeStatesRequest): Promise<voidMessage> {
         const data = SubscribeStatesRequest.encode(request).finish();
-        const promise = this.rpc.request(
-            '.APIConnection',
-            'subscribe_states',
-            data,
-        );
+        const promise = this.rpc.request('.APIConnection', 'subscribe_states', data);
         return promise.then((data) => voidMessage.decode(new Reader(data)));
     }
 
     subscribe_logs(request: SubscribeLogsRequest): Promise<voidMessage> {
         const data = SubscribeLogsRequest.encode(request).finish();
-        const promise = this.rpc.request(
-            '.APIConnection',
-            'subscribe_logs',
-            data,
-        );
+        const promise = this.rpc.request('.APIConnection', 'subscribe_logs', data);
         return promise.then((data) => voidMessage.decode(new Reader(data)));
     }
 
-    subscribe_homeassistant_services(
-        request: SubscribeHomeassistantServicesRequest,
-    ): Promise<voidMessage> {
-        const data = SubscribeHomeassistantServicesRequest.encode(
-            request,
-        ).finish();
-        const promise = this.rpc.request(
-            '.APIConnection',
-            'subscribe_homeassistant_services',
-            data,
-        );
+    subscribe_homeassistant_services(request: SubscribeHomeassistantServicesRequest): Promise<voidMessage> {
+        const data = SubscribeHomeassistantServicesRequest.encode(request).finish();
+        const promise = this.rpc.request('.APIConnection', 'subscribe_homeassistant_services', data);
         return promise.then((data) => voidMessage.decode(new Reader(data)));
     }
 
-    subscribe_home_assistant_states(
-        request: SubscribeHomeAssistantStatesRequest,
-    ): Promise<voidMessage> {
-        const data = SubscribeHomeAssistantStatesRequest.encode(
-            request,
-        ).finish();
-        const promise = this.rpc.request(
-            '.APIConnection',
-            'subscribe_home_assistant_states',
-            data,
-        );
+    subscribe_home_assistant_states(request: SubscribeHomeAssistantStatesRequest): Promise<voidMessage> {
+        const data = SubscribeHomeAssistantStatesRequest.encode(request).finish();
+        const promise = this.rpc.request('.APIConnection', 'subscribe_home_assistant_states', data);
         return promise.then((data) => voidMessage.decode(new Reader(data)));
     }
 
@@ -977,21 +941,13 @@ export class APIConnectionClientImpl implements APIConnection {
 
     execute_service(request: ExecuteServiceRequest): Promise<voidMessage> {
         const data = ExecuteServiceRequest.encode(request).finish();
-        const promise = this.rpc.request(
-            '.APIConnection',
-            'execute_service',
-            data,
-        );
+        const promise = this.rpc.request('.APIConnection', 'execute_service', data);
         return promise.then((data) => voidMessage.decode(new Reader(data)));
     }
 
     cover_command(request: CoverCommandRequest): Promise<voidMessage> {
         const data = CoverCommandRequest.encode(request).finish();
-        const promise = this.rpc.request(
-            '.APIConnection',
-            'cover_command',
-            data,
-        );
+        const promise = this.rpc.request('.APIConnection', 'cover_command', data);
         return promise.then((data) => voidMessage.decode(new Reader(data)));
     }
 
@@ -1003,51 +959,31 @@ export class APIConnectionClientImpl implements APIConnection {
 
     light_command(request: LightCommandRequest): Promise<voidMessage> {
         const data = LightCommandRequest.encode(request).finish();
-        const promise = this.rpc.request(
-            '.APIConnection',
-            'light_command',
-            data,
-        );
+        const promise = this.rpc.request('.APIConnection', 'light_command', data);
         return promise.then((data) => voidMessage.decode(new Reader(data)));
     }
 
     switch_command(request: SwitchCommandRequest): Promise<voidMessage> {
         const data = SwitchCommandRequest.encode(request).finish();
-        const promise = this.rpc.request(
-            '.APIConnection',
-            'switch_command',
-            data,
-        );
+        const promise = this.rpc.request('.APIConnection', 'switch_command', data);
         return promise.then((data) => voidMessage.decode(new Reader(data)));
     }
 
     camera_image(request: CameraImageRequest): Promise<voidMessage> {
         const data = CameraImageRequest.encode(request).finish();
-        const promise = this.rpc.request(
-            '.APIConnection',
-            'camera_image',
-            data,
-        );
+        const promise = this.rpc.request('.APIConnection', 'camera_image', data);
         return promise.then((data) => voidMessage.decode(new Reader(data)));
     }
 
     climate_command(request: ClimateCommandRequest): Promise<voidMessage> {
         const data = ClimateCommandRequest.encode(request).finish();
-        const promise = this.rpc.request(
-            '.APIConnection',
-            'climate_command',
-            data,
-        );
+        const promise = this.rpc.request('.APIConnection', 'climate_command', data);
         return promise.then((data) => voidMessage.decode(new Reader(data)));
     }
 }
 
 interface Rpc {
-    request(
-        service: string,
-        method: string,
-        data: Uint8Array,
-    ): Promise<Uint8Array>;
+    request(service: string, method: string, data: Uint8Array): Promise<Uint8Array>;
 }
 
 export const LegacyCoverState = {
@@ -1641,18 +1577,12 @@ export const HelloResponse = {
     },
     fromJSON(object: any): HelloResponse {
         const message = Object.create(baseHelloResponse) as HelloResponse;
-        if (
-            object.apiVersionMajor !== undefined &&
-            object.apiVersionMajor !== null
-        ) {
+        if (object.apiVersionMajor !== undefined && object.apiVersionMajor !== null) {
             message.apiVersionMajor = Number(object.apiVersionMajor);
         } else {
             message.apiVersionMajor = 0;
         }
-        if (
-            object.apiVersionMinor !== undefined &&
-            object.apiVersionMinor !== null
-        ) {
+        if (object.apiVersionMinor !== undefined && object.apiVersionMinor !== null) {
             message.apiVersionMinor = Number(object.apiVersionMinor);
         } else {
             message.apiVersionMinor = 0;
@@ -1666,18 +1596,12 @@ export const HelloResponse = {
     },
     fromPartial(object: DeepPartial<HelloResponse>): HelloResponse {
         const message = Object.create(baseHelloResponse) as HelloResponse;
-        if (
-            object.apiVersionMajor !== undefined &&
-            object.apiVersionMajor !== null
-        ) {
+        if (object.apiVersionMajor !== undefined && object.apiVersionMajor !== null) {
             message.apiVersionMajor = object.apiVersionMajor;
         } else {
             message.apiVersionMajor = 0;
         }
-        if (
-            object.apiVersionMinor !== undefined &&
-            object.apiVersionMinor !== null
-        ) {
+        if (object.apiVersionMinor !== undefined && object.apiVersionMinor !== null) {
             message.apiVersionMinor = object.apiVersionMinor;
         } else {
             message.apiVersionMinor = 0;
@@ -1767,10 +1691,7 @@ export const ConnectResponse = {
     },
     fromJSON(object: any): ConnectResponse {
         const message = Object.create(baseConnectResponse) as ConnectResponse;
-        if (
-            object.invalidPassword !== undefined &&
-            object.invalidPassword !== null
-        ) {
+        if (object.invalidPassword !== undefined && object.invalidPassword !== null) {
             message.invalidPassword = Boolean(object.invalidPassword);
         } else {
             message.invalidPassword = false;
@@ -1779,10 +1700,7 @@ export const ConnectResponse = {
     },
     fromPartial(object: DeepPartial<ConnectResponse>): ConnectResponse {
         const message = Object.create(baseConnectResponse) as ConnectResponse;
-        if (
-            object.invalidPassword !== undefined &&
-            object.invalidPassword !== null
-        ) {
+        if (object.invalidPassword !== undefined && object.invalidPassword !== null) {
             message.invalidPassword = object.invalidPassword;
         } else {
             message.invalidPassword = false;
@@ -1797,17 +1715,12 @@ export const ConnectResponse = {
 };
 
 export const DisconnectRequest = {
-    encode(
-        message: DisconnectRequest,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: DisconnectRequest, writer: Writer = Writer.create()): Writer {
         return writer;
     },
     decode(reader: Reader, length?: number): DisconnectRequest {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseDisconnectRequest,
-        ) as DisconnectRequest;
+        const message = Object.create(baseDisconnectRequest) as DisconnectRequest;
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
@@ -1819,15 +1732,11 @@ export const DisconnectRequest = {
         return message;
     },
     fromJSON(object: any): DisconnectRequest {
-        const message = Object.create(
-            baseDisconnectRequest,
-        ) as DisconnectRequest;
+        const message = Object.create(baseDisconnectRequest) as DisconnectRequest;
         return message;
     },
     fromPartial(object: DeepPartial<DisconnectRequest>): DisconnectRequest {
-        const message = Object.create(
-            baseDisconnectRequest,
-        ) as DisconnectRequest;
+        const message = Object.create(baseDisconnectRequest) as DisconnectRequest;
         return message;
     },
     toJSON(message: DisconnectRequest): unknown {
@@ -1837,17 +1746,12 @@ export const DisconnectRequest = {
 };
 
 export const DisconnectResponse = {
-    encode(
-        message: DisconnectResponse,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: DisconnectResponse, writer: Writer = Writer.create()): Writer {
         return writer;
     },
     decode(reader: Reader, length?: number): DisconnectResponse {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseDisconnectResponse,
-        ) as DisconnectResponse;
+        const message = Object.create(baseDisconnectResponse) as DisconnectResponse;
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
@@ -1859,15 +1763,11 @@ export const DisconnectResponse = {
         return message;
     },
     fromJSON(object: any): DisconnectResponse {
-        const message = Object.create(
-            baseDisconnectResponse,
-        ) as DisconnectResponse;
+        const message = Object.create(baseDisconnectResponse) as DisconnectResponse;
         return message;
     },
     fromPartial(object: DeepPartial<DisconnectResponse>): DisconnectResponse {
-        const message = Object.create(
-            baseDisconnectResponse,
-        ) as DisconnectResponse;
+        const message = Object.create(baseDisconnectResponse) as DisconnectResponse;
         return message;
     },
     toJSON(message: DisconnectResponse): unknown {
@@ -1939,17 +1839,12 @@ export const PingResponse = {
 };
 
 export const DeviceInfoRequest = {
-    encode(
-        message: DeviceInfoRequest,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: DeviceInfoRequest, writer: Writer = Writer.create()): Writer {
         return writer;
     },
     decode(reader: Reader, length?: number): DeviceInfoRequest {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseDeviceInfoRequest,
-        ) as DeviceInfoRequest;
+        const message = Object.create(baseDeviceInfoRequest) as DeviceInfoRequest;
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
@@ -1961,15 +1856,11 @@ export const DeviceInfoRequest = {
         return message;
     },
     fromJSON(object: any): DeviceInfoRequest {
-        const message = Object.create(
-            baseDeviceInfoRequest,
-        ) as DeviceInfoRequest;
+        const message = Object.create(baseDeviceInfoRequest) as DeviceInfoRequest;
         return message;
     },
     fromPartial(object: DeepPartial<DeviceInfoRequest>): DeviceInfoRequest {
-        const message = Object.create(
-            baseDeviceInfoRequest,
-        ) as DeviceInfoRequest;
+        const message = Object.create(baseDeviceInfoRequest) as DeviceInfoRequest;
         return message;
     },
     toJSON(message: DeviceInfoRequest): unknown {
@@ -1979,10 +1870,7 @@ export const DeviceInfoRequest = {
 };
 
 export const DeviceInfoResponse = {
-    encode(
-        message: DeviceInfoResponse,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: DeviceInfoResponse, writer: Writer = Writer.create()): Writer {
         writer.uint32(8).bool(message.usesPassword);
         writer.uint32(18).string(message.name);
         writer.uint32(26).string(message.macAddress);
@@ -1994,9 +1882,7 @@ export const DeviceInfoResponse = {
     },
     decode(reader: Reader, length?: number): DeviceInfoResponse {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseDeviceInfoResponse,
-        ) as DeviceInfoResponse;
+        const message = Object.create(baseDeviceInfoResponse) as DeviceInfoResponse;
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
@@ -2029,9 +1915,7 @@ export const DeviceInfoResponse = {
         return message;
     },
     fromJSON(object: any): DeviceInfoResponse {
-        const message = Object.create(
-            baseDeviceInfoResponse,
-        ) as DeviceInfoResponse;
+        const message = Object.create(baseDeviceInfoResponse) as DeviceInfoResponse;
         if (object.usesPassword !== undefined && object.usesPassword !== null) {
             message.usesPassword = Boolean(object.usesPassword);
         } else {
@@ -2047,18 +1931,12 @@ export const DeviceInfoResponse = {
         } else {
             message.macAddress = '';
         }
-        if (
-            object.esphomeVersion !== undefined &&
-            object.esphomeVersion !== null
-        ) {
+        if (object.esphomeVersion !== undefined && object.esphomeVersion !== null) {
             message.esphomeVersion = String(object.esphomeVersion);
         } else {
             message.esphomeVersion = '';
         }
-        if (
-            object.compilationTime !== undefined &&
-            object.compilationTime !== null
-        ) {
+        if (object.compilationTime !== undefined && object.compilationTime !== null) {
             message.compilationTime = String(object.compilationTime);
         } else {
             message.compilationTime = '';
@@ -2076,9 +1954,7 @@ export const DeviceInfoResponse = {
         return message;
     },
     fromPartial(object: DeepPartial<DeviceInfoResponse>): DeviceInfoResponse {
-        const message = Object.create(
-            baseDeviceInfoResponse,
-        ) as DeviceInfoResponse;
+        const message = Object.create(baseDeviceInfoResponse) as DeviceInfoResponse;
         if (object.usesPassword !== undefined && object.usesPassword !== null) {
             message.usesPassword = object.usesPassword;
         } else {
@@ -2094,18 +1970,12 @@ export const DeviceInfoResponse = {
         } else {
             message.macAddress = '';
         }
-        if (
-            object.esphomeVersion !== undefined &&
-            object.esphomeVersion !== null
-        ) {
+        if (object.esphomeVersion !== undefined && object.esphomeVersion !== null) {
             message.esphomeVersion = object.esphomeVersion;
         } else {
             message.esphomeVersion = '';
         }
-        if (
-            object.compilationTime !== undefined &&
-            object.compilationTime !== null
-        ) {
+        if (object.compilationTime !== undefined && object.compilationTime !== null) {
             message.compilationTime = object.compilationTime;
         } else {
             message.compilationTime = '';
@@ -2136,17 +2006,12 @@ export const DeviceInfoResponse = {
 };
 
 export const ListEntitiesRequest = {
-    encode(
-        message: ListEntitiesRequest,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: ListEntitiesRequest, writer: Writer = Writer.create()): Writer {
         return writer;
     },
     decode(reader: Reader, length?: number): ListEntitiesRequest {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseListEntitiesRequest,
-        ) as ListEntitiesRequest;
+        const message = Object.create(baseListEntitiesRequest) as ListEntitiesRequest;
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
@@ -2158,15 +2023,11 @@ export const ListEntitiesRequest = {
         return message;
     },
     fromJSON(object: any): ListEntitiesRequest {
-        const message = Object.create(
-            baseListEntitiesRequest,
-        ) as ListEntitiesRequest;
+        const message = Object.create(baseListEntitiesRequest) as ListEntitiesRequest;
         return message;
     },
     fromPartial(object: DeepPartial<ListEntitiesRequest>): ListEntitiesRequest {
-        const message = Object.create(
-            baseListEntitiesRequest,
-        ) as ListEntitiesRequest;
+        const message = Object.create(baseListEntitiesRequest) as ListEntitiesRequest;
         return message;
     },
     toJSON(message: ListEntitiesRequest): unknown {
@@ -2176,17 +2037,12 @@ export const ListEntitiesRequest = {
 };
 
 export const ListEntitiesDoneResponse = {
-    encode(
-        message: ListEntitiesDoneResponse,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: ListEntitiesDoneResponse, writer: Writer = Writer.create()): Writer {
         return writer;
     },
     decode(reader: Reader, length?: number): ListEntitiesDoneResponse {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseListEntitiesDoneResponse,
-        ) as ListEntitiesDoneResponse;
+        const message = Object.create(baseListEntitiesDoneResponse) as ListEntitiesDoneResponse;
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
@@ -2198,17 +2054,11 @@ export const ListEntitiesDoneResponse = {
         return message;
     },
     fromJSON(object: any): ListEntitiesDoneResponse {
-        const message = Object.create(
-            baseListEntitiesDoneResponse,
-        ) as ListEntitiesDoneResponse;
+        const message = Object.create(baseListEntitiesDoneResponse) as ListEntitiesDoneResponse;
         return message;
     },
-    fromPartial(
-        object: DeepPartial<ListEntitiesDoneResponse>,
-    ): ListEntitiesDoneResponse {
-        const message = Object.create(
-            baseListEntitiesDoneResponse,
-        ) as ListEntitiesDoneResponse;
+    fromPartial(object: DeepPartial<ListEntitiesDoneResponse>): ListEntitiesDoneResponse {
+        const message = Object.create(baseListEntitiesDoneResponse) as ListEntitiesDoneResponse;
         return message;
     },
     toJSON(message: ListEntitiesDoneResponse): unknown {
@@ -2218,17 +2068,12 @@ export const ListEntitiesDoneResponse = {
 };
 
 export const SubscribeStatesRequest = {
-    encode(
-        message: SubscribeStatesRequest,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: SubscribeStatesRequest, writer: Writer = Writer.create()): Writer {
         return writer;
     },
     decode(reader: Reader, length?: number): SubscribeStatesRequest {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseSubscribeStatesRequest,
-        ) as SubscribeStatesRequest;
+        const message = Object.create(baseSubscribeStatesRequest) as SubscribeStatesRequest;
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
@@ -2240,17 +2085,11 @@ export const SubscribeStatesRequest = {
         return message;
     },
     fromJSON(object: any): SubscribeStatesRequest {
-        const message = Object.create(
-            baseSubscribeStatesRequest,
-        ) as SubscribeStatesRequest;
+        const message = Object.create(baseSubscribeStatesRequest) as SubscribeStatesRequest;
         return message;
     },
-    fromPartial(
-        object: DeepPartial<SubscribeStatesRequest>,
-    ): SubscribeStatesRequest {
-        const message = Object.create(
-            baseSubscribeStatesRequest,
-        ) as SubscribeStatesRequest;
+    fromPartial(object: DeepPartial<SubscribeStatesRequest>): SubscribeStatesRequest {
+        const message = Object.create(baseSubscribeStatesRequest) as SubscribeStatesRequest;
         return message;
     },
     toJSON(message: SubscribeStatesRequest): unknown {
@@ -2306,10 +2145,7 @@ export const ListEntity = {
 };
 
 export const ListEntitiesBinarySensorResponse = {
-    encode(
-        message: ListEntitiesBinarySensorResponse,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: ListEntitiesBinarySensorResponse, writer: Writer = Writer.create()): Writer {
         writer.uint32(10).string(message.objectId);
         writer.uint32(21).fixed32(message.key);
         writer.uint32(26).string(message.name);
@@ -2320,9 +2156,7 @@ export const ListEntitiesBinarySensorResponse = {
     },
     decode(reader: Reader, length?: number): ListEntitiesBinarySensorResponse {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseListEntitiesBinarySensorResponse,
-        ) as ListEntitiesBinarySensorResponse;
+        const message = Object.create(baseListEntitiesBinarySensorResponse) as ListEntitiesBinarySensorResponse;
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
@@ -2352,9 +2186,7 @@ export const ListEntitiesBinarySensorResponse = {
         return message;
     },
     fromJSON(object: any): ListEntitiesBinarySensorResponse {
-        const message = Object.create(
-            baseListEntitiesBinarySensorResponse,
-        ) as ListEntitiesBinarySensorResponse;
+        const message = Object.create(baseListEntitiesBinarySensorResponse) as ListEntitiesBinarySensorResponse;
         if (object.objectId !== undefined && object.objectId !== null) {
             message.objectId = String(object.objectId);
         } else {
@@ -2380,22 +2212,15 @@ export const ListEntitiesBinarySensorResponse = {
         } else {
             message.deviceClass = '';
         }
-        if (
-            object.isStatusBinarySensor !== undefined &&
-            object.isStatusBinarySensor !== null
-        ) {
+        if (object.isStatusBinarySensor !== undefined && object.isStatusBinarySensor !== null) {
             message.isStatusBinarySensor = Boolean(object.isStatusBinarySensor);
         } else {
             message.isStatusBinarySensor = false;
         }
         return message;
     },
-    fromPartial(
-        object: DeepPartial<ListEntitiesBinarySensorResponse>,
-    ): ListEntitiesBinarySensorResponse {
-        const message = Object.create(
-            baseListEntitiesBinarySensorResponse,
-        ) as ListEntitiesBinarySensorResponse;
+    fromPartial(object: DeepPartial<ListEntitiesBinarySensorResponse>): ListEntitiesBinarySensorResponse {
+        const message = Object.create(baseListEntitiesBinarySensorResponse) as ListEntitiesBinarySensorResponse;
         if (object.objectId !== undefined && object.objectId !== null) {
             message.objectId = object.objectId;
         } else {
@@ -2421,10 +2246,7 @@ export const ListEntitiesBinarySensorResponse = {
         } else {
             message.deviceClass = '';
         }
-        if (
-            object.isStatusBinarySensor !== undefined &&
-            object.isStatusBinarySensor !== null
-        ) {
+        if (object.isStatusBinarySensor !== undefined && object.isStatusBinarySensor !== null) {
             message.isStatusBinarySensor = object.isStatusBinarySensor;
         } else {
             message.isStatusBinarySensor = false;
@@ -2444,10 +2266,7 @@ export const ListEntitiesBinarySensorResponse = {
 };
 
 export const BinarySensorStateResponse = {
-    encode(
-        message: BinarySensorStateResponse,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: BinarySensorStateResponse, writer: Writer = Writer.create()): Writer {
         writer.uint32(13).fixed32(message.key);
         writer.uint32(16).bool(message.state);
         writer.uint32(24).bool(message.missingState);
@@ -2455,9 +2274,7 @@ export const BinarySensorStateResponse = {
     },
     decode(reader: Reader, length?: number): BinarySensorStateResponse {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseBinarySensorStateResponse,
-        ) as BinarySensorStateResponse;
+        const message = Object.create(baseBinarySensorStateResponse) as BinarySensorStateResponse;
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
@@ -2478,9 +2295,7 @@ export const BinarySensorStateResponse = {
         return message;
     },
     fromJSON(object: any): BinarySensorStateResponse {
-        const message = Object.create(
-            baseBinarySensorStateResponse,
-        ) as BinarySensorStateResponse;
+        const message = Object.create(baseBinarySensorStateResponse) as BinarySensorStateResponse;
         if (object.key !== undefined && object.key !== null) {
             message.key = Number(object.key);
         } else {
@@ -2498,12 +2313,8 @@ export const BinarySensorStateResponse = {
         }
         return message;
     },
-    fromPartial(
-        object: DeepPartial<BinarySensorStateResponse>,
-    ): BinarySensorStateResponse {
-        const message = Object.create(
-            baseBinarySensorStateResponse,
-        ) as BinarySensorStateResponse;
+    fromPartial(object: DeepPartial<BinarySensorStateResponse>): BinarySensorStateResponse {
+        const message = Object.create(baseBinarySensorStateResponse) as BinarySensorStateResponse;
         if (object.key !== undefined && object.key !== null) {
             message.key = object.key;
         } else {
@@ -2531,10 +2342,7 @@ export const BinarySensorStateResponse = {
 };
 
 export const ListEntitiesCoverResponse = {
-    encode(
-        message: ListEntitiesCoverResponse,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: ListEntitiesCoverResponse, writer: Writer = Writer.create()): Writer {
         writer.uint32(10).string(message.objectId);
         writer.uint32(21).fixed32(message.key);
         writer.uint32(26).string(message.name);
@@ -2547,9 +2355,7 @@ export const ListEntitiesCoverResponse = {
     },
     decode(reader: Reader, length?: number): ListEntitiesCoverResponse {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseListEntitiesCoverResponse,
-        ) as ListEntitiesCoverResponse;
+        const message = Object.create(baseListEntitiesCoverResponse) as ListEntitiesCoverResponse;
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
@@ -2585,9 +2391,7 @@ export const ListEntitiesCoverResponse = {
         return message;
     },
     fromJSON(object: any): ListEntitiesCoverResponse {
-        const message = Object.create(
-            baseListEntitiesCoverResponse,
-        ) as ListEntitiesCoverResponse;
+        const message = Object.create(baseListEntitiesCoverResponse) as ListEntitiesCoverResponse;
         if (object.objectId !== undefined && object.objectId !== null) {
             message.objectId = String(object.objectId);
         } else {
@@ -2613,10 +2417,7 @@ export const ListEntitiesCoverResponse = {
         } else {
             message.assumedState = false;
         }
-        if (
-            object.supportsPosition !== undefined &&
-            object.supportsPosition !== null
-        ) {
+        if (object.supportsPosition !== undefined && object.supportsPosition !== null) {
             message.supportsPosition = Boolean(object.supportsPosition);
         } else {
             message.supportsPosition = false;
@@ -2633,12 +2434,8 @@ export const ListEntitiesCoverResponse = {
         }
         return message;
     },
-    fromPartial(
-        object: DeepPartial<ListEntitiesCoverResponse>,
-    ): ListEntitiesCoverResponse {
-        const message = Object.create(
-            baseListEntitiesCoverResponse,
-        ) as ListEntitiesCoverResponse;
+    fromPartial(object: DeepPartial<ListEntitiesCoverResponse>): ListEntitiesCoverResponse {
+        const message = Object.create(baseListEntitiesCoverResponse) as ListEntitiesCoverResponse;
         if (object.objectId !== undefined && object.objectId !== null) {
             message.objectId = object.objectId;
         } else {
@@ -2664,10 +2461,7 @@ export const ListEntitiesCoverResponse = {
         } else {
             message.assumedState = false;
         }
-        if (
-            object.supportsPosition !== undefined &&
-            object.supportsPosition !== null
-        ) {
+        if (object.supportsPosition !== undefined && object.supportsPosition !== null) {
             message.supportsPosition = object.supportsPosition;
         } else {
             message.supportsPosition = false;
@@ -2699,10 +2493,7 @@ export const ListEntitiesCoverResponse = {
 };
 
 export const CoverStateResponse = {
-    encode(
-        message: CoverStateResponse,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: CoverStateResponse, writer: Writer = Writer.create()): Writer {
         writer.uint32(13).fixed32(message.key);
         writer.uint32(16).int32(message.legacyState);
         writer.uint32(29).float(message.position);
@@ -2712,9 +2503,7 @@ export const CoverStateResponse = {
     },
     decode(reader: Reader, length?: number): CoverStateResponse {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseCoverStateResponse,
-        ) as CoverStateResponse;
+        const message = Object.create(baseCoverStateResponse) as CoverStateResponse;
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
@@ -2741,9 +2530,7 @@ export const CoverStateResponse = {
         return message;
     },
     fromJSON(object: any): CoverStateResponse {
-        const message = Object.create(
-            baseCoverStateResponse,
-        ) as CoverStateResponse;
+        const message = Object.create(baseCoverStateResponse) as CoverStateResponse;
         if (object.key !== undefined && object.key !== null) {
             message.key = Number(object.key);
         } else {
@@ -2764,22 +2551,15 @@ export const CoverStateResponse = {
         } else {
             message.tilt = 0;
         }
-        if (
-            object.currentOperation !== undefined &&
-            object.currentOperation !== null
-        ) {
-            message.currentOperation = CoverOperation.fromJSON(
-                object.currentOperation,
-            );
+        if (object.currentOperation !== undefined && object.currentOperation !== null) {
+            message.currentOperation = CoverOperation.fromJSON(object.currentOperation);
         } else {
             message.currentOperation = 0;
         }
         return message;
     },
     fromPartial(object: DeepPartial<CoverStateResponse>): CoverStateResponse {
-        const message = Object.create(
-            baseCoverStateResponse,
-        ) as CoverStateResponse;
+        const message = Object.create(baseCoverStateResponse) as CoverStateResponse;
         if (object.key !== undefined && object.key !== null) {
             message.key = object.key;
         } else {
@@ -2800,10 +2580,7 @@ export const CoverStateResponse = {
         } else {
             message.tilt = 0;
         }
-        if (
-            object.currentOperation !== undefined &&
-            object.currentOperation !== null
-        ) {
+        if (object.currentOperation !== undefined && object.currentOperation !== null) {
             message.currentOperation = object.currentOperation;
         } else {
             message.currentOperation = 0;
@@ -2822,10 +2599,7 @@ export const CoverStateResponse = {
 };
 
 export const CoverCommandRequest = {
-    encode(
-        message: CoverCommandRequest,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: CoverCommandRequest, writer: Writer = Writer.create()): Writer {
         writer.uint32(13).fixed32(message.key);
         writer.uint32(16).bool(message.hasLegacyCommand);
         writer.uint32(24).int32(message.legacyCommand);
@@ -2838,9 +2612,7 @@ export const CoverCommandRequest = {
     },
     decode(reader: Reader, length?: number): CoverCommandRequest {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseCoverCommandRequest,
-        ) as CoverCommandRequest;
+        const message = Object.create(baseCoverCommandRequest) as CoverCommandRequest;
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
@@ -2876,29 +2648,19 @@ export const CoverCommandRequest = {
         return message;
     },
     fromJSON(object: any): CoverCommandRequest {
-        const message = Object.create(
-            baseCoverCommandRequest,
-        ) as CoverCommandRequest;
+        const message = Object.create(baseCoverCommandRequest) as CoverCommandRequest;
         if (object.key !== undefined && object.key !== null) {
             message.key = Number(object.key);
         } else {
             message.key = 0;
         }
-        if (
-            object.hasLegacyCommand !== undefined &&
-            object.hasLegacyCommand !== null
-        ) {
+        if (object.hasLegacyCommand !== undefined && object.hasLegacyCommand !== null) {
             message.hasLegacyCommand = Boolean(object.hasLegacyCommand);
         } else {
             message.hasLegacyCommand = false;
         }
-        if (
-            object.legacyCommand !== undefined &&
-            object.legacyCommand !== null
-        ) {
-            message.legacyCommand = LegacyCoverCommand.fromJSON(
-                object.legacyCommand,
-            );
+        if (object.legacyCommand !== undefined && object.legacyCommand !== null) {
+            message.legacyCommand = LegacyCoverCommand.fromJSON(object.legacyCommand);
         } else {
             message.legacyCommand = 0;
         }
@@ -2930,26 +2692,18 @@ export const CoverCommandRequest = {
         return message;
     },
     fromPartial(object: DeepPartial<CoverCommandRequest>): CoverCommandRequest {
-        const message = Object.create(
-            baseCoverCommandRequest,
-        ) as CoverCommandRequest;
+        const message = Object.create(baseCoverCommandRequest) as CoverCommandRequest;
         if (object.key !== undefined && object.key !== null) {
             message.key = object.key;
         } else {
             message.key = 0;
         }
-        if (
-            object.hasLegacyCommand !== undefined &&
-            object.hasLegacyCommand !== null
-        ) {
+        if (object.hasLegacyCommand !== undefined && object.hasLegacyCommand !== null) {
             message.hasLegacyCommand = object.hasLegacyCommand;
         } else {
             message.hasLegacyCommand = false;
         }
-        if (
-            object.legacyCommand !== undefined &&
-            object.legacyCommand !== null
-        ) {
+        if (object.legacyCommand !== undefined && object.legacyCommand !== null) {
             message.legacyCommand = object.legacyCommand;
         } else {
             message.legacyCommand = 0;
@@ -2996,10 +2750,7 @@ export const CoverCommandRequest = {
 };
 
 export const ListEntitiesFanResponse = {
-    encode(
-        message: ListEntitiesFanResponse,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: ListEntitiesFanResponse, writer: Writer = Writer.create()): Writer {
         writer.uint32(10).string(message.objectId);
         writer.uint32(21).fixed32(message.key);
         writer.uint32(26).string(message.name);
@@ -3010,9 +2761,7 @@ export const ListEntitiesFanResponse = {
     },
     decode(reader: Reader, length?: number): ListEntitiesFanResponse {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseListEntitiesFanResponse,
-        ) as ListEntitiesFanResponse;
+        const message = Object.create(baseListEntitiesFanResponse) as ListEntitiesFanResponse;
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
@@ -3042,9 +2791,7 @@ export const ListEntitiesFanResponse = {
         return message;
     },
     fromJSON(object: any): ListEntitiesFanResponse {
-        const message = Object.create(
-            baseListEntitiesFanResponse,
-        ) as ListEntitiesFanResponse;
+        const message = Object.create(baseListEntitiesFanResponse) as ListEntitiesFanResponse;
         if (object.objectId !== undefined && object.objectId !== null) {
             message.objectId = String(object.objectId);
         } else {
@@ -3065,30 +2812,20 @@ export const ListEntitiesFanResponse = {
         } else {
             message.uniqueId = '';
         }
-        if (
-            object.supportsOscillation !== undefined &&
-            object.supportsOscillation !== null
-        ) {
+        if (object.supportsOscillation !== undefined && object.supportsOscillation !== null) {
             message.supportsOscillation = Boolean(object.supportsOscillation);
         } else {
             message.supportsOscillation = false;
         }
-        if (
-            object.supportsSpeed !== undefined &&
-            object.supportsSpeed !== null
-        ) {
+        if (object.supportsSpeed !== undefined && object.supportsSpeed !== null) {
             message.supportsSpeed = Boolean(object.supportsSpeed);
         } else {
             message.supportsSpeed = false;
         }
         return message;
     },
-    fromPartial(
-        object: DeepPartial<ListEntitiesFanResponse>,
-    ): ListEntitiesFanResponse {
-        const message = Object.create(
-            baseListEntitiesFanResponse,
-        ) as ListEntitiesFanResponse;
+    fromPartial(object: DeepPartial<ListEntitiesFanResponse>): ListEntitiesFanResponse {
+        const message = Object.create(baseListEntitiesFanResponse) as ListEntitiesFanResponse;
         if (object.objectId !== undefined && object.objectId !== null) {
             message.objectId = object.objectId;
         } else {
@@ -3109,18 +2846,12 @@ export const ListEntitiesFanResponse = {
         } else {
             message.uniqueId = '';
         }
-        if (
-            object.supportsOscillation !== undefined &&
-            object.supportsOscillation !== null
-        ) {
+        if (object.supportsOscillation !== undefined && object.supportsOscillation !== null) {
             message.supportsOscillation = object.supportsOscillation;
         } else {
             message.supportsOscillation = false;
         }
-        if (
-            object.supportsSpeed !== undefined &&
-            object.supportsSpeed !== null
-        ) {
+        if (object.supportsSpeed !== undefined && object.supportsSpeed !== null) {
             message.supportsSpeed = object.supportsSpeed;
         } else {
             message.supportsSpeed = false;
@@ -3140,10 +2871,7 @@ export const ListEntitiesFanResponse = {
 };
 
 export const FanStateResponse = {
-    encode(
-        message: FanStateResponse,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: FanStateResponse, writer: Writer = Writer.create()): Writer {
         writer.uint32(13).fixed32(message.key);
         writer.uint32(16).bool(message.state);
         writer.uint32(24).bool(message.oscillating);
@@ -3234,10 +2962,7 @@ export const FanStateResponse = {
 };
 
 export const FanCommandRequest = {
-    encode(
-        message: FanCommandRequest,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: FanCommandRequest, writer: Writer = Writer.create()): Writer {
         writer.uint32(13).fixed32(message.key);
         writer.uint32(16).bool(message.hasState);
         writer.uint32(24).bool(message.state);
@@ -3249,9 +2974,7 @@ export const FanCommandRequest = {
     },
     decode(reader: Reader, length?: number): FanCommandRequest {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseFanCommandRequest,
-        ) as FanCommandRequest;
+        const message = Object.create(baseFanCommandRequest) as FanCommandRequest;
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
@@ -3284,9 +3007,7 @@ export const FanCommandRequest = {
         return message;
     },
     fromJSON(object: any): FanCommandRequest {
-        const message = Object.create(
-            baseFanCommandRequest,
-        ) as FanCommandRequest;
+        const message = Object.create(baseFanCommandRequest) as FanCommandRequest;
         if (object.key !== undefined && object.key !== null) {
             message.key = Number(object.key);
         } else {
@@ -3312,10 +3033,7 @@ export const FanCommandRequest = {
         } else {
             message.speed = 0;
         }
-        if (
-            object.hasOscillating !== undefined &&
-            object.hasOscillating !== null
-        ) {
+        if (object.hasOscillating !== undefined && object.hasOscillating !== null) {
             message.hasOscillating = Boolean(object.hasOscillating);
         } else {
             message.hasOscillating = false;
@@ -3328,9 +3046,7 @@ export const FanCommandRequest = {
         return message;
     },
     fromPartial(object: DeepPartial<FanCommandRequest>): FanCommandRequest {
-        const message = Object.create(
-            baseFanCommandRequest,
-        ) as FanCommandRequest;
+        const message = Object.create(baseFanCommandRequest) as FanCommandRequest;
         if (object.key !== undefined && object.key !== null) {
             message.key = object.key;
         } else {
@@ -3356,10 +3072,7 @@ export const FanCommandRequest = {
         } else {
             message.speed = 0;
         }
-        if (
-            object.hasOscillating !== undefined &&
-            object.hasOscillating !== null
-        ) {
+        if (object.hasOscillating !== undefined && object.hasOscillating !== null) {
             message.hasOscillating = object.hasOscillating;
         } else {
             message.hasOscillating = false;
@@ -3385,10 +3098,7 @@ export const FanCommandRequest = {
 };
 
 export const ListEntitiesLightResponse = {
-    encode(
-        message: ListEntitiesLightResponse,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: ListEntitiesLightResponse, writer: Writer = Writer.create()): Writer {
         writer.uint32(10).string(message.objectId);
         writer.uint32(21).fixed32(message.key);
         writer.uint32(26).string(message.name);
@@ -3406,9 +3116,7 @@ export const ListEntitiesLightResponse = {
     },
     decode(reader: Reader, length?: number): ListEntitiesLightResponse {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseListEntitiesLightResponse,
-        ) as ListEntitiesLightResponse;
+        const message = Object.create(baseListEntitiesLightResponse) as ListEntitiesLightResponse;
         message.effects = [];
         while (reader.pos < end) {
             const tag = reader.uint32();
@@ -3454,9 +3162,7 @@ export const ListEntitiesLightResponse = {
         return message;
     },
     fromJSON(object: any): ListEntitiesLightResponse {
-        const message = Object.create(
-            baseListEntitiesLightResponse,
-        ) as ListEntitiesLightResponse;
+        const message = Object.create(baseListEntitiesLightResponse) as ListEntitiesLightResponse;
         message.effects = [];
         if (object.objectId !== undefined && object.objectId !== null) {
             message.objectId = String(object.objectId);
@@ -3478,10 +3184,7 @@ export const ListEntitiesLightResponse = {
         } else {
             message.uniqueId = '';
         }
-        if (
-            object.supportsBrightness !== undefined &&
-            object.supportsBrightness !== null
-        ) {
+        if (object.supportsBrightness !== undefined && object.supportsBrightness !== null) {
             message.supportsBrightness = Boolean(object.supportsBrightness);
         } else {
             message.supportsBrightness = false;
@@ -3491,21 +3194,13 @@ export const ListEntitiesLightResponse = {
         } else {
             message.supportsRgb = false;
         }
-        if (
-            object.supportsWhiteValue !== undefined &&
-            object.supportsWhiteValue !== null
-        ) {
+        if (object.supportsWhiteValue !== undefined && object.supportsWhiteValue !== null) {
             message.supportsWhiteValue = Boolean(object.supportsWhiteValue);
         } else {
             message.supportsWhiteValue = false;
         }
-        if (
-            object.supportsColorTemperature !== undefined &&
-            object.supportsColorTemperature !== null
-        ) {
-            message.supportsColorTemperature = Boolean(
-                object.supportsColorTemperature,
-            );
+        if (object.supportsColorTemperature !== undefined && object.supportsColorTemperature !== null) {
+            message.supportsColorTemperature = Boolean(object.supportsColorTemperature);
         } else {
             message.supportsColorTemperature = false;
         }
@@ -3526,12 +3221,8 @@ export const ListEntitiesLightResponse = {
         }
         return message;
     },
-    fromPartial(
-        object: DeepPartial<ListEntitiesLightResponse>,
-    ): ListEntitiesLightResponse {
-        const message = Object.create(
-            baseListEntitiesLightResponse,
-        ) as ListEntitiesLightResponse;
+    fromPartial(object: DeepPartial<ListEntitiesLightResponse>): ListEntitiesLightResponse {
+        const message = Object.create(baseListEntitiesLightResponse) as ListEntitiesLightResponse;
         message.effects = [];
         if (object.objectId !== undefined && object.objectId !== null) {
             message.objectId = object.objectId;
@@ -3553,10 +3244,7 @@ export const ListEntitiesLightResponse = {
         } else {
             message.uniqueId = '';
         }
-        if (
-            object.supportsBrightness !== undefined &&
-            object.supportsBrightness !== null
-        ) {
+        if (object.supportsBrightness !== undefined && object.supportsBrightness !== null) {
             message.supportsBrightness = object.supportsBrightness;
         } else {
             message.supportsBrightness = false;
@@ -3566,18 +3254,12 @@ export const ListEntitiesLightResponse = {
         } else {
             message.supportsRgb = false;
         }
-        if (
-            object.supportsWhiteValue !== undefined &&
-            object.supportsWhiteValue !== null
-        ) {
+        if (object.supportsWhiteValue !== undefined && object.supportsWhiteValue !== null) {
             message.supportsWhiteValue = object.supportsWhiteValue;
         } else {
             message.supportsWhiteValue = false;
         }
-        if (
-            object.supportsColorTemperature !== undefined &&
-            object.supportsColorTemperature !== null
-        ) {
+        if (object.supportsColorTemperature !== undefined && object.supportsColorTemperature !== null) {
             message.supportsColorTemperature = object.supportsColorTemperature;
         } else {
             message.supportsColorTemperature = false;
@@ -3608,8 +3290,7 @@ export const ListEntitiesLightResponse = {
         obj.supportsBrightness = message.supportsBrightness || false;
         obj.supportsRgb = message.supportsRgb || false;
         obj.supportsWhiteValue = message.supportsWhiteValue || false;
-        obj.supportsColorTemperature =
-            message.supportsColorTemperature || false;
+        obj.supportsColorTemperature = message.supportsColorTemperature || false;
         obj.minMireds = message.minMireds || 0;
         obj.maxMireds = message.maxMireds || 0;
         if (message.effects) {
@@ -3622,10 +3303,7 @@ export const ListEntitiesLightResponse = {
 };
 
 export const LightStateResponse = {
-    encode(
-        message: LightStateResponse,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: LightStateResponse, writer: Writer = Writer.create()): Writer {
         writer.uint32(13).fixed32(message.key);
         writer.uint32(16).bool(message.state);
         writer.uint32(29).float(message.brightness);
@@ -3639,9 +3317,7 @@ export const LightStateResponse = {
     },
     decode(reader: Reader, length?: number): LightStateResponse {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseLightStateResponse,
-        ) as LightStateResponse;
+        const message = Object.create(baseLightStateResponse) as LightStateResponse;
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
@@ -3680,9 +3356,7 @@ export const LightStateResponse = {
         return message;
     },
     fromJSON(object: any): LightStateResponse {
-        const message = Object.create(
-            baseLightStateResponse,
-        ) as LightStateResponse;
+        const message = Object.create(baseLightStateResponse) as LightStateResponse;
         if (object.key !== undefined && object.key !== null) {
             message.key = Number(object.key);
         } else {
@@ -3718,10 +3392,7 @@ export const LightStateResponse = {
         } else {
             message.white = 0;
         }
-        if (
-            object.colorTemperature !== undefined &&
-            object.colorTemperature !== null
-        ) {
+        if (object.colorTemperature !== undefined && object.colorTemperature !== null) {
             message.colorTemperature = Number(object.colorTemperature);
         } else {
             message.colorTemperature = 0;
@@ -3734,9 +3405,7 @@ export const LightStateResponse = {
         return message;
     },
     fromPartial(object: DeepPartial<LightStateResponse>): LightStateResponse {
-        const message = Object.create(
-            baseLightStateResponse,
-        ) as LightStateResponse;
+        const message = Object.create(baseLightStateResponse) as LightStateResponse;
         if (object.key !== undefined && object.key !== null) {
             message.key = object.key;
         } else {
@@ -3772,10 +3441,7 @@ export const LightStateResponse = {
         } else {
             message.white = 0;
         }
-        if (
-            object.colorTemperature !== undefined &&
-            object.colorTemperature !== null
-        ) {
+        if (object.colorTemperature !== undefined && object.colorTemperature !== null) {
             message.colorTemperature = object.colorTemperature;
         } else {
             message.colorTemperature = 0;
@@ -3803,10 +3469,7 @@ export const LightStateResponse = {
 };
 
 export const LightCommandRequest = {
-    encode(
-        message: LightCommandRequest,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: LightCommandRequest, writer: Writer = Writer.create()): Writer {
         writer.uint32(13).fixed32(message.key);
         writer.uint32(16).bool(message.hasState);
         writer.uint32(24).bool(message.state);
@@ -3830,9 +3493,7 @@ export const LightCommandRequest = {
     },
     decode(reader: Reader, length?: number): LightCommandRequest {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseLightCommandRequest,
-        ) as LightCommandRequest;
+        const message = Object.create(baseLightCommandRequest) as LightCommandRequest;
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
@@ -3901,9 +3562,7 @@ export const LightCommandRequest = {
         return message;
     },
     fromJSON(object: any): LightCommandRequest {
-        const message = Object.create(
-            baseLightCommandRequest,
-        ) as LightCommandRequest;
+        const message = Object.create(baseLightCommandRequest) as LightCommandRequest;
         if (object.key !== undefined && object.key !== null) {
             message.key = Number(object.key);
         } else {
@@ -3919,10 +3578,7 @@ export const LightCommandRequest = {
         } else {
             message.state = false;
         }
-        if (
-            object.hasBrightness !== undefined &&
-            object.hasBrightness !== null
-        ) {
+        if (object.hasBrightness !== undefined && object.hasBrightness !== null) {
             message.hasBrightness = Boolean(object.hasBrightness);
         } else {
             message.hasBrightness = false;
@@ -3962,42 +3618,27 @@ export const LightCommandRequest = {
         } else {
             message.white = 0;
         }
-        if (
-            object.hasColorTemperature !== undefined &&
-            object.hasColorTemperature !== null
-        ) {
+        if (object.hasColorTemperature !== undefined && object.hasColorTemperature !== null) {
             message.hasColorTemperature = Boolean(object.hasColorTemperature);
         } else {
             message.hasColorTemperature = false;
         }
-        if (
-            object.colorTemperature !== undefined &&
-            object.colorTemperature !== null
-        ) {
+        if (object.colorTemperature !== undefined && object.colorTemperature !== null) {
             message.colorTemperature = Number(object.colorTemperature);
         } else {
             message.colorTemperature = 0;
         }
-        if (
-            object.hasTransitionLength !== undefined &&
-            object.hasTransitionLength !== null
-        ) {
+        if (object.hasTransitionLength !== undefined && object.hasTransitionLength !== null) {
             message.hasTransitionLength = Boolean(object.hasTransitionLength);
         } else {
             message.hasTransitionLength = false;
         }
-        if (
-            object.transitionLength !== undefined &&
-            object.transitionLength !== null
-        ) {
+        if (object.transitionLength !== undefined && object.transitionLength !== null) {
             message.transitionLength = Number(object.transitionLength);
         } else {
             message.transitionLength = 0;
         }
-        if (
-            object.hasFlashLength !== undefined &&
-            object.hasFlashLength !== null
-        ) {
+        if (object.hasFlashLength !== undefined && object.hasFlashLength !== null) {
             message.hasFlashLength = Boolean(object.hasFlashLength);
         } else {
             message.hasFlashLength = false;
@@ -4020,9 +3661,7 @@ export const LightCommandRequest = {
         return message;
     },
     fromPartial(object: DeepPartial<LightCommandRequest>): LightCommandRequest {
-        const message = Object.create(
-            baseLightCommandRequest,
-        ) as LightCommandRequest;
+        const message = Object.create(baseLightCommandRequest) as LightCommandRequest;
         if (object.key !== undefined && object.key !== null) {
             message.key = object.key;
         } else {
@@ -4038,10 +3677,7 @@ export const LightCommandRequest = {
         } else {
             message.state = false;
         }
-        if (
-            object.hasBrightness !== undefined &&
-            object.hasBrightness !== null
-        ) {
+        if (object.hasBrightness !== undefined && object.hasBrightness !== null) {
             message.hasBrightness = object.hasBrightness;
         } else {
             message.hasBrightness = false;
@@ -4081,42 +3717,27 @@ export const LightCommandRequest = {
         } else {
             message.white = 0;
         }
-        if (
-            object.hasColorTemperature !== undefined &&
-            object.hasColorTemperature !== null
-        ) {
+        if (object.hasColorTemperature !== undefined && object.hasColorTemperature !== null) {
             message.hasColorTemperature = object.hasColorTemperature;
         } else {
             message.hasColorTemperature = false;
         }
-        if (
-            object.colorTemperature !== undefined &&
-            object.colorTemperature !== null
-        ) {
+        if (object.colorTemperature !== undefined && object.colorTemperature !== null) {
             message.colorTemperature = object.colorTemperature;
         } else {
             message.colorTemperature = 0;
         }
-        if (
-            object.hasTransitionLength !== undefined &&
-            object.hasTransitionLength !== null
-        ) {
+        if (object.hasTransitionLength !== undefined && object.hasTransitionLength !== null) {
             message.hasTransitionLength = object.hasTransitionLength;
         } else {
             message.hasTransitionLength = false;
         }
-        if (
-            object.transitionLength !== undefined &&
-            object.transitionLength !== null
-        ) {
+        if (object.transitionLength !== undefined && object.transitionLength !== null) {
             message.transitionLength = object.transitionLength;
         } else {
             message.transitionLength = 0;
         }
-        if (
-            object.hasFlashLength !== undefined &&
-            object.hasFlashLength !== null
-        ) {
+        if (object.hasFlashLength !== undefined && object.hasFlashLength !== null) {
             message.hasFlashLength = object.hasFlashLength;
         } else {
             message.hasFlashLength = false;
@@ -4164,10 +3785,7 @@ export const LightCommandRequest = {
 };
 
 export const ListEntitiesSensorResponse = {
-    encode(
-        message: ListEntitiesSensorResponse,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: ListEntitiesSensorResponse, writer: Writer = Writer.create()): Writer {
         writer.uint32(10).string(message.objectId);
         writer.uint32(21).fixed32(message.key);
         writer.uint32(26).string(message.name);
@@ -4180,9 +3798,7 @@ export const ListEntitiesSensorResponse = {
     },
     decode(reader: Reader, length?: number): ListEntitiesSensorResponse {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseListEntitiesSensorResponse,
-        ) as ListEntitiesSensorResponse;
+        const message = Object.create(baseListEntitiesSensorResponse) as ListEntitiesSensorResponse;
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
@@ -4218,9 +3834,7 @@ export const ListEntitiesSensorResponse = {
         return message;
     },
     fromJSON(object: any): ListEntitiesSensorResponse {
-        const message = Object.create(
-            baseListEntitiesSensorResponse,
-        ) as ListEntitiesSensorResponse;
+        const message = Object.create(baseListEntitiesSensorResponse) as ListEntitiesSensorResponse;
         if (object.objectId !== undefined && object.objectId !== null) {
             message.objectId = String(object.objectId);
         } else {
@@ -4246,18 +3860,12 @@ export const ListEntitiesSensorResponse = {
         } else {
             message.icon = '';
         }
-        if (
-            object.unitOfMeasurement !== undefined &&
-            object.unitOfMeasurement !== null
-        ) {
+        if (object.unitOfMeasurement !== undefined && object.unitOfMeasurement !== null) {
             message.unitOfMeasurement = String(object.unitOfMeasurement);
         } else {
             message.unitOfMeasurement = '';
         }
-        if (
-            object.accuracyDecimals !== undefined &&
-            object.accuracyDecimals !== null
-        ) {
+        if (object.accuracyDecimals !== undefined && object.accuracyDecimals !== null) {
             message.accuracyDecimals = Number(object.accuracyDecimals);
         } else {
             message.accuracyDecimals = 0;
@@ -4269,12 +3877,8 @@ export const ListEntitiesSensorResponse = {
         }
         return message;
     },
-    fromPartial(
-        object: DeepPartial<ListEntitiesSensorResponse>,
-    ): ListEntitiesSensorResponse {
-        const message = Object.create(
-            baseListEntitiesSensorResponse,
-        ) as ListEntitiesSensorResponse;
+    fromPartial(object: DeepPartial<ListEntitiesSensorResponse>): ListEntitiesSensorResponse {
+        const message = Object.create(baseListEntitiesSensorResponse) as ListEntitiesSensorResponse;
         if (object.objectId !== undefined && object.objectId !== null) {
             message.objectId = object.objectId;
         } else {
@@ -4300,18 +3904,12 @@ export const ListEntitiesSensorResponse = {
         } else {
             message.icon = '';
         }
-        if (
-            object.unitOfMeasurement !== undefined &&
-            object.unitOfMeasurement !== null
-        ) {
+        if (object.unitOfMeasurement !== undefined && object.unitOfMeasurement !== null) {
             message.unitOfMeasurement = object.unitOfMeasurement;
         } else {
             message.unitOfMeasurement = '';
         }
-        if (
-            object.accuracyDecimals !== undefined &&
-            object.accuracyDecimals !== null
-        ) {
+        if (object.accuracyDecimals !== undefined && object.accuracyDecimals !== null) {
             message.accuracyDecimals = object.accuracyDecimals;
         } else {
             message.accuracyDecimals = 0;
@@ -4338,10 +3936,7 @@ export const ListEntitiesSensorResponse = {
 };
 
 export const SensorStateResponse = {
-    encode(
-        message: SensorStateResponse,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: SensorStateResponse, writer: Writer = Writer.create()): Writer {
         writer.uint32(13).fixed32(message.key);
         writer.uint32(21).float(message.state);
         writer.uint32(24).bool(message.missingState);
@@ -4349,9 +3944,7 @@ export const SensorStateResponse = {
     },
     decode(reader: Reader, length?: number): SensorStateResponse {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseSensorStateResponse,
-        ) as SensorStateResponse;
+        const message = Object.create(baseSensorStateResponse) as SensorStateResponse;
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
@@ -4372,9 +3965,7 @@ export const SensorStateResponse = {
         return message;
     },
     fromJSON(object: any): SensorStateResponse {
-        const message = Object.create(
-            baseSensorStateResponse,
-        ) as SensorStateResponse;
+        const message = Object.create(baseSensorStateResponse) as SensorStateResponse;
         if (object.key !== undefined && object.key !== null) {
             message.key = Number(object.key);
         } else {
@@ -4393,9 +3984,7 @@ export const SensorStateResponse = {
         return message;
     },
     fromPartial(object: DeepPartial<SensorStateResponse>): SensorStateResponse {
-        const message = Object.create(
-            baseSensorStateResponse,
-        ) as SensorStateResponse;
+        const message = Object.create(baseSensorStateResponse) as SensorStateResponse;
         if (object.key !== undefined && object.key !== null) {
             message.key = object.key;
         } else {
@@ -4423,10 +4012,7 @@ export const SensorStateResponse = {
 };
 
 export const ListEntitiesSwitchResponse = {
-    encode(
-        message: ListEntitiesSwitchResponse,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: ListEntitiesSwitchResponse, writer: Writer = Writer.create()): Writer {
         writer.uint32(10).string(message.objectId);
         writer.uint32(21).fixed32(message.key);
         writer.uint32(26).string(message.name);
@@ -4437,9 +4023,7 @@ export const ListEntitiesSwitchResponse = {
     },
     decode(reader: Reader, length?: number): ListEntitiesSwitchResponse {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseListEntitiesSwitchResponse,
-        ) as ListEntitiesSwitchResponse;
+        const message = Object.create(baseListEntitiesSwitchResponse) as ListEntitiesSwitchResponse;
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
@@ -4469,9 +4053,7 @@ export const ListEntitiesSwitchResponse = {
         return message;
     },
     fromJSON(object: any): ListEntitiesSwitchResponse {
-        const message = Object.create(
-            baseListEntitiesSwitchResponse,
-        ) as ListEntitiesSwitchResponse;
+        const message = Object.create(baseListEntitiesSwitchResponse) as ListEntitiesSwitchResponse;
         if (object.objectId !== undefined && object.objectId !== null) {
             message.objectId = String(object.objectId);
         } else {
@@ -4504,12 +4086,8 @@ export const ListEntitiesSwitchResponse = {
         }
         return message;
     },
-    fromPartial(
-        object: DeepPartial<ListEntitiesSwitchResponse>,
-    ): ListEntitiesSwitchResponse {
-        const message = Object.create(
-            baseListEntitiesSwitchResponse,
-        ) as ListEntitiesSwitchResponse;
+    fromPartial(object: DeepPartial<ListEntitiesSwitchResponse>): ListEntitiesSwitchResponse {
+        const message = Object.create(baseListEntitiesSwitchResponse) as ListEntitiesSwitchResponse;
         if (object.objectId !== undefined && object.objectId !== null) {
             message.objectId = object.objectId;
         } else {
@@ -4555,19 +4133,14 @@ export const ListEntitiesSwitchResponse = {
 };
 
 export const SwitchStateResponse = {
-    encode(
-        message: SwitchStateResponse,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: SwitchStateResponse, writer: Writer = Writer.create()): Writer {
         writer.uint32(13).fixed32(message.key);
         writer.uint32(16).bool(message.state);
         return writer;
     },
     decode(reader: Reader, length?: number): SwitchStateResponse {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseSwitchStateResponse,
-        ) as SwitchStateResponse;
+        const message = Object.create(baseSwitchStateResponse) as SwitchStateResponse;
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
@@ -4585,9 +4158,7 @@ export const SwitchStateResponse = {
         return message;
     },
     fromJSON(object: any): SwitchStateResponse {
-        const message = Object.create(
-            baseSwitchStateResponse,
-        ) as SwitchStateResponse;
+        const message = Object.create(baseSwitchStateResponse) as SwitchStateResponse;
         if (object.key !== undefined && object.key !== null) {
             message.key = Number(object.key);
         } else {
@@ -4601,9 +4172,7 @@ export const SwitchStateResponse = {
         return message;
     },
     fromPartial(object: DeepPartial<SwitchStateResponse>): SwitchStateResponse {
-        const message = Object.create(
-            baseSwitchStateResponse,
-        ) as SwitchStateResponse;
+        const message = Object.create(baseSwitchStateResponse) as SwitchStateResponse;
         if (object.key !== undefined && object.key !== null) {
             message.key = object.key;
         } else {
@@ -4625,19 +4194,14 @@ export const SwitchStateResponse = {
 };
 
 export const SwitchCommandRequest = {
-    encode(
-        message: SwitchCommandRequest,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: SwitchCommandRequest, writer: Writer = Writer.create()): Writer {
         writer.uint32(13).fixed32(message.key);
         writer.uint32(16).bool(message.state);
         return writer;
     },
     decode(reader: Reader, length?: number): SwitchCommandRequest {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseSwitchCommandRequest,
-        ) as SwitchCommandRequest;
+        const message = Object.create(baseSwitchCommandRequest) as SwitchCommandRequest;
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
@@ -4655,9 +4219,7 @@ export const SwitchCommandRequest = {
         return message;
     },
     fromJSON(object: any): SwitchCommandRequest {
-        const message = Object.create(
-            baseSwitchCommandRequest,
-        ) as SwitchCommandRequest;
+        const message = Object.create(baseSwitchCommandRequest) as SwitchCommandRequest;
         if (object.key !== undefined && object.key !== null) {
             message.key = Number(object.key);
         } else {
@@ -4670,12 +4232,8 @@ export const SwitchCommandRequest = {
         }
         return message;
     },
-    fromPartial(
-        object: DeepPartial<SwitchCommandRequest>,
-    ): SwitchCommandRequest {
-        const message = Object.create(
-            baseSwitchCommandRequest,
-        ) as SwitchCommandRequest;
+    fromPartial(object: DeepPartial<SwitchCommandRequest>): SwitchCommandRequest {
+        const message = Object.create(baseSwitchCommandRequest) as SwitchCommandRequest;
         if (object.key !== undefined && object.key !== null) {
             message.key = object.key;
         } else {
@@ -4697,10 +4255,7 @@ export const SwitchCommandRequest = {
 };
 
 export const ListEntitiesTextSensorResponse = {
-    encode(
-        message: ListEntitiesTextSensorResponse,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: ListEntitiesTextSensorResponse, writer: Writer = Writer.create()): Writer {
         writer.uint32(10).string(message.objectId);
         writer.uint32(21).fixed32(message.key);
         writer.uint32(26).string(message.name);
@@ -4710,9 +4265,7 @@ export const ListEntitiesTextSensorResponse = {
     },
     decode(reader: Reader, length?: number): ListEntitiesTextSensorResponse {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseListEntitiesTextSensorResponse,
-        ) as ListEntitiesTextSensorResponse;
+        const message = Object.create(baseListEntitiesTextSensorResponse) as ListEntitiesTextSensorResponse;
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
@@ -4739,9 +4292,7 @@ export const ListEntitiesTextSensorResponse = {
         return message;
     },
     fromJSON(object: any): ListEntitiesTextSensorResponse {
-        const message = Object.create(
-            baseListEntitiesTextSensorResponse,
-        ) as ListEntitiesTextSensorResponse;
+        const message = Object.create(baseListEntitiesTextSensorResponse) as ListEntitiesTextSensorResponse;
         if (object.objectId !== undefined && object.objectId !== null) {
             message.objectId = String(object.objectId);
         } else {
@@ -4769,12 +4320,8 @@ export const ListEntitiesTextSensorResponse = {
         }
         return message;
     },
-    fromPartial(
-        object: DeepPartial<ListEntitiesTextSensorResponse>,
-    ): ListEntitiesTextSensorResponse {
-        const message = Object.create(
-            baseListEntitiesTextSensorResponse,
-        ) as ListEntitiesTextSensorResponse;
+    fromPartial(object: DeepPartial<ListEntitiesTextSensorResponse>): ListEntitiesTextSensorResponse {
+        const message = Object.create(baseListEntitiesTextSensorResponse) as ListEntitiesTextSensorResponse;
         if (object.objectId !== undefined && object.objectId !== null) {
             message.objectId = object.objectId;
         } else {
@@ -4814,10 +4361,7 @@ export const ListEntitiesTextSensorResponse = {
 };
 
 export const TextSensorStateResponse = {
-    encode(
-        message: TextSensorStateResponse,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: TextSensorStateResponse, writer: Writer = Writer.create()): Writer {
         writer.uint32(13).fixed32(message.key);
         writer.uint32(18).string(message.state);
         writer.uint32(24).bool(message.missingState);
@@ -4825,9 +4369,7 @@ export const TextSensorStateResponse = {
     },
     decode(reader: Reader, length?: number): TextSensorStateResponse {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseTextSensorStateResponse,
-        ) as TextSensorStateResponse;
+        const message = Object.create(baseTextSensorStateResponse) as TextSensorStateResponse;
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
@@ -4848,9 +4390,7 @@ export const TextSensorStateResponse = {
         return message;
     },
     fromJSON(object: any): TextSensorStateResponse {
-        const message = Object.create(
-            baseTextSensorStateResponse,
-        ) as TextSensorStateResponse;
+        const message = Object.create(baseTextSensorStateResponse) as TextSensorStateResponse;
         if (object.key !== undefined && object.key !== null) {
             message.key = Number(object.key);
         } else {
@@ -4868,12 +4408,8 @@ export const TextSensorStateResponse = {
         }
         return message;
     },
-    fromPartial(
-        object: DeepPartial<TextSensorStateResponse>,
-    ): TextSensorStateResponse {
-        const message = Object.create(
-            baseTextSensorStateResponse,
-        ) as TextSensorStateResponse;
+    fromPartial(object: DeepPartial<TextSensorStateResponse>): TextSensorStateResponse {
+        const message = Object.create(baseTextSensorStateResponse) as TextSensorStateResponse;
         if (object.key !== undefined && object.key !== null) {
             message.key = object.key;
         } else {
@@ -4901,19 +4437,14 @@ export const TextSensorStateResponse = {
 };
 
 export const SubscribeLogsRequest = {
-    encode(
-        message: SubscribeLogsRequest,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: SubscribeLogsRequest, writer: Writer = Writer.create()): Writer {
         writer.uint32(8).int32(message.level);
         writer.uint32(16).bool(message.dumpConfig);
         return writer;
     },
     decode(reader: Reader, length?: number): SubscribeLogsRequest {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseSubscribeLogsRequest,
-        ) as SubscribeLogsRequest;
+        const message = Object.create(baseSubscribeLogsRequest) as SubscribeLogsRequest;
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
@@ -4931,9 +4462,7 @@ export const SubscribeLogsRequest = {
         return message;
     },
     fromJSON(object: any): SubscribeLogsRequest {
-        const message = Object.create(
-            baseSubscribeLogsRequest,
-        ) as SubscribeLogsRequest;
+        const message = Object.create(baseSubscribeLogsRequest) as SubscribeLogsRequest;
         if (object.level !== undefined && object.level !== null) {
             message.level = LogLevel.fromJSON(object.level);
         } else {
@@ -4946,12 +4475,8 @@ export const SubscribeLogsRequest = {
         }
         return message;
     },
-    fromPartial(
-        object: DeepPartial<SubscribeLogsRequest>,
-    ): SubscribeLogsRequest {
-        const message = Object.create(
-            baseSubscribeLogsRequest,
-        ) as SubscribeLogsRequest;
+    fromPartial(object: DeepPartial<SubscribeLogsRequest>): SubscribeLogsRequest {
+        const message = Object.create(baseSubscribeLogsRequest) as SubscribeLogsRequest;
         if (object.level !== undefined && object.level !== null) {
             message.level = object.level;
         } else {
@@ -4973,10 +4498,7 @@ export const SubscribeLogsRequest = {
 };
 
 export const SubscribeLogsResponse = {
-    encode(
-        message: SubscribeLogsResponse,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: SubscribeLogsResponse, writer: Writer = Writer.create()): Writer {
         writer.uint32(8).int32(message.level);
         writer.uint32(18).string(message.tag);
         writer.uint32(26).string(message.message);
@@ -4985,9 +4507,7 @@ export const SubscribeLogsResponse = {
     },
     decode(reader: Reader, length?: number): SubscribeLogsResponse {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseSubscribeLogsResponse,
-        ) as SubscribeLogsResponse;
+        const message = Object.create(baseSubscribeLogsResponse) as SubscribeLogsResponse;
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
@@ -5011,9 +4531,7 @@ export const SubscribeLogsResponse = {
         return message;
     },
     fromJSON(object: any): SubscribeLogsResponse {
-        const message = Object.create(
-            baseSubscribeLogsResponse,
-        ) as SubscribeLogsResponse;
+        const message = Object.create(baseSubscribeLogsResponse) as SubscribeLogsResponse;
         if (object.level !== undefined && object.level !== null) {
             message.level = LogLevel.fromJSON(object.level);
         } else {
@@ -5036,12 +4554,8 @@ export const SubscribeLogsResponse = {
         }
         return message;
     },
-    fromPartial(
-        object: DeepPartial<SubscribeLogsResponse>,
-    ): SubscribeLogsResponse {
-        const message = Object.create(
-            baseSubscribeLogsResponse,
-        ) as SubscribeLogsResponse;
+    fromPartial(object: DeepPartial<SubscribeLogsResponse>): SubscribeLogsResponse {
+        const message = Object.create(baseSubscribeLogsResponse) as SubscribeLogsResponse;
         if (object.level !== undefined && object.level !== null) {
             message.level = object.level;
         } else {
@@ -5075,16 +4589,10 @@ export const SubscribeLogsResponse = {
 };
 
 export const SubscribeHomeassistantServicesRequest = {
-    encode(
-        message: SubscribeHomeassistantServicesRequest,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: SubscribeHomeassistantServicesRequest, writer: Writer = Writer.create()): Writer {
         return writer;
     },
-    decode(
-        reader: Reader,
-        length?: number,
-    ): SubscribeHomeassistantServicesRequest {
+    decode(reader: Reader, length?: number): SubscribeHomeassistantServicesRequest {
         let end = length === undefined ? reader.len : reader.pos + length;
         const message = Object.create(
             baseSubscribeHomeassistantServicesRequest,
@@ -5105,9 +4613,7 @@ export const SubscribeHomeassistantServicesRequest = {
         ) as SubscribeHomeassistantServicesRequest;
         return message;
     },
-    fromPartial(
-        object: DeepPartial<SubscribeHomeassistantServicesRequest>,
-    ): SubscribeHomeassistantServicesRequest {
+    fromPartial(object: DeepPartial<SubscribeHomeassistantServicesRequest>): SubscribeHomeassistantServicesRequest {
         const message = Object.create(
             baseSubscribeHomeassistantServicesRequest,
         ) as SubscribeHomeassistantServicesRequest;
@@ -5120,19 +4626,14 @@ export const SubscribeHomeassistantServicesRequest = {
 };
 
 export const HomeassistantServiceMap = {
-    encode(
-        message: HomeassistantServiceMap,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: HomeassistantServiceMap, writer: Writer = Writer.create()): Writer {
         writer.uint32(10).string(message.key);
         writer.uint32(18).string(message.value);
         return writer;
     },
     decode(reader: Reader, length?: number): HomeassistantServiceMap {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseHomeassistantServiceMap,
-        ) as HomeassistantServiceMap;
+        const message = Object.create(baseHomeassistantServiceMap) as HomeassistantServiceMap;
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
@@ -5150,9 +4651,7 @@ export const HomeassistantServiceMap = {
         return message;
     },
     fromJSON(object: any): HomeassistantServiceMap {
-        const message = Object.create(
-            baseHomeassistantServiceMap,
-        ) as HomeassistantServiceMap;
+        const message = Object.create(baseHomeassistantServiceMap) as HomeassistantServiceMap;
         if (object.key !== undefined && object.key !== null) {
             message.key = String(object.key);
         } else {
@@ -5165,12 +4664,8 @@ export const HomeassistantServiceMap = {
         }
         return message;
     },
-    fromPartial(
-        object: DeepPartial<HomeassistantServiceMap>,
-    ): HomeassistantServiceMap {
-        const message = Object.create(
-            baseHomeassistantServiceMap,
-        ) as HomeassistantServiceMap;
+    fromPartial(object: DeepPartial<HomeassistantServiceMap>): HomeassistantServiceMap {
+        const message = Object.create(baseHomeassistantServiceMap) as HomeassistantServiceMap;
         if (object.key !== undefined && object.key !== null) {
             message.key = object.key;
         } else {
@@ -5192,37 +4687,23 @@ export const HomeassistantServiceMap = {
 };
 
 export const HomeassistantServiceResponse = {
-    encode(
-        message: HomeassistantServiceResponse,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: HomeassistantServiceResponse, writer: Writer = Writer.create()): Writer {
         writer.uint32(10).string(message.service);
         for (const v of message.data) {
-            HomeassistantServiceMap.encode(
-                v!,
-                writer.uint32(18).fork(),
-            ).ldelim();
+            HomeassistantServiceMap.encode(v!, writer.uint32(18).fork()).ldelim();
         }
         for (const v of message.dataTemplate) {
-            HomeassistantServiceMap.encode(
-                v!,
-                writer.uint32(26).fork(),
-            ).ldelim();
+            HomeassistantServiceMap.encode(v!, writer.uint32(26).fork()).ldelim();
         }
         for (const v of message.variables) {
-            HomeassistantServiceMap.encode(
-                v!,
-                writer.uint32(34).fork(),
-            ).ldelim();
+            HomeassistantServiceMap.encode(v!, writer.uint32(34).fork()).ldelim();
         }
         writer.uint32(40).bool(message.isEvent);
         return writer;
     },
     decode(reader: Reader, length?: number): HomeassistantServiceResponse {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseHomeassistantServiceResponse,
-        ) as HomeassistantServiceResponse;
+        const message = Object.create(baseHomeassistantServiceResponse) as HomeassistantServiceResponse;
         message.data = [];
         message.dataTemplate = [];
         message.variables = [];
@@ -5233,19 +4714,13 @@ export const HomeassistantServiceResponse = {
                     message.service = reader.string();
                     break;
                 case 2:
-                    message.data.push(
-                        HomeassistantServiceMap.decode(reader, reader.uint32()),
-                    );
+                    message.data.push(HomeassistantServiceMap.decode(reader, reader.uint32()));
                     break;
                 case 3:
-                    message.dataTemplate.push(
-                        HomeassistantServiceMap.decode(reader, reader.uint32()),
-                    );
+                    message.dataTemplate.push(HomeassistantServiceMap.decode(reader, reader.uint32()));
                     break;
                 case 4:
-                    message.variables.push(
-                        HomeassistantServiceMap.decode(reader, reader.uint32()),
-                    );
+                    message.variables.push(HomeassistantServiceMap.decode(reader, reader.uint32()));
                     break;
                 case 5:
                     message.isEvent = reader.bool();
@@ -5258,9 +4733,7 @@ export const HomeassistantServiceResponse = {
         return message;
     },
     fromJSON(object: any): HomeassistantServiceResponse {
-        const message = Object.create(
-            baseHomeassistantServiceResponse,
-        ) as HomeassistantServiceResponse;
+        const message = Object.create(baseHomeassistantServiceResponse) as HomeassistantServiceResponse;
         message.data = [];
         message.dataTemplate = [];
         message.variables = [];
@@ -5291,12 +4764,8 @@ export const HomeassistantServiceResponse = {
         }
         return message;
     },
-    fromPartial(
-        object: DeepPartial<HomeassistantServiceResponse>,
-    ): HomeassistantServiceResponse {
-        const message = Object.create(
-            baseHomeassistantServiceResponse,
-        ) as HomeassistantServiceResponse;
+    fromPartial(object: DeepPartial<HomeassistantServiceResponse>): HomeassistantServiceResponse {
+        const message = Object.create(baseHomeassistantServiceResponse) as HomeassistantServiceResponse;
         message.data = [];
         message.dataTemplate = [];
         message.variables = [];
@@ -5312,9 +4781,7 @@ export const HomeassistantServiceResponse = {
         }
         if (object.dataTemplate !== undefined && object.dataTemplate !== null) {
             for (const e of object.dataTemplate) {
-                message.dataTemplate.push(
-                    HomeassistantServiceMap.fromPartial(e),
-                );
+                message.dataTemplate.push(HomeassistantServiceMap.fromPartial(e));
             }
         }
         if (object.variables !== undefined && object.variables !== null) {
@@ -5333,23 +4800,17 @@ export const HomeassistantServiceResponse = {
         const obj: any = {};
         obj.service = message.service || '';
         if (message.data) {
-            obj.data = message.data.map((e) =>
-                e ? HomeassistantServiceMap.toJSON(e) : undefined,
-            );
+            obj.data = message.data.map((e) => (e ? HomeassistantServiceMap.toJSON(e) : undefined));
         } else {
             obj.data = [];
         }
         if (message.dataTemplate) {
-            obj.dataTemplate = message.dataTemplate.map((e) =>
-                e ? HomeassistantServiceMap.toJSON(e) : undefined,
-            );
+            obj.dataTemplate = message.dataTemplate.map((e) => (e ? HomeassistantServiceMap.toJSON(e) : undefined));
         } else {
             obj.dataTemplate = [];
         }
         if (message.variables) {
-            obj.variables = message.variables.map((e) =>
-                e ? HomeassistantServiceMap.toJSON(e) : undefined,
-            );
+            obj.variables = message.variables.map((e) => (e ? HomeassistantServiceMap.toJSON(e) : undefined));
         } else {
             obj.variables = [];
         }
@@ -5359,20 +4820,12 @@ export const HomeassistantServiceResponse = {
 };
 
 export const SubscribeHomeAssistantStatesRequest = {
-    encode(
-        message: SubscribeHomeAssistantStatesRequest,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: SubscribeHomeAssistantStatesRequest, writer: Writer = Writer.create()): Writer {
         return writer;
     },
-    decode(
-        reader: Reader,
-        length?: number,
-    ): SubscribeHomeAssistantStatesRequest {
+    decode(reader: Reader, length?: number): SubscribeHomeAssistantStatesRequest {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseSubscribeHomeAssistantStatesRequest,
-        ) as SubscribeHomeAssistantStatesRequest;
+        const message = Object.create(baseSubscribeHomeAssistantStatesRequest) as SubscribeHomeAssistantStatesRequest;
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
@@ -5384,17 +4837,11 @@ export const SubscribeHomeAssistantStatesRequest = {
         return message;
     },
     fromJSON(object: any): SubscribeHomeAssistantStatesRequest {
-        const message = Object.create(
-            baseSubscribeHomeAssistantStatesRequest,
-        ) as SubscribeHomeAssistantStatesRequest;
+        const message = Object.create(baseSubscribeHomeAssistantStatesRequest) as SubscribeHomeAssistantStatesRequest;
         return message;
     },
-    fromPartial(
-        object: DeepPartial<SubscribeHomeAssistantStatesRequest>,
-    ): SubscribeHomeAssistantStatesRequest {
-        const message = Object.create(
-            baseSubscribeHomeAssistantStatesRequest,
-        ) as SubscribeHomeAssistantStatesRequest;
+    fromPartial(object: DeepPartial<SubscribeHomeAssistantStatesRequest>): SubscribeHomeAssistantStatesRequest {
+        const message = Object.create(baseSubscribeHomeAssistantStatesRequest) as SubscribeHomeAssistantStatesRequest;
         return message;
     },
     toJSON(message: SubscribeHomeAssistantStatesRequest): unknown {
@@ -5404,21 +4851,13 @@ export const SubscribeHomeAssistantStatesRequest = {
 };
 
 export const SubscribeHomeAssistantStateResponse = {
-    encode(
-        message: SubscribeHomeAssistantStateResponse,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: SubscribeHomeAssistantStateResponse, writer: Writer = Writer.create()): Writer {
         writer.uint32(10).string(message.entityId);
         return writer;
     },
-    decode(
-        reader: Reader,
-        length?: number,
-    ): SubscribeHomeAssistantStateResponse {
+    decode(reader: Reader, length?: number): SubscribeHomeAssistantStateResponse {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseSubscribeHomeAssistantStateResponse,
-        ) as SubscribeHomeAssistantStateResponse;
+        const message = Object.create(baseSubscribeHomeAssistantStateResponse) as SubscribeHomeAssistantStateResponse;
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
@@ -5433,9 +4872,7 @@ export const SubscribeHomeAssistantStateResponse = {
         return message;
     },
     fromJSON(object: any): SubscribeHomeAssistantStateResponse {
-        const message = Object.create(
-            baseSubscribeHomeAssistantStateResponse,
-        ) as SubscribeHomeAssistantStateResponse;
+        const message = Object.create(baseSubscribeHomeAssistantStateResponse) as SubscribeHomeAssistantStateResponse;
         if (object.entityId !== undefined && object.entityId !== null) {
             message.entityId = String(object.entityId);
         } else {
@@ -5443,12 +4880,8 @@ export const SubscribeHomeAssistantStateResponse = {
         }
         return message;
     },
-    fromPartial(
-        object: DeepPartial<SubscribeHomeAssistantStateResponse>,
-    ): SubscribeHomeAssistantStateResponse {
-        const message = Object.create(
-            baseSubscribeHomeAssistantStateResponse,
-        ) as SubscribeHomeAssistantStateResponse;
+    fromPartial(object: DeepPartial<SubscribeHomeAssistantStateResponse>): SubscribeHomeAssistantStateResponse {
+        const message = Object.create(baseSubscribeHomeAssistantStateResponse) as SubscribeHomeAssistantStateResponse;
         if (object.entityId !== undefined && object.entityId !== null) {
             message.entityId = object.entityId;
         } else {
@@ -5464,19 +4897,14 @@ export const SubscribeHomeAssistantStateResponse = {
 };
 
 export const HomeAssistantStateResponse = {
-    encode(
-        message: HomeAssistantStateResponse,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: HomeAssistantStateResponse, writer: Writer = Writer.create()): Writer {
         writer.uint32(10).string(message.entityId);
         writer.uint32(18).string(message.state);
         return writer;
     },
     decode(reader: Reader, length?: number): HomeAssistantStateResponse {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseHomeAssistantStateResponse,
-        ) as HomeAssistantStateResponse;
+        const message = Object.create(baseHomeAssistantStateResponse) as HomeAssistantStateResponse;
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
@@ -5494,9 +4922,7 @@ export const HomeAssistantStateResponse = {
         return message;
     },
     fromJSON(object: any): HomeAssistantStateResponse {
-        const message = Object.create(
-            baseHomeAssistantStateResponse,
-        ) as HomeAssistantStateResponse;
+        const message = Object.create(baseHomeAssistantStateResponse) as HomeAssistantStateResponse;
         if (object.entityId !== undefined && object.entityId !== null) {
             message.entityId = String(object.entityId);
         } else {
@@ -5509,12 +4935,8 @@ export const HomeAssistantStateResponse = {
         }
         return message;
     },
-    fromPartial(
-        object: DeepPartial<HomeAssistantStateResponse>,
-    ): HomeAssistantStateResponse {
-        const message = Object.create(
-            baseHomeAssistantStateResponse,
-        ) as HomeAssistantStateResponse;
+    fromPartial(object: DeepPartial<HomeAssistantStateResponse>): HomeAssistantStateResponse {
+        const message = Object.create(baseHomeAssistantStateResponse) as HomeAssistantStateResponse;
         if (object.entityId !== undefined && object.entityId !== null) {
             message.entityId = object.entityId;
         } else {
@@ -5613,19 +5035,14 @@ export const GetTimeResponse = {
 };
 
 export const ListEntitiesServicesArgument = {
-    encode(
-        message: ListEntitiesServicesArgument,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: ListEntitiesServicesArgument, writer: Writer = Writer.create()): Writer {
         writer.uint32(10).string(message.name);
         writer.uint32(16).int32(message.type);
         return writer;
     },
     decode(reader: Reader, length?: number): ListEntitiesServicesArgument {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseListEntitiesServicesArgument,
-        ) as ListEntitiesServicesArgument;
+        const message = Object.create(baseListEntitiesServicesArgument) as ListEntitiesServicesArgument;
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
@@ -5643,9 +5060,7 @@ export const ListEntitiesServicesArgument = {
         return message;
     },
     fromJSON(object: any): ListEntitiesServicesArgument {
-        const message = Object.create(
-            baseListEntitiesServicesArgument,
-        ) as ListEntitiesServicesArgument;
+        const message = Object.create(baseListEntitiesServicesArgument) as ListEntitiesServicesArgument;
         if (object.name !== undefined && object.name !== null) {
             message.name = String(object.name);
         } else {
@@ -5658,12 +5073,8 @@ export const ListEntitiesServicesArgument = {
         }
         return message;
     },
-    fromPartial(
-        object: DeepPartial<ListEntitiesServicesArgument>,
-    ): ListEntitiesServicesArgument {
-        const message = Object.create(
-            baseListEntitiesServicesArgument,
-        ) as ListEntitiesServicesArgument;
+    fromPartial(object: DeepPartial<ListEntitiesServicesArgument>): ListEntitiesServicesArgument {
+        const message = Object.create(baseListEntitiesServicesArgument) as ListEntitiesServicesArgument;
         if (object.name !== undefined && object.name !== null) {
             message.name = object.name;
         } else {
@@ -5685,25 +5096,17 @@ export const ListEntitiesServicesArgument = {
 };
 
 export const ListEntitiesServicesResponse = {
-    encode(
-        message: ListEntitiesServicesResponse,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: ListEntitiesServicesResponse, writer: Writer = Writer.create()): Writer {
         writer.uint32(10).string(message.name);
         writer.uint32(21).fixed32(message.key);
         for (const v of message.args) {
-            ListEntitiesServicesArgument.encode(
-                v!,
-                writer.uint32(26).fork(),
-            ).ldelim();
+            ListEntitiesServicesArgument.encode(v!, writer.uint32(26).fork()).ldelim();
         }
         return writer;
     },
     decode(reader: Reader, length?: number): ListEntitiesServicesResponse {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseListEntitiesServicesResponse,
-        ) as ListEntitiesServicesResponse;
+        const message = Object.create(baseListEntitiesServicesResponse) as ListEntitiesServicesResponse;
         message.args = [];
         while (reader.pos < end) {
             const tag = reader.uint32();
@@ -5715,12 +5118,7 @@ export const ListEntitiesServicesResponse = {
                     message.key = reader.fixed32();
                     break;
                 case 3:
-                    message.args.push(
-                        ListEntitiesServicesArgument.decode(
-                            reader,
-                            reader.uint32(),
-                        ),
-                    );
+                    message.args.push(ListEntitiesServicesArgument.decode(reader, reader.uint32()));
                     break;
                 default:
                     reader.skipType(tag & 7);
@@ -5730,9 +5128,7 @@ export const ListEntitiesServicesResponse = {
         return message;
     },
     fromJSON(object: any): ListEntitiesServicesResponse {
-        const message = Object.create(
-            baseListEntitiesServicesResponse,
-        ) as ListEntitiesServicesResponse;
+        const message = Object.create(baseListEntitiesServicesResponse) as ListEntitiesServicesResponse;
         message.args = [];
         if (object.name !== undefined && object.name !== null) {
             message.name = String(object.name);
@@ -5751,12 +5147,8 @@ export const ListEntitiesServicesResponse = {
         }
         return message;
     },
-    fromPartial(
-        object: DeepPartial<ListEntitiesServicesResponse>,
-    ): ListEntitiesServicesResponse {
-        const message = Object.create(
-            baseListEntitiesServicesResponse,
-        ) as ListEntitiesServicesResponse;
+    fromPartial(object: DeepPartial<ListEntitiesServicesResponse>): ListEntitiesServicesResponse {
+        const message = Object.create(baseListEntitiesServicesResponse) as ListEntitiesServicesResponse;
         message.args = [];
         if (object.name !== undefined && object.name !== null) {
             message.name = object.name;
@@ -5780,9 +5172,7 @@ export const ListEntitiesServicesResponse = {
         obj.name = message.name || '';
         obj.key = message.key || 0;
         if (message.args) {
-            obj.args = message.args.map((e) =>
-                e ? ListEntitiesServicesArgument.toJSON(e) : undefined,
-            );
+            obj.args = message.args.map((e) => (e ? ListEntitiesServicesArgument.toJSON(e) : undefined));
         } else {
             obj.args = [];
         }
@@ -5791,10 +5181,7 @@ export const ListEntitiesServicesResponse = {
 };
 
 export const ExecuteServiceArgument = {
-    encode(
-        message: ExecuteServiceArgument,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: ExecuteServiceArgument, writer: Writer = Writer.create()): Writer {
         writer.uint32(8).bool(message.bool_);
         writer.uint32(16).int32(message.legacyInt);
         writer.uint32(29).float(message.float_);
@@ -5822,9 +5209,7 @@ export const ExecuteServiceArgument = {
     },
     decode(reader: Reader, length?: number): ExecuteServiceArgument {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseExecuteServiceArgument,
-        ) as ExecuteServiceArgument;
+        const message = Object.create(baseExecuteServiceArgument) as ExecuteServiceArgument;
         message.boolArray = [];
         message.intArray = [];
         message.floatArray = [];
@@ -5888,9 +5273,7 @@ export const ExecuteServiceArgument = {
         return message;
     },
     fromJSON(object: any): ExecuteServiceArgument {
-        const message = Object.create(
-            baseExecuteServiceArgument,
-        ) as ExecuteServiceArgument;
+        const message = Object.create(baseExecuteServiceArgument) as ExecuteServiceArgument;
         message.boolArray = [];
         message.intArray = [];
         message.floatArray = [];
@@ -5942,12 +5325,8 @@ export const ExecuteServiceArgument = {
         }
         return message;
     },
-    fromPartial(
-        object: DeepPartial<ExecuteServiceArgument>,
-    ): ExecuteServiceArgument {
-        const message = Object.create(
-            baseExecuteServiceArgument,
-        ) as ExecuteServiceArgument;
+    fromPartial(object: DeepPartial<ExecuteServiceArgument>): ExecuteServiceArgument {
+        const message = Object.create(baseExecuteServiceArgument) as ExecuteServiceArgument;
         message.boolArray = [];
         message.intArray = [];
         message.floatArray = [];
@@ -6031,24 +5410,16 @@ export const ExecuteServiceArgument = {
 };
 
 export const ExecuteServiceRequest = {
-    encode(
-        message: ExecuteServiceRequest,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: ExecuteServiceRequest, writer: Writer = Writer.create()): Writer {
         writer.uint32(13).fixed32(message.key);
         for (const v of message.args) {
-            ExecuteServiceArgument.encode(
-                v!,
-                writer.uint32(18).fork(),
-            ).ldelim();
+            ExecuteServiceArgument.encode(v!, writer.uint32(18).fork()).ldelim();
         }
         return writer;
     },
     decode(reader: Reader, length?: number): ExecuteServiceRequest {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseExecuteServiceRequest,
-        ) as ExecuteServiceRequest;
+        const message = Object.create(baseExecuteServiceRequest) as ExecuteServiceRequest;
         message.args = [];
         while (reader.pos < end) {
             const tag = reader.uint32();
@@ -6057,9 +5428,7 @@ export const ExecuteServiceRequest = {
                     message.key = reader.fixed32();
                     break;
                 case 2:
-                    message.args.push(
-                        ExecuteServiceArgument.decode(reader, reader.uint32()),
-                    );
+                    message.args.push(ExecuteServiceArgument.decode(reader, reader.uint32()));
                     break;
                 default:
                     reader.skipType(tag & 7);
@@ -6069,9 +5438,7 @@ export const ExecuteServiceRequest = {
         return message;
     },
     fromJSON(object: any): ExecuteServiceRequest {
-        const message = Object.create(
-            baseExecuteServiceRequest,
-        ) as ExecuteServiceRequest;
+        const message = Object.create(baseExecuteServiceRequest) as ExecuteServiceRequest;
         message.args = [];
         if (object.key !== undefined && object.key !== null) {
             message.key = Number(object.key);
@@ -6085,12 +5452,8 @@ export const ExecuteServiceRequest = {
         }
         return message;
     },
-    fromPartial(
-        object: DeepPartial<ExecuteServiceRequest>,
-    ): ExecuteServiceRequest {
-        const message = Object.create(
-            baseExecuteServiceRequest,
-        ) as ExecuteServiceRequest;
+    fromPartial(object: DeepPartial<ExecuteServiceRequest>): ExecuteServiceRequest {
+        const message = Object.create(baseExecuteServiceRequest) as ExecuteServiceRequest;
         message.args = [];
         if (object.key !== undefined && object.key !== null) {
             message.key = object.key;
@@ -6108,9 +5471,7 @@ export const ExecuteServiceRequest = {
         const obj: any = {};
         obj.key = message.key || 0;
         if (message.args) {
-            obj.args = message.args.map((e) =>
-                e ? ExecuteServiceArgument.toJSON(e) : undefined,
-            );
+            obj.args = message.args.map((e) => (e ? ExecuteServiceArgument.toJSON(e) : undefined));
         } else {
             obj.args = [];
         }
@@ -6119,10 +5480,7 @@ export const ExecuteServiceRequest = {
 };
 
 export const ListEntitiesCameraResponse = {
-    encode(
-        message: ListEntitiesCameraResponse,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: ListEntitiesCameraResponse, writer: Writer = Writer.create()): Writer {
         writer.uint32(10).string(message.objectId);
         writer.uint32(21).fixed32(message.key);
         writer.uint32(26).string(message.name);
@@ -6131,9 +5489,7 @@ export const ListEntitiesCameraResponse = {
     },
     decode(reader: Reader, length?: number): ListEntitiesCameraResponse {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseListEntitiesCameraResponse,
-        ) as ListEntitiesCameraResponse;
+        const message = Object.create(baseListEntitiesCameraResponse) as ListEntitiesCameraResponse;
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
@@ -6157,9 +5513,7 @@ export const ListEntitiesCameraResponse = {
         return message;
     },
     fromJSON(object: any): ListEntitiesCameraResponse {
-        const message = Object.create(
-            baseListEntitiesCameraResponse,
-        ) as ListEntitiesCameraResponse;
+        const message = Object.create(baseListEntitiesCameraResponse) as ListEntitiesCameraResponse;
         if (object.objectId !== undefined && object.objectId !== null) {
             message.objectId = String(object.objectId);
         } else {
@@ -6182,12 +5536,8 @@ export const ListEntitiesCameraResponse = {
         }
         return message;
     },
-    fromPartial(
-        object: DeepPartial<ListEntitiesCameraResponse>,
-    ): ListEntitiesCameraResponse {
-        const message = Object.create(
-            baseListEntitiesCameraResponse,
-        ) as ListEntitiesCameraResponse;
+    fromPartial(object: DeepPartial<ListEntitiesCameraResponse>): ListEntitiesCameraResponse {
+        const message = Object.create(baseListEntitiesCameraResponse) as ListEntitiesCameraResponse;
         if (object.objectId !== undefined && object.objectId !== null) {
             message.objectId = object.objectId;
         } else {
@@ -6221,10 +5571,7 @@ export const ListEntitiesCameraResponse = {
 };
 
 export const CameraImageResponse = {
-    encode(
-        message: CameraImageResponse,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: CameraImageResponse, writer: Writer = Writer.create()): Writer {
         writer.uint32(13).fixed32(message.key);
         writer.uint32(18).bytes(message.data);
         writer.uint32(24).bool(message.done);
@@ -6232,9 +5579,7 @@ export const CameraImageResponse = {
     },
     decode(reader: Reader, length?: number): CameraImageResponse {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseCameraImageResponse,
-        ) as CameraImageResponse;
+        const message = Object.create(baseCameraImageResponse) as CameraImageResponse;
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
@@ -6255,9 +5600,7 @@ export const CameraImageResponse = {
         return message;
     },
     fromJSON(object: any): CameraImageResponse {
-        const message = Object.create(
-            baseCameraImageResponse,
-        ) as CameraImageResponse;
+        const message = Object.create(baseCameraImageResponse) as CameraImageResponse;
         if (object.key !== undefined && object.key !== null) {
             message.key = Number(object.key);
         } else {
@@ -6274,9 +5617,7 @@ export const CameraImageResponse = {
         return message;
     },
     fromPartial(object: DeepPartial<CameraImageResponse>): CameraImageResponse {
-        const message = Object.create(
-            baseCameraImageResponse,
-        ) as CameraImageResponse;
+        const message = Object.create(baseCameraImageResponse) as CameraImageResponse;
         if (object.key !== undefined && object.key !== null) {
             message.key = object.key;
         } else {
@@ -6302,19 +5643,14 @@ export const CameraImageResponse = {
 };
 
 export const CameraImageRequest = {
-    encode(
-        message: CameraImageRequest,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: CameraImageRequest, writer: Writer = Writer.create()): Writer {
         writer.uint32(8).bool(message.single);
         writer.uint32(16).bool(message.stream);
         return writer;
     },
     decode(reader: Reader, length?: number): CameraImageRequest {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseCameraImageRequest,
-        ) as CameraImageRequest;
+        const message = Object.create(baseCameraImageRequest) as CameraImageRequest;
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
@@ -6332,9 +5668,7 @@ export const CameraImageRequest = {
         return message;
     },
     fromJSON(object: any): CameraImageRequest {
-        const message = Object.create(
-            baseCameraImageRequest,
-        ) as CameraImageRequest;
+        const message = Object.create(baseCameraImageRequest) as CameraImageRequest;
         if (object.single !== undefined && object.single !== null) {
             message.single = Boolean(object.single);
         } else {
@@ -6348,9 +5682,7 @@ export const CameraImageRequest = {
         return message;
     },
     fromPartial(object: DeepPartial<CameraImageRequest>): CameraImageRequest {
-        const message = Object.create(
-            baseCameraImageRequest,
-        ) as CameraImageRequest;
+        const message = Object.create(baseCameraImageRequest) as CameraImageRequest;
         if (object.single !== undefined && object.single !== null) {
             message.single = object.single;
         } else {
@@ -6372,10 +5704,7 @@ export const CameraImageRequest = {
 };
 
 export const ListEntitiesClimateResponse = {
-    encode(
-        message: ListEntitiesClimateResponse,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: ListEntitiesClimateResponse, writer: Writer = Writer.create()): Writer {
         writer.uint32(10).string(message.objectId);
         writer.uint32(21).fixed32(message.key);
         writer.uint32(26).string(message.name);
@@ -6406,9 +5735,7 @@ export const ListEntitiesClimateResponse = {
     },
     decode(reader: Reader, length?: number): ListEntitiesClimateResponse {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseListEntitiesClimateResponse,
-        ) as ListEntitiesClimateResponse;
+        const message = Object.create(baseListEntitiesClimateResponse) as ListEntitiesClimateResponse;
         message.supportedModes = [];
         message.supportedFanModes = [];
         message.supportedSwingModes = [];
@@ -6462,9 +5789,7 @@ export const ListEntitiesClimateResponse = {
                     if ((tag & 7) === 2) {
                         const end2 = reader.uint32() + reader.pos;
                         while (reader.pos < end2) {
-                            message.supportedFanModes.push(
-                                reader.int32() as any,
-                            );
+                            message.supportedFanModes.push(reader.int32() as any);
                         }
                     } else {
                         message.supportedFanModes.push(reader.int32() as any);
@@ -6474,9 +5799,7 @@ export const ListEntitiesClimateResponse = {
                     if ((tag & 7) === 2) {
                         const end2 = reader.uint32() + reader.pos;
                         while (reader.pos < end2) {
-                            message.supportedSwingModes.push(
-                                reader.int32() as any,
-                            );
+                            message.supportedSwingModes.push(reader.int32() as any);
                         }
                     } else {
                         message.supportedSwingModes.push(reader.int32() as any);
@@ -6490,9 +5813,7 @@ export const ListEntitiesClimateResponse = {
         return message;
     },
     fromJSON(object: any): ListEntitiesClimateResponse {
-        const message = Object.create(
-            baseListEntitiesClimateResponse,
-        ) as ListEntitiesClimateResponse;
+        const message = Object.create(baseListEntitiesClimateResponse) as ListEntitiesClimateResponse;
         message.supportedModes = [];
         message.supportedFanModes = [];
         message.supportedSwingModes = [];
@@ -6516,13 +5837,8 @@ export const ListEntitiesClimateResponse = {
         } else {
             message.uniqueId = '';
         }
-        if (
-            object.supportsCurrentTemperature !== undefined &&
-            object.supportsCurrentTemperature !== null
-        ) {
-            message.supportsCurrentTemperature = Boolean(
-                object.supportsCurrentTemperature,
-            );
+        if (object.supportsCurrentTemperature !== undefined && object.supportsCurrentTemperature !== null) {
+            message.supportsCurrentTemperature = Boolean(object.supportsCurrentTemperature);
         } else {
             message.supportsCurrentTemperature = false;
         }
@@ -6530,43 +5846,27 @@ export const ListEntitiesClimateResponse = {
             object.supportsTwoPointTargetTemperature !== undefined &&
             object.supportsTwoPointTargetTemperature !== null
         ) {
-            message.supportsTwoPointTargetTemperature = Boolean(
-                object.supportsTwoPointTargetTemperature,
-            );
+            message.supportsTwoPointTargetTemperature = Boolean(object.supportsTwoPointTargetTemperature);
         } else {
             message.supportsTwoPointTargetTemperature = false;
         }
-        if (
-            object.supportedModes !== undefined &&
-            object.supportedModes !== null
-        ) {
+        if (object.supportedModes !== undefined && object.supportedModes !== null) {
             for (const e of object.supportedModes) {
                 message.supportedModes.push(ClimateMode.fromJSON(e));
             }
         }
-        if (
-            object.visualMinTemperature !== undefined &&
-            object.visualMinTemperature !== null
-        ) {
+        if (object.visualMinTemperature !== undefined && object.visualMinTemperature !== null) {
             message.visualMinTemperature = Number(object.visualMinTemperature);
         } else {
             message.visualMinTemperature = 0;
         }
-        if (
-            object.visualMaxTemperature !== undefined &&
-            object.visualMaxTemperature !== null
-        ) {
+        if (object.visualMaxTemperature !== undefined && object.visualMaxTemperature !== null) {
             message.visualMaxTemperature = Number(object.visualMaxTemperature);
         } else {
             message.visualMaxTemperature = 0;
         }
-        if (
-            object.visualTemperatureStep !== undefined &&
-            object.visualTemperatureStep !== null
-        ) {
-            message.visualTemperatureStep = Number(
-                object.visualTemperatureStep,
-            );
+        if (object.visualTemperatureStep !== undefined && object.visualTemperatureStep !== null) {
+            message.visualTemperatureStep = Number(object.visualTemperatureStep);
         } else {
             message.visualTemperatureStep = 0;
         }
@@ -6575,38 +5875,25 @@ export const ListEntitiesClimateResponse = {
         } else {
             message.supportsAway = false;
         }
-        if (
-            object.supportsAction !== undefined &&
-            object.supportsAction !== null
-        ) {
+        if (object.supportsAction !== undefined && object.supportsAction !== null) {
             message.supportsAction = Boolean(object.supportsAction);
         } else {
             message.supportsAction = false;
         }
-        if (
-            object.supportedFanModes !== undefined &&
-            object.supportedFanModes !== null
-        ) {
+        if (object.supportedFanModes !== undefined && object.supportedFanModes !== null) {
             for (const e of object.supportedFanModes) {
                 message.supportedFanModes.push(ClimateFanMode.fromJSON(e));
             }
         }
-        if (
-            object.supportedSwingModes !== undefined &&
-            object.supportedSwingModes !== null
-        ) {
+        if (object.supportedSwingModes !== undefined && object.supportedSwingModes !== null) {
             for (const e of object.supportedSwingModes) {
                 message.supportedSwingModes.push(ClimateSwingMode.fromJSON(e));
             }
         }
         return message;
     },
-    fromPartial(
-        object: DeepPartial<ListEntitiesClimateResponse>,
-    ): ListEntitiesClimateResponse {
-        const message = Object.create(
-            baseListEntitiesClimateResponse,
-        ) as ListEntitiesClimateResponse;
+    fromPartial(object: DeepPartial<ListEntitiesClimateResponse>): ListEntitiesClimateResponse {
+        const message = Object.create(baseListEntitiesClimateResponse) as ListEntitiesClimateResponse;
         message.supportedModes = [];
         message.supportedFanModes = [];
         message.supportedSwingModes = [];
@@ -6630,12 +5917,8 @@ export const ListEntitiesClimateResponse = {
         } else {
             message.uniqueId = '';
         }
-        if (
-            object.supportsCurrentTemperature !== undefined &&
-            object.supportsCurrentTemperature !== null
-        ) {
-            message.supportsCurrentTemperature =
-                object.supportsCurrentTemperature;
+        if (object.supportsCurrentTemperature !== undefined && object.supportsCurrentTemperature !== null) {
+            message.supportsCurrentTemperature = object.supportsCurrentTemperature;
         } else {
             message.supportsCurrentTemperature = false;
         }
@@ -6643,39 +5926,26 @@ export const ListEntitiesClimateResponse = {
             object.supportsTwoPointTargetTemperature !== undefined &&
             object.supportsTwoPointTargetTemperature !== null
         ) {
-            message.supportsTwoPointTargetTemperature =
-                object.supportsTwoPointTargetTemperature;
+            message.supportsTwoPointTargetTemperature = object.supportsTwoPointTargetTemperature;
         } else {
             message.supportsTwoPointTargetTemperature = false;
         }
-        if (
-            object.supportedModes !== undefined &&
-            object.supportedModes !== null
-        ) {
+        if (object.supportedModes !== undefined && object.supportedModes !== null) {
             for (const e of object.supportedModes) {
                 message.supportedModes.push(e);
             }
         }
-        if (
-            object.visualMinTemperature !== undefined &&
-            object.visualMinTemperature !== null
-        ) {
+        if (object.visualMinTemperature !== undefined && object.visualMinTemperature !== null) {
             message.visualMinTemperature = object.visualMinTemperature;
         } else {
             message.visualMinTemperature = 0;
         }
-        if (
-            object.visualMaxTemperature !== undefined &&
-            object.visualMaxTemperature !== null
-        ) {
+        if (object.visualMaxTemperature !== undefined && object.visualMaxTemperature !== null) {
             message.visualMaxTemperature = object.visualMaxTemperature;
         } else {
             message.visualMaxTemperature = 0;
         }
-        if (
-            object.visualTemperatureStep !== undefined &&
-            object.visualTemperatureStep !== null
-        ) {
+        if (object.visualTemperatureStep !== undefined && object.visualTemperatureStep !== null) {
             message.visualTemperatureStep = object.visualTemperatureStep;
         } else {
             message.visualTemperatureStep = 0;
@@ -6685,26 +5955,17 @@ export const ListEntitiesClimateResponse = {
         } else {
             message.supportsAway = false;
         }
-        if (
-            object.supportsAction !== undefined &&
-            object.supportsAction !== null
-        ) {
+        if (object.supportsAction !== undefined && object.supportsAction !== null) {
             message.supportsAction = object.supportsAction;
         } else {
             message.supportsAction = false;
         }
-        if (
-            object.supportedFanModes !== undefined &&
-            object.supportedFanModes !== null
-        ) {
+        if (object.supportedFanModes !== undefined && object.supportedFanModes !== null) {
             for (const e of object.supportedFanModes) {
                 message.supportedFanModes.push(e);
             }
         }
-        if (
-            object.supportedSwingModes !== undefined &&
-            object.supportedSwingModes !== null
-        ) {
+        if (object.supportedSwingModes !== undefined && object.supportedSwingModes !== null) {
             for (const e of object.supportedSwingModes) {
                 message.supportedSwingModes.push(e);
             }
@@ -6717,14 +5978,10 @@ export const ListEntitiesClimateResponse = {
         obj.key = message.key || 0;
         obj.name = message.name || '';
         obj.uniqueId = message.uniqueId || '';
-        obj.supportsCurrentTemperature =
-            message.supportsCurrentTemperature || false;
-        obj.supportsTwoPointTargetTemperature =
-            message.supportsTwoPointTargetTemperature || false;
+        obj.supportsCurrentTemperature = message.supportsCurrentTemperature || false;
+        obj.supportsTwoPointTargetTemperature = message.supportsTwoPointTargetTemperature || false;
         if (message.supportedModes) {
-            obj.supportedModes = message.supportedModes.map((e) =>
-                ClimateMode.toJSON(e),
-            );
+            obj.supportedModes = message.supportedModes.map((e) => ClimateMode.toJSON(e));
         } else {
             obj.supportedModes = [];
         }
@@ -6734,16 +5991,12 @@ export const ListEntitiesClimateResponse = {
         obj.supportsAway = message.supportsAway || false;
         obj.supportsAction = message.supportsAction || false;
         if (message.supportedFanModes) {
-            obj.supportedFanModes = message.supportedFanModes.map((e) =>
-                ClimateFanMode.toJSON(e),
-            );
+            obj.supportedFanModes = message.supportedFanModes.map((e) => ClimateFanMode.toJSON(e));
         } else {
             obj.supportedFanModes = [];
         }
         if (message.supportedSwingModes) {
-            obj.supportedSwingModes = message.supportedSwingModes.map((e) =>
-                ClimateSwingMode.toJSON(e),
-            );
+            obj.supportedSwingModes = message.supportedSwingModes.map((e) => ClimateSwingMode.toJSON(e));
         } else {
             obj.supportedSwingModes = [];
         }
@@ -6752,10 +6005,7 @@ export const ListEntitiesClimateResponse = {
 };
 
 export const ClimateStateResponse = {
-    encode(
-        message: ClimateStateResponse,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: ClimateStateResponse, writer: Writer = Writer.create()): Writer {
         writer.uint32(13).fixed32(message.key);
         writer.uint32(16).int32(message.mode);
         writer.uint32(29).float(message.currentTemperature);
@@ -6770,9 +6020,7 @@ export const ClimateStateResponse = {
     },
     decode(reader: Reader, length?: number): ClimateStateResponse {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseClimateStateResponse,
-        ) as ClimateStateResponse;
+        const message = Object.create(baseClimateStateResponse) as ClimateStateResponse;
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
@@ -6814,9 +6062,7 @@ export const ClimateStateResponse = {
         return message;
     },
     fromJSON(object: any): ClimateStateResponse {
-        const message = Object.create(
-            baseClimateStateResponse,
-        ) as ClimateStateResponse;
+        const message = Object.create(baseClimateStateResponse) as ClimateStateResponse;
         if (object.key !== undefined && object.key !== null) {
             message.key = Number(object.key);
         } else {
@@ -6827,37 +6073,23 @@ export const ClimateStateResponse = {
         } else {
             message.mode = 0;
         }
-        if (
-            object.currentTemperature !== undefined &&
-            object.currentTemperature !== null
-        ) {
+        if (object.currentTemperature !== undefined && object.currentTemperature !== null) {
             message.currentTemperature = Number(object.currentTemperature);
         } else {
             message.currentTemperature = 0;
         }
-        if (
-            object.targetTemperature !== undefined &&
-            object.targetTemperature !== null
-        ) {
+        if (object.targetTemperature !== undefined && object.targetTemperature !== null) {
             message.targetTemperature = Number(object.targetTemperature);
         } else {
             message.targetTemperature = 0;
         }
-        if (
-            object.targetTemperatureLow !== undefined &&
-            object.targetTemperatureLow !== null
-        ) {
+        if (object.targetTemperatureLow !== undefined && object.targetTemperatureLow !== null) {
             message.targetTemperatureLow = Number(object.targetTemperatureLow);
         } else {
             message.targetTemperatureLow = 0;
         }
-        if (
-            object.targetTemperatureHigh !== undefined &&
-            object.targetTemperatureHigh !== null
-        ) {
-            message.targetTemperatureHigh = Number(
-                object.targetTemperatureHigh,
-            );
+        if (object.targetTemperatureHigh !== undefined && object.targetTemperatureHigh !== null) {
+            message.targetTemperatureHigh = Number(object.targetTemperatureHigh);
         } else {
             message.targetTemperatureHigh = 0;
         }
@@ -6883,12 +6115,8 @@ export const ClimateStateResponse = {
         }
         return message;
     },
-    fromPartial(
-        object: DeepPartial<ClimateStateResponse>,
-    ): ClimateStateResponse {
-        const message = Object.create(
-            baseClimateStateResponse,
-        ) as ClimateStateResponse;
+    fromPartial(object: DeepPartial<ClimateStateResponse>): ClimateStateResponse {
+        const message = Object.create(baseClimateStateResponse) as ClimateStateResponse;
         if (object.key !== undefined && object.key !== null) {
             message.key = object.key;
         } else {
@@ -6899,34 +6127,22 @@ export const ClimateStateResponse = {
         } else {
             message.mode = 0;
         }
-        if (
-            object.currentTemperature !== undefined &&
-            object.currentTemperature !== null
-        ) {
+        if (object.currentTemperature !== undefined && object.currentTemperature !== null) {
             message.currentTemperature = object.currentTemperature;
         } else {
             message.currentTemperature = 0;
         }
-        if (
-            object.targetTemperature !== undefined &&
-            object.targetTemperature !== null
-        ) {
+        if (object.targetTemperature !== undefined && object.targetTemperature !== null) {
             message.targetTemperature = object.targetTemperature;
         } else {
             message.targetTemperature = 0;
         }
-        if (
-            object.targetTemperatureLow !== undefined &&
-            object.targetTemperatureLow !== null
-        ) {
+        if (object.targetTemperatureLow !== undefined && object.targetTemperatureLow !== null) {
             message.targetTemperatureLow = object.targetTemperatureLow;
         } else {
             message.targetTemperatureLow = 0;
         }
-        if (
-            object.targetTemperatureHigh !== undefined &&
-            object.targetTemperatureHigh !== null
-        ) {
+        if (object.targetTemperatureHigh !== undefined && object.targetTemperatureHigh !== null) {
             message.targetTemperatureHigh = object.targetTemperatureHigh;
         } else {
             message.targetTemperatureHigh = 0;
@@ -6970,10 +6186,7 @@ export const ClimateStateResponse = {
 };
 
 export const ClimateCommandRequest = {
-    encode(
-        message: ClimateCommandRequest,
-        writer: Writer = Writer.create(),
-    ): Writer {
+    encode(message: ClimateCommandRequest, writer: Writer = Writer.create()): Writer {
         writer.uint32(13).fixed32(message.key);
         writer.uint32(16).bool(message.hasMode);
         writer.uint32(24).int32(message.mode);
@@ -6993,9 +6206,7 @@ export const ClimateCommandRequest = {
     },
     decode(reader: Reader, length?: number): ClimateCommandRequest {
         let end = length === undefined ? reader.len : reader.pos + length;
-        const message = Object.create(
-            baseClimateCommandRequest,
-        ) as ClimateCommandRequest;
+        const message = Object.create(baseClimateCommandRequest) as ClimateCommandRequest;
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
@@ -7052,9 +6263,7 @@ export const ClimateCommandRequest = {
         return message;
     },
     fromJSON(object: any): ClimateCommandRequest {
-        const message = Object.create(
-            baseClimateCommandRequest,
-        ) as ClimateCommandRequest;
+        const message = Object.create(baseClimateCommandRequest) as ClimateCommandRequest;
         if (object.key !== undefined && object.key !== null) {
             message.key = Number(object.key);
         } else {
@@ -7070,57 +6279,33 @@ export const ClimateCommandRequest = {
         } else {
             message.mode = 0;
         }
-        if (
-            object.hasTargetTemperature !== undefined &&
-            object.hasTargetTemperature !== null
-        ) {
+        if (object.hasTargetTemperature !== undefined && object.hasTargetTemperature !== null) {
             message.hasTargetTemperature = Boolean(object.hasTargetTemperature);
         } else {
             message.hasTargetTemperature = false;
         }
-        if (
-            object.targetTemperature !== undefined &&
-            object.targetTemperature !== null
-        ) {
+        if (object.targetTemperature !== undefined && object.targetTemperature !== null) {
             message.targetTemperature = Number(object.targetTemperature);
         } else {
             message.targetTemperature = 0;
         }
-        if (
-            object.hasTargetTemperatureLow !== undefined &&
-            object.hasTargetTemperatureLow !== null
-        ) {
-            message.hasTargetTemperatureLow = Boolean(
-                object.hasTargetTemperatureLow,
-            );
+        if (object.hasTargetTemperatureLow !== undefined && object.hasTargetTemperatureLow !== null) {
+            message.hasTargetTemperatureLow = Boolean(object.hasTargetTemperatureLow);
         } else {
             message.hasTargetTemperatureLow = false;
         }
-        if (
-            object.targetTemperatureLow !== undefined &&
-            object.targetTemperatureLow !== null
-        ) {
+        if (object.targetTemperatureLow !== undefined && object.targetTemperatureLow !== null) {
             message.targetTemperatureLow = Number(object.targetTemperatureLow);
         } else {
             message.targetTemperatureLow = 0;
         }
-        if (
-            object.hasTargetTemperatureHigh !== undefined &&
-            object.hasTargetTemperatureHigh !== null
-        ) {
-            message.hasTargetTemperatureHigh = Boolean(
-                object.hasTargetTemperatureHigh,
-            );
+        if (object.hasTargetTemperatureHigh !== undefined && object.hasTargetTemperatureHigh !== null) {
+            message.hasTargetTemperatureHigh = Boolean(object.hasTargetTemperatureHigh);
         } else {
             message.hasTargetTemperatureHigh = false;
         }
-        if (
-            object.targetTemperatureHigh !== undefined &&
-            object.targetTemperatureHigh !== null
-        ) {
-            message.targetTemperatureHigh = Number(
-                object.targetTemperatureHigh,
-            );
+        if (object.targetTemperatureHigh !== undefined && object.targetTemperatureHigh !== null) {
+            message.targetTemperatureHigh = Number(object.targetTemperatureHigh);
         } else {
             message.targetTemperatureHigh = 0;
         }
@@ -7156,12 +6341,8 @@ export const ClimateCommandRequest = {
         }
         return message;
     },
-    fromPartial(
-        object: DeepPartial<ClimateCommandRequest>,
-    ): ClimateCommandRequest {
-        const message = Object.create(
-            baseClimateCommandRequest,
-        ) as ClimateCommandRequest;
+    fromPartial(object: DeepPartial<ClimateCommandRequest>): ClimateCommandRequest {
+        const message = Object.create(baseClimateCommandRequest) as ClimateCommandRequest;
         if (object.key !== undefined && object.key !== null) {
             message.key = object.key;
         } else {
@@ -7177,50 +6358,32 @@ export const ClimateCommandRequest = {
         } else {
             message.mode = 0;
         }
-        if (
-            object.hasTargetTemperature !== undefined &&
-            object.hasTargetTemperature !== null
-        ) {
+        if (object.hasTargetTemperature !== undefined && object.hasTargetTemperature !== null) {
             message.hasTargetTemperature = object.hasTargetTemperature;
         } else {
             message.hasTargetTemperature = false;
         }
-        if (
-            object.targetTemperature !== undefined &&
-            object.targetTemperature !== null
-        ) {
+        if (object.targetTemperature !== undefined && object.targetTemperature !== null) {
             message.targetTemperature = object.targetTemperature;
         } else {
             message.targetTemperature = 0;
         }
-        if (
-            object.hasTargetTemperatureLow !== undefined &&
-            object.hasTargetTemperatureLow !== null
-        ) {
+        if (object.hasTargetTemperatureLow !== undefined && object.hasTargetTemperatureLow !== null) {
             message.hasTargetTemperatureLow = object.hasTargetTemperatureLow;
         } else {
             message.hasTargetTemperatureLow = false;
         }
-        if (
-            object.targetTemperatureLow !== undefined &&
-            object.targetTemperatureLow !== null
-        ) {
+        if (object.targetTemperatureLow !== undefined && object.targetTemperatureLow !== null) {
             message.targetTemperatureLow = object.targetTemperatureLow;
         } else {
             message.targetTemperatureLow = 0;
         }
-        if (
-            object.hasTargetTemperatureHigh !== undefined &&
-            object.hasTargetTemperatureHigh !== null
-        ) {
+        if (object.hasTargetTemperatureHigh !== undefined && object.hasTargetTemperatureHigh !== null) {
             message.hasTargetTemperatureHigh = object.hasTargetTemperatureHigh;
         } else {
             message.hasTargetTemperatureHigh = false;
         }
-        if (
-            object.targetTemperatureHigh !== undefined &&
-            object.targetTemperatureHigh !== null
-        ) {
+        if (object.targetTemperatureHigh !== undefined && object.targetTemperatureHigh !== null) {
             message.targetTemperatureHigh = object.targetTemperatureHigh;
         } else {
             message.targetTemperatureHigh = 0;
@@ -7266,8 +6429,7 @@ export const ClimateCommandRequest = {
         obj.targetTemperature = message.targetTemperature || 0;
         obj.hasTargetTemperatureLow = message.hasTargetTemperatureLow || false;
         obj.targetTemperatureLow = message.targetTemperatureLow || 0;
-        obj.hasTargetTemperatureHigh =
-            message.hasTargetTemperatureHigh || false;
+        obj.hasTargetTemperatureHigh = message.hasTargetTemperatureHigh || false;
         obj.targetTemperatureHigh = message.targetTemperatureHigh || 0;
         obj.hasAway = message.hasAway || false;
         obj.away = message.away || false;
