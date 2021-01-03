@@ -153,7 +153,7 @@ export class LightComponent extends BaseComponent<LightEntity, LightStateEvent> 
             colorTemperature: 0,
             effect: '',
             flashLength: 0,
-            green: state?.blue ?? num,
+            green: state?.green ?? num,
             hasBrightness: this.listEntity.supportsBrightness,
             hasColorTemperature: false,
             hasEffect: false,
