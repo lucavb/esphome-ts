@@ -42,7 +42,7 @@
         "jest-junit": "12.0.0",
         "prettier": "2.2.1",
         "ts-jest": "26.4.4",
-        "ts-proto": "1.42.0",
+        "ts-proto": "1.50.0",
         "typescript": "4.1.3"
     }
 }
