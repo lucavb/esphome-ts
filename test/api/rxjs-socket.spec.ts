@@ -6,7 +6,8 @@ import DoneCallback = jest.DoneCallback;
 
 const isTrue = (val: boolean) => val;
 const isFalse = (val: boolean) => !val;
-const isRecord = (arg: unknown): arg is Record<string, unknown> => !!arg && typeof arg === 'object';
+const isRecord = (arg: unknown): arg is Record<string, unknown> =>
+    !!arg && typeof arg === 'object' && !Array.isArray(arg);
 
 describe('RxjsSocket', () => {
     let client: RxjsSocket;
