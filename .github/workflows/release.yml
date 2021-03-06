@@ -16,6 +16,8 @@ jobs:
               uses: actions/setup-node@v1
               with:
                   node-version: 14
+            - name: Update Git
+              run: git fetch --all
             - name: Install dependencies
               run: npm ci
             - name: Linting
