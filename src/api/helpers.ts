@@ -9,11 +9,11 @@ import {
     ListEntitiesSwitchResponse,
     SensorStateResponse,
     SwitchStateResponse,
-} from './protobuf';
+} from './protobuf/api';
 import { MessageTypes } from './requestResponseMatching';
 import { decode } from './client';
 import { ListEntityResponses, StateResponses } from './interfaces';
-import { CommandInterface } from '../components/commandInterface';
+import { CommandInterface } from '../components';
 import { Observable } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { BaseComponent, BinarySensorComponent, LightComponent, SensorComponent, SwitchComponent } from '..';

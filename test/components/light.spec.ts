@@ -1,6 +1,6 @@
 import { LightComponent, LightStateEvent } from '../../src';
 import { Subject } from 'rxjs';
-import { LightCommandRequest, ListEntitiesLightResponse } from '../../src/api/protobuf';
+import { LightCommandRequest, ListEntitiesLightResponse } from '../../src/api/protobuf/api';
 import { DebugConnection } from '../testHelpers/debugConnection';
 import { Reader } from 'protobufjs/minimal';
 

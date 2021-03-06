@@ -24,10 +24,10 @@ import {
     stateResponses,
     StateResponses,
 } from './';
-import { BaseComponent } from '../components/base';
+import { BaseComponent } from '../components';
 import { BehaviorSubject, concat, merge, Observable, of, Subscription } from 'rxjs';
 import { EspSocket } from './espSocket';
-import { DeviceInfoRequest, DeviceInfoResponse } from './protobuf';
+import { DeviceInfoRequest, DeviceInfoResponse } from './protobuf/api';
 
 const PING_TIMEOUT = 90 * 1000;
 

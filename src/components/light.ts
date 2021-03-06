@@ -4,7 +4,7 @@ import { convertNumbers } from './helpers';
 import { BaseComponent } from './base';
 import { hsv as hsvConvert, rgb as rgbConvert } from 'color-convert';
 import { Hsv, Rgb } from './interfaces';
-import { LightCommandRequest } from '../api/protobuf';
+import { LightCommandRequest } from '../api/protobuf/api';
 import { MessageTypes } from '../api';
 
 export const DEFAULT_NO_EFFECT = 'None';
