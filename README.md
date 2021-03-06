@@ -5,20 +5,21 @@ This is a client library for use with [esphome](https://esphome.io).
 ## Example use
 
 ```typescript
-import {EspDevice, SwitchComponent} from 'esphome-ts/dist';
-import {filter, tap} from 'rxjs/operators';
+import { EspDevice, SwitchComponent } from 'esphome-ts/dist';
+import { filter, tap } from 'rxjs/operators';
 
 const device = new EspDevice('my_esp.local');
-device.discovery$.pipe(
-    filter((value) => value),
-    tap(() => {
-        const sw = device.components['test_switch'] as SwitchComponent;
-        sw.state$.subscribe((value) => {
-            console.log(sw.status);
-        });
-    }),
-).subscribe();
-
+device.discovery$
+    .pipe(
+        filter((value) => value),
+        tap(() => {
+            const sw = device.components['test_switch'] as SwitchComponent;
+            sw.state$.subscribe((value) => {
+                console.log(sw.status);
+            });
+        }),
+    )
+    .subscribe();
 ```
 
 Please see more [here](docs/index.md)
