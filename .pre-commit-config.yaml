@@ -1,5 +1,6 @@
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
+default_stages: [commit]
 repos:
     - repo: https://github.com/pre-commit/pre-commit-hooks
       rev: v3.2.0
@@ -9,14 +10,7 @@ repos:
           - id: check-yaml
           - id: check-added-large-files
 
-    - repo: https://gitea.sunbury.xyz/lucabecker/pre-commit
-      rev: v0.0.2
-      hooks:
-          - id: ts-no-console-log
-          - id: ts-no-focus-test
-          - id: ts-accessing-window
-
-    - repo: https://github.com/prettier/prettier
-      rev: 2.1.1
+    - repo: https://github.com/pre-commit/mirrors-prettier
+      rev: v2.2.1
       hooks:
           - id: prettier
