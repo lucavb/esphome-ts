@@ -6,19 +6,21 @@ a RxJS based interface to it.
 ## Getting started
 
 ```typescript
-import {EspDevice, SwitchComponent} from 'esphome-ts/dist';
-import {filter, tap} from 'rxjs/operators';
+import { EspDevice, SwitchComponent } from 'esphome-ts/dist';
+import { filter, tap } from 'rxjs/operators';
 
 const device = new EspDevice('my_esp.local');
-device.discovery$.pipe(
-    filter((value) => value),
-    tap(() => {
-        const sw = device.components['test_switch'] as SwitchComponent;
-        sw.state$.subscribe((value) => {
-            console.log(sw.status);
-        });
-    }),
-).subscribe();
+device.discovery$
+    .pipe(
+        filter((value) => value),
+        tap(() => {
+            const sw = device.components['test_switch'] as SwitchComponent;
+            sw.state$.subscribe((value) => {
+                console.log(sw.status);
+            });
+        }),
+    )
+    .subscribe();
 ```
 
 You always want to start with an instance of `EspDevice`. This is your starting
@@ -31,7 +33,7 @@ querying the device for information on its components(s).
 Once this process is done, `true` will be emmited through `discovery$` observable,
 hence the filter pipe. Afterwards, you can access the discovered components via the
 `components` dictionary. You just have to know the name of your component.
-*Beware of the naming scheme of esphome here*.
+_Beware of the naming scheme of esphome here_.
 
 ## Supported components
 
@@ -45,23 +47,23 @@ probably only be used to call the methods on the component itself.
 
 Supports the following actions:
 
-* turn on, turn off
-* set brightness
-* set color (rgb, hsv)
-* and respective get methods
+-   turn on, turn off
+-   set brightness
+-   set color (rgb, hsv)
+-   and respective get methods
 
 ### Binary sensor
 
-* get status
+-   get status
 
 ### Switch
 
-* turn on, turn off
-* get status
+-   turn on, turn off
+-   get status
 
 ### Sensor
 
-* get value
+-   get value
 
 Typescript should point out most values that you can expect and their names have been
 somewhat reasonable, so I won't go into detail what they do.

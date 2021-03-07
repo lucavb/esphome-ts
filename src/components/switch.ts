@@ -2,7 +2,7 @@ import { BaseComponent } from './base';
 import { ComponentType, ListEntity } from './entities';
 import { SwitchStateEvent } from './states';
 import { MessageTypes } from '../api';
-import { SwitchCommandRequest } from '../api/protobuf';
+import { SwitchCommandRequest } from '../api/protobuf/api';
 
 export class SwitchComponent extends BaseComponent<ListEntity, SwitchStateEvent> {
     get status(): boolean {

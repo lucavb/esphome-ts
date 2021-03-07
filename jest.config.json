@@ -1,12 +1,6 @@
 {
     "preset": "ts-jest",
     "testEnvironment": "node",
-    "coveragePathIgnorePatterns": [
-        "<rootDir>/src/api/protobuf",
-        "<rootDir>/test"
-    ],
-    "reporters": [
-        "default",
-        ["jest-junit", { "outputDirectory": ".", "outputName": "junit.xml" }]
-    ]
+    "coveragePathIgnorePatterns": ["<rootDir>/src/api/protobuf", "<rootDir>/test"],
+    "reporters": ["default", ["jest-junit", { "outputDirectory": ".", "outputName": "junit.xml" }]]
 }

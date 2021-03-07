@@ -1,7 +1,7 @@
 import { EspDevice, isFalse, isTrue, MessageTypes } from '../../src';
 import { EspDeviceMock } from '../testHelpers/espDeviceMock';
 import { catchError, delay, filter, switchMap, switchMapTo, take, tap, timeout } from 'rxjs/operators';
-import { ListEntitiesSwitchResponse } from '../../src/api/protobuf';
+import { ListEntitiesSwitchResponse } from '../../src/api/protobuf/api';
 import { of, Subject } from 'rxjs';
 import DoneCallback = jest.DoneCallback;
 

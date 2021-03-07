@@ -1,14 +1,14 @@
 import { Server, Socket } from 'net';
 import { fromEvent, Observable, Subject } from 'rxjs';
 import { map, take, takeUntil, tap } from 'rxjs/operators';
-import { MessageTypes } from '../../src/api/requestResponseMatching';
+import { MessageTypes } from '../../src';
 import {
     ConnectResponse,
     DeviceInfoResponse,
     HelloResponse,
     ListEntitiesDoneResponse,
     PingRequest,
-} from '../../src/api/protobuf';
+} from '../../src/api/protobuf/api';
 
 const sendOverSocket = (socket: Socket, type: MessageTypes, payload: Uint8Array): void => {
     const final = new Uint8Array([0x0, payload.length, type, ...Array.from(payload)]);
