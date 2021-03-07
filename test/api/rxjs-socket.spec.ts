@@ -9,7 +9,7 @@ const isFalse = (val: boolean) => !val;
 const isRecord = (arg: unknown): arg is Record<string, unknown> =>
     !!arg && typeof arg === 'object' && !Array.isArray(arg);
 
-describe('RxjsSocket', () => {
+xdescribe('RxjsSocket', () => {
     let client: RxjsSocket;
     let server: Server;
     const host = 'localhost';
