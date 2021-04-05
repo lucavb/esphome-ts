@@ -27,7 +27,7 @@ import {
 import { BaseComponent } from '../components';
 import { BehaviorSubject, concat, merge, Observable, of, Subscription } from 'rxjs';
 import { EspSocket } from './espSocket';
-import { DeviceInfoRequest, DeviceInfoResponse } from './protobuf/api';
+import { DeviceInfoResponse } from './protobuf/api';
 
 const PING_TIMEOUT = 90 * 1000;
 
@@ -37,7 +37,7 @@ export class EspDevice {
 
     private readonly stateEvents$: Observable<StateResponses>;
 
-    public deviceInfo?: DeviceInfoRequest;
+    public deviceInfo?: DeviceInfoResponse;
 
     public readonly components: { [key: string]: BaseComponent } = {};
 
@@ -63,6 +63,7 @@ export class EspDevice {
         this.stateEvents$ = this.socket.espData$.pipe(
             filter((data: ReadData) => stateResponses.has(data.type)),
             map((data: ReadData) => stateParser(data)),
+            filter((parsed): parsed is StateResponses => !!parsed),
         );
         this.subscription.add(
             this.socket.espData$

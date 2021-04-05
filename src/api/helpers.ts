@@ -18,7 +18,7 @@ import { Observable } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { BaseComponent, BinarySensorComponent, LightComponent, SensorComponent, SwitchComponent } from '..';
 
-export const stateParser = (data: ReadData): StateResponses => {
+export const stateParser = (data: ReadData): StateResponses | undefined => {
     switch (data.type) {
         case MessageTypes.BinarySensorStateResponse: {
             return decode(BinarySensorStateResponse, data);
@@ -32,10 +32,11 @@ export const stateParser = (data: ReadData): StateResponses => {
         case MessageTypes.SwitchStateResponse: {
             return decode(SwitchStateResponse, data);
         }
-        default: {
+        case MessageTypes.CoverStateResponse: {
             return decode(CoverStateResponse, data);
         }
     }
+    return undefined;
 };
 
 export const createComponents = (
