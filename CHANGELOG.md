@@ -1,3 +1,10 @@
+## [3.1.1](https://github.com/lucavb/esphome-ts/compare/v3.1.0...v3.1.1) (2021-04-05)
+
+
+### Bug Fixes
+
+* **api:** exchanging wrong interface / no longer decoding per default coverstate ([f4a82ba](https://github.com/lucavb/esphome-ts/commit/f4a82ba1f371f4299a7f89dbb522656f95c4018d))
+
 # [3.1.0](https://github.com/lucavb/esphome-ts/compare/v3.0.5...v3.1.0) (2021-03-07)
 
 
