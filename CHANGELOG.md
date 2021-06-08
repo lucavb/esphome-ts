@@ -1,3 +1,10 @@
+# [3.2.0](https://github.com/lucavb/esphome-ts/compare/v3.1.1...v3.2.0) (2021-06-08)
+
+
+### Features
+
+* **deps:** rxjs@7 release commit ([32ccd14](https://github.com/lucavb/esphome-ts/commit/32ccd14caedec692479c950c94d6e71cf0c4d73e))
+
 ## [3.1.1](https://github.com/lucavb/esphome-ts/compare/v3.1.0...v3.1.1) (2021-04-05)
 
 
