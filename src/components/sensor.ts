@@ -12,6 +12,10 @@ export class SensorComponent extends BaseComponent<SensorEntity, SensorStateEven
         return 'sensor';
     }
 
+    public get deviceClass(): string | undefined {
+        return this.listEntity.deviceClass;
+    }
+
     public get unitOfMeasurement(): string {
         return this.listEntity.unitOfMeasurement;
     }
