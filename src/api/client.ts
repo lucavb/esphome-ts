@@ -52,9 +52,9 @@ export class Client {
         const data = HelloRequest.encode(request).finish();
         this.socket.sendEspMessage(MessageTypes.HelloRequest, data);
         return this.socket.espData$.pipe(
-            filter((value) => value.type === MessageTypes.HelloResponse),
+            filter((value: ReadData) => value.type === MessageTypes.HelloResponse),
             take(1),
-            switchMap((data) => of(HelloResponse.decode(new Reader(data.payload)))),
+            switchMap((data: ReadData) => of(HelloResponse.decode(new Reader(data.payload)))),
         );
     }
 
@@ -62,9 +62,9 @@ export class Client {
         const data = ConnectRequest.encode(request).finish();
         this.socket.sendEspMessage(MessageTypes.ConnectRequest, data);
         return this.socket.espData$.pipe(
-            filter((value) => value.type === MessageTypes.ConnectResponse),
+            filter((value: ReadData) => value.type === MessageTypes.ConnectResponse),
             take(1),
-            switchMap((data) => of(ConnectResponse.decode(new Reader(data.payload)))),
+            switchMap((data: ReadData) => of(ConnectResponse.decode(new Reader(data.payload)))),
         );
     }
 
@@ -72,9 +72,9 @@ export class Client {
         const data = PingRequest.encode({}).finish();
         this.socket.sendEspMessage(MessageTypes.ConnectRequest, data);
         return this.socket.espData$.pipe(
-            filter((value) => value.type === MessageTypes.PingResponse),
+            filter((value: ReadData) => value.type === MessageTypes.PingResponse),
             take(1),
-            switchMap((data) => of(PingResponse.decode(new Reader(data.payload)))),
+            switchMap((data: ReadData) => of(PingResponse.decode(new Reader(data.payload)))),
         );
     }
 
