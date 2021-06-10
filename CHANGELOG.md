@@ -1,3 +1,10 @@
+# [3.3.0](https://github.com/lucavb/esphome-ts/compare/v3.2.0...v3.3.0) (2021-06-10)
+
+
+### Features
+
+* release deviceClass ([56a8244](https://github.com/lucavb/esphome-ts/commit/56a8244c5f62c98066155fa61626c1e0be68a165))
+
 # [3.2.0](https://github.com/lucavb/esphome-ts/compare/v3.1.1...v3.2.0) (2021-06-08)
 
 
