@@ -68,7 +68,7 @@ describe('espDevice', () => {
             .subscribe();
     });
 
-    it('alive$ returns false on close', async (done) => {
+    it('alive$ returns false on close', (done) => {
         device = new EspDevice('localhost', '', portNumber);
         device.discovery$
             .pipe(
