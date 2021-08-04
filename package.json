@@ -31,7 +31,7 @@
     "dependencies": {
         "color-convert": "2.0.1",
         "protobufjs": "6.11.2",
-        "rxjs": "7.2.0"
+        "rxjs": "7.3.0"
     },
     "devDependencies": {
         "@commitlint/cli": "13.1.0",
