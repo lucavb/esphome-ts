@@ -88,7 +88,7 @@ export class RxjsSocket {
 
         fromEvent(this.socket, 'error')
             .pipe(
-                filter((val): val is Error => val instanceof Error),
+                filter((payload): payload is Error => payload instanceof Error),
                 tap((err: Error) => this.error.next(err)),
                 takeUntil(this.terminate),
             )
@@ -96,7 +96,7 @@ export class RxjsSocket {
 
         fromEvent(this.socket, 'data')
             .pipe(
-                filter((val): val is Buffer => val instanceof Buffer),
+                filter((event: unknown): event is Buffer => Buffer.isBuffer(event)),
                 tap((buffer: Buffer) => this.data.next(buffer)),
                 takeUntil(this.terminate),
             )
@@ -125,7 +125,7 @@ export class RxjsSocket {
             .subscribe();
 
         if (this.config.timeout && this.config.timeout > 0) {
-            fromEvent<void>(this.socket, 'timeout')
+            fromEvent(this.socket, 'timeout')
                 .pipe(
                     tap(() => this.timeout.next()),
                     tap(() => {
@@ -150,7 +150,7 @@ export class RxjsSocket {
 
     private destroySocket(): void {
         this.socket?.destroy();
-        this.socket = undefined;
+        delete this.socket;
         this.connected.next(false);
     }
 }
