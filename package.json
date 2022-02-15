@@ -41,7 +41,7 @@
         "@types/color-convert": "2.0.0",
         "@types/jest": "27.0.2",
         "@types/node": "16.11.11",
-        "@typescript-eslint/eslint-plugin": "5.11.0",
+        "@typescript-eslint/eslint-plugin": "5.12.0",
         "@typescript-eslint/parser": "5.11.0",
         "eslint": "8.9.0",
         "eslint-config-google": "0.14.0",
