@@ -30,7 +30,7 @@
     "license": "GPL-3.0",
     "dependencies": {
         "color-convert": "2.0.1",
-        "protobufjs": "6.11.2",
+        "protobufjs": "6.11.3",
         "rxjs": "7.5.5"
     },
     "devDependencies": {
