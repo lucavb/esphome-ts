@@ -1,3 +1,5 @@
+import { CoverOperation, LegacyCoverState } from "../api/protobuf/api";
+
 export interface StateEvent {
     key: number;
 }
@@ -19,4 +21,11 @@ export interface LightStateEvent extends StateEvent {
     green?: number;
     blue?: number;
     effect?: string;
+}
+
+export interface CoverStateEvent extends StateEvent {
+    state?: LegacyCoverState;
+    position?: number;
+    tilt?: number;
+    operationr?: CoverOperation;
 }
