@@ -1,3 +1,5 @@
+import { FanDirection, FanSpeed } from '../api/protobuf/api';
+
 export interface StateEvent {
     key: number;
 }
@@ -19,4 +21,11 @@ export interface LightStateEvent extends StateEvent {
     green?: number;
     blue?: number;
     effect?: string;
+}
+
+export interface FanStateEvent extends StateEvent {
+    state?: boolean;
+    oscillating?: boolean;
+    speed?: FanSpeed;
+    direction?: FanDirection;
 }

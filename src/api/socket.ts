@@ -1,6 +1,6 @@
 import { Socket } from 'net';
 import { BehaviorSubject, fromEvent, Observable, Subject } from 'rxjs';
-import { take, takeUntil, tap } from 'rxjs/operators';
+import { filter, take, takeUntil, tap } from 'rxjs/operators';
 
 export interface RxjsSocketConfiguration {
     reconnectOnTimeout?: boolean;
@@ -86,33 +86,36 @@ export class RxjsSocket {
             return;
         }
 
-        fromEvent<Error>(this.socket, 'error')
+        fromEvent(this.socket, 'error')
             .pipe(
+                filter((payload): payload is Error => payload instanceof Error),
                 tap((err: Error) => this.error.next(err)),
                 takeUntil(this.terminate),
             )
             .subscribe();
-        fromEvent<Buffer>(this.socket, 'data')
+
+        fromEvent(this.socket, 'data')
             .pipe(
+                filter((event: unknown): event is Buffer => Buffer.isBuffer(event)),
                 tap((buffer: Buffer) => this.data.next(buffer)),
                 takeUntil(this.terminate),
             )
             .subscribe();
-        fromEvent<void>(this.socket, 'connect')
+        fromEvent(this.socket, 'connect')
             .pipe(
                 take(1),
                 tap(() => this.connected.next(true)),
                 takeUntil(this.terminate),
             )
             .subscribe();
-        fromEvent<void>(this.socket, 'close')
+        fromEvent(this.socket, 'close')
             .pipe(
                 take(1),
                 tap(() => this.connected.next(false)),
                 takeUntil(this.terminate),
             )
             .subscribe();
-        fromEvent<void>(this.socket, 'end')
+        fromEvent(this.socket, 'end')
             .pipe(
                 take(1),
                 tap(() => this.socket?.end()),
@@ -122,7 +125,7 @@ export class RxjsSocket {
             .subscribe();
 
         if (this.config.timeout && this.config.timeout > 0) {
-            fromEvent<void>(this.socket, 'timeout')
+            fromEvent(this.socket, 'timeout')
                 .pipe(
                     tap(() => this.timeout.next()),
                     tap(() => {
@@ -147,7 +150,7 @@ export class RxjsSocket {
 
     private destroySocket(): void {
         this.socket?.destroy();
-        this.socket = undefined;
+        delete this.socket;
         this.connected.next(false);
     }
 }

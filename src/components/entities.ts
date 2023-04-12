@@ -22,4 +22,10 @@ export interface LightEntity extends ListEntity {
     supportsRgb: boolean;
 }
 
-export type ComponentType = 'light' | 'binarySensor' | 'sensor' | 'switch';
+export interface FanEntity extends ListEntity {
+    supportsOscillation: boolean;
+    supportsSpeed: boolean;
+    supportsDirection: boolean;
+}
+
+export type ComponentType = 'light' | 'binarySensor' | 'sensor' | 'switch' | 'fan';

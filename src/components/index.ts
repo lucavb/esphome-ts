@@ -3,6 +3,7 @@ export * from './binarySensor';
 export * from './binarySensorTypes';
 export * from './commandInterface';
 export * from './entities';
+export * from './fan';
 export * from './helpers';
 export * from './interfaces';
 export * from './light';
