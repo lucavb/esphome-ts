@@ -1,3 +1,10 @@
+## [3.3.1](https://github.com/lucavb/esphome-ts/compare/v3.3.0...v3.3.1) (2023-05-07)
+
+
+### Bug Fixes
+
+* **deps:** move rxjs to become a peerdependency ([c5f1722](https://github.com/lucavb/esphome-ts/commit/c5f1722b7e24fa5917ca2d062a7ef8ad5cb265d1))
+
 # [3.3.0](https://github.com/lucavb/esphome-ts/compare/v3.2.0...v3.3.0) (2021-06-10)
 
 
