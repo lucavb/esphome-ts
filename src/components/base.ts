@@ -3,7 +3,7 @@ import { StateEvent } from './states';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { debounceTime, filter, take, takeUntil, tap } from 'rxjs/operators';
 import { CommandInterface } from './commandInterface';
-import { isTrue, MessageTypes } from '../api';
+import { isTrue, isTruthy, MessageTypes } from '../api';
 
 export abstract class BaseComponent<L extends ListEntity = ListEntity, S extends StateEvent = StateEvent> {
     protected readonly state = new BehaviorSubject<S | undefined>(undefined);
@@ -20,7 +20,7 @@ export abstract class BaseComponent<L extends ListEntity = ListEntity, S extends
         private readonly commandInterface: CommandInterface,
     ) {
         this.commandInPipeline = new BehaviorSubject<boolean>(false);
-        this.state$ = this.state.pipe(filter((state?: S): state is S => state !== undefined));
+        this.state$ = this.state.pipe(filter(isTruthy));
         this.provideStateObservable(state);
         this.commandInPipeline
             .pipe(
@@ -64,7 +64,7 @@ export abstract class BaseComponent<L extends ListEntity = ListEntity, S extends
         this.teardown.next();
     }
 
-    protected queueCommand(type: MessageTypes, dataFn: () => Uint8Array, disableSerialise: boolean = false): void {
+    protected queueCommand(type: MessageTypes, dataFn: () => Uint8Array, disableSerialise = false): void {
         this.commandInPipeline
             .pipe(
                 filter((x: boolean) => !x || disableSerialise),

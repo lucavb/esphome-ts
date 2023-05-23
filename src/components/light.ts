@@ -145,7 +145,7 @@ export class LightComponent extends BaseComponent<LightEntity, LightStateEvent> 
         }
     }
 
-    private generateState(num: number, turnOn: boolean = true): LightCommandRequest {
+    private generateState(num: number, turnOn = true): LightCommandRequest {
         const state = this.state.getValue();
         return {
             blue: state?.blue ?? num,

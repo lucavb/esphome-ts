@@ -4,7 +4,7 @@
         "node": true
     },
     "plugins": ["@typescript-eslint", "prettier", "unused-imports"],
-    "extends": ["google", "plugin:prettier/recommended"],
+    "extends": ["google", "plugin:prettier/recommended", "plugin:@typescript-eslint/recommended"],
     "ignorePatterns": ["dist"],
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
@@ -12,6 +12,8 @@
         "sourceType": "module"
     },
     "rules": {
+        "no-nested-ternary": "error",
+        "curly": "error",
         "eqeqeq": "error",
         "prettier/prettier": ["error"],
         "require-jsdoc": "off",

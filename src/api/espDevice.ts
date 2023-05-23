@@ -1,4 +1,3 @@
-import { ReadData } from './connection';
 import {
     catchError,
     distinctUntilChanged,
@@ -26,7 +25,7 @@ import {
 } from './';
 import { BaseComponent } from '../components';
 import { BehaviorSubject, concat, merge, Observable, of, Subscription } from 'rxjs';
-import { EspSocket } from './espSocket';
+import { EspSocket, ReadData } from './espSocket';
 import { DeviceInfoResponse } from './protobuf/api';
 
 const PING_TIMEOUT = 90 * 1000;
@@ -49,9 +48,9 @@ export class EspDevice {
     public readonly alive$: Observable<boolean>;
 
     constructor(
-        private readonly host: string,
-        private readonly password: string = '',
-        private readonly port: number = 6053,
+        protected readonly host: string,
+        protected readonly password: string = '',
+        protected readonly port: number = 6053,
     ) {
         this.subscription = new Subscription();
         this.discovery = new BehaviorSubject<boolean>(false);
@@ -152,7 +151,7 @@ export class EspDevice {
             if (component) {
                 this.components[id] = this.components[id] ?? component;
             } else if (state$) {
-                this.components[id].provideStateObservable(state$);
+                this.components[id]?.provideStateObservable(state$);
             }
         }
     }
