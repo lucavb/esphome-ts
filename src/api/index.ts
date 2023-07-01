@@ -1,5 +1,7 @@
 export * from './bytePositions';
 export * from './client';
+export * from './plaintextClient';
+export * from './noiseClient';
 export * from './connection';
 export * from './espDevice';
 export * from './helpers';
