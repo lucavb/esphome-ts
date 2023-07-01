@@ -34,7 +34,7 @@ describe('espDevice', () => {
     it(
         'connects',
         (done) => {
-            device = new EspDevice('localhost', '', portNumber);
+            device = new EspDevice('localhost', '', '', portNumber);
             device.discovery$
                 .pipe(
                     filter(isTrue),
@@ -55,7 +55,7 @@ describe('espDevice', () => {
                 data: ListEntitiesSwitchResponse.encode(listEntitySwitch).finish(),
             },
         ];
-        device = new EspDevice('localhost', '', portNumber);
+        device = new EspDevice('localhost', '', '', portNumber);
         device.discovery$
             .pipe(
                 filter(isTrue),
@@ -69,7 +69,7 @@ describe('espDevice', () => {
     });
 
     it('alive$ returns false on close', (done) => {
-        device = new EspDevice('localhost', '', portNumber);
+        device = new EspDevice('localhost', '', '', portNumber);
         device.discovery$
             .pipe(
                 filter(isTrue),
@@ -90,7 +90,7 @@ describe('espDevice', () => {
     xit(
         'alive$ runs out after 90s',
         (done) => {
-            device = new EspDevice('localhost', '', portNumber);
+            device = new EspDevice('localhost', '', '', portNumber);
             device.discovery$
                 .pipe(
                     filter(isTrue),
@@ -110,7 +110,7 @@ describe('espDevice', () => {
     it(
         'should not crash on a non existent esphome device abc',
         (done) => {
-            device = new EspDevice('localhost', '', 33333);
+            device = new EspDevice('localhost', '', '', 33333);
             device.discovery$
                 .pipe(
                     filter(isTrue),
@@ -134,7 +134,7 @@ describe('espDevice', () => {
 
     it('retries when it is told to', (done: DoneCallback) => {
         const retryWhen$ = new Subject<void>();
-        device = new EspDevice('localhost', '', portNumber);
+        device = new EspDevice('localhost', '', portNumber.toString());
 
         device.provideRetryObservable(retryWhen$);
         device.alive$
