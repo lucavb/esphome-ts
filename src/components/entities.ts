@@ -22,4 +22,10 @@ export interface LightEntity extends ListEntity {
     supportsRgb: boolean;
 }
 
-export type ComponentType = 'light' | 'binarySensor' | 'sensor' | 'switch';
+export interface CoverEntity extends ListEntity {
+    assumedState: boolean;
+    supportsPosition: boolean;
+    supportsTilt: boolean;
+}
+
+export type ComponentType = 'light' | 'binarySensor' | 'sensor' | 'switch' | 'cover';
