@@ -58,7 +58,7 @@
         "semantic-release": "21.0.2",
         "ts-jest": "28.0.8",
         "ts-node-dev": "2.0.0",
-        "ts-proto": "1.148.1",
+        "ts-proto": "1.165.3",
         "typescript": "5.0.4"
     }
 }
