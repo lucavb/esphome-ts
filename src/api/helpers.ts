@@ -1,4 +1,3 @@
-import { ReadData } from './connection';
 import {
     BinarySensorStateResponse,
     CoverStateResponse,
@@ -17,6 +16,7 @@ import { CommandInterface } from '../components';
 import { Observable } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { BaseComponent, BinarySensorComponent, LightComponent, SensorComponent, SwitchComponent } from '..';
+import { ReadData } from './espSocket';
 
 export const stateParser = (data: ReadData): StateResponses | undefined => {
     switch (data.type) {
@@ -113,8 +113,10 @@ export const transformStates = <T extends StateResponses>(
     return stateEvents$.pipe(filter((stateEvent) => stateEvent.key === listEntityResponse.key)) as Observable<T>;
 };
 
+type FalsyTypes = null | undefined | false | 0 | 0n | '';
+
 export const isTrue = (val: unknown): val is true => val === true;
-export const isTruthy = (val: unknown): boolean => !!val;
+export const isTruthy = <T>(val: T | FalsyTypes): val is T => !!val;
 
 export const isFalse = (val: unknown): val is false => val === false;
-export const isFalsy = (val: unknown): boolean => !val;
+export const isFalsy = <T>(val: T | FalsyTypes): val is FalsyTypes => !val;

@@ -1,6 +1,6 @@
 import { from, Observable } from 'rxjs';
 import { filter, map, switchMap, take, takeUntil, timeout } from 'rxjs/operators';
-import { CommandInterface } from '../components/commandInterface';
+import { CommandInterface } from '../components';
 import { RxjsSocket, RxjsSocketConfiguration } from './socket';
 import { BytePositions, HEADER_FIRST_BYTE, HEADER_SIZE } from './bytePositions';
 import { MessageTypes } from './requestResponseMatching';
@@ -22,12 +22,13 @@ export class EspSocket extends RxjsSocket implements CommandInterface {
                 let bytesTaken = 0;
                 const result: Buffer[] = [];
                 while (bytesTaken < buffer.length) {
-                    const subBuffer = buffer.slice(
-                        bytesTaken,
-                        bytesTaken + HEADER_SIZE + buffer[bytesTaken + BytePositions.LENGTH],
-                    );
+                    const currentPackageSize = buffer[bytesTaken + BytePositions.LENGTH];
+                    if (typeof currentPackageSize !== 'number') {
+                        break;
+                    }
+                    const subBuffer = buffer.slice(bytesTaken, bytesTaken + HEADER_SIZE + currentPackageSize);
                     result.push(subBuffer);
-                    bytesTaken += HEADER_SIZE + buffer[bytesTaken + BytePositions.LENGTH];
+                    bytesTaken += HEADER_SIZE + currentPackageSize;
                 }
                 return from(result);
             }),

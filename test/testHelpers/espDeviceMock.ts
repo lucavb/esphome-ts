@@ -19,7 +19,7 @@ export class EspDeviceMock {
     receivedTypes: MessageTypes[] = [];
     server: Server;
     private readonly teardown = new Subject<void>();
-    private isPasswordInvalid: boolean = false;
+    private isPasswordInvalid = false;
     latestSocket?: Socket;
     sockets: Socket[] = [];
     types$: Subject<MessageTypes>;

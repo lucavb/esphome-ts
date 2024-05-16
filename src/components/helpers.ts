@@ -1,4 +1,4 @@
-export const convertNumbers = (num: number, max: number = 255, fromEsp: boolean = false): number => {
+export const convertNumbers = (num: number, max = 255, fromEsp = false): number => {
     if (fromEsp) {
         return Math.floor(num * max);
     } else {

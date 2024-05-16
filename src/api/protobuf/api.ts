@@ -1,4 +1,5 @@
 /* eslint-disable */
+// @ts-nocheck
 import { Reader, Writer } from 'protobufjs/minimal';
 import { voidMessage } from './api_options';
 

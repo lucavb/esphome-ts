@@ -10,12 +10,11 @@ import {
     PingResponse,
     SubscribeStatesRequest,
 } from './protobuf/api';
-import { ReadData } from './connection';
 import { Observable, of, Subscription } from 'rxjs';
 import { MessageTypes } from './requestResponseMatching';
 import { filter, switchMap, take, tap } from 'rxjs/operators';
 import { Reader } from 'protobufjs/minimal';
-import { EspSocket } from './espSocket';
+import { EspSocket, ReadData } from './espSocket';
 import { voidMessage } from './protobuf/api_options';
 
 export interface Decoder<T> {
