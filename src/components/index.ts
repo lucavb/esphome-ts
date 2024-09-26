@@ -2,6 +2,7 @@ export * from './base';
 export * from './binarySensor';
 export * from './binarySensorTypes';
 export * from './commandInterface';
+export * from './cover';
 export * from './entities';
 export * from './helpers';
 export * from './interfaces';

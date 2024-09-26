@@ -1,6 +1,7 @@
 import { filter, take, tap } from 'rxjs/operators';
-import { LightComponent } from './components/light';
-import { EspDevice, isSwitchComponent, isTrue } from './api';
+import { EspDevice, isTrue } from './api';
+import { BaseComponent } from './components/base';
+import { CoverComponent } from './components/cover';
 
 const device = new EspDevice('172.16.0.112');
 device.discovery$
@@ -8,13 +9,13 @@ device.discovery$
         filter(isTrue),
         take(1),
         tap(() => {
-            const kitchenLights = device.components['kitchen_lights:'] as LightComponent;
-            const livingRoomDehumidifier = device.components['living_room_dehumidifier'];
-            console.log(livingRoomDehumidifier.name);
-
-            if (isSwitchComponent(livingRoomDehumidifier)) {
-                livingRoomDehumidifier.state$.pipe(tap(console.log)).subscribe();
-                livingRoomDehumidifier.turnOff();
+            for (const [key, value] of Object.entries(device.components)) { 
+                console.log(key, value.type);
+                if (value instanceof CoverComponent) {
+                    value.open();
+                    value.close();
+                    value.stop();
+                }
             }
         }),
     )
