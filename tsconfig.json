@@ -1,13 +1,16 @@
 {
     "compilerOptions": {
-        "target": "es6",
-        "module": "commonjs",
-        "declaration": true,
+        "target": "ES2022",
+        "module": "preserve",
+        "moduleResolution": "bundler",
         "strict": true,
         "esModuleInterop": true,
         "forceConsistentCasingInFileNames": true,
-        "outDir": "dist"
+        "verbatimModuleSyntax": true,
+        "skipLibCheck": true,
+        "noEmit": true,
+        "types": ["vitest/globals", "node"]
     },
-    "include": ["src"],
-    "exclude": ["node_modules", "**/*.spec.ts"]
+    "include": ["src", "test", "examples", "vitest.config.ts", "tsup.config.ts"],
+    "exclude": ["node_modules", "dist"]
 }
