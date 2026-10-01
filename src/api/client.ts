@@ -10,20 +10,20 @@ import {
     PingResponse,
     SubscribeStatesRequest,
 } from './protobuf/api';
-import { ReadData } from './connection';
+import { type ReadData } from './espSocket';
 import { Observable, of, Subscription } from 'rxjs';
 import { MessageTypes } from './requestResponseMatching';
 import { filter, switchMap, take, tap } from 'rxjs/operators';
-import { Reader } from 'protobufjs/minimal';
+import { BinaryReader } from '@bufbuild/protobuf/wire';
 import { EspSocket } from './espSocket';
 import { voidMessage } from './protobuf/api_options';
 
 export interface Decoder<T> {
-    decode: (reader: Reader, length?: number) => T;
+    decode: (reader: BinaryReader, length?: number) => T;
 }
 
 export const decode = <T>(decoder: Decoder<T>, data: ReadData): T => {
-    return decoder.decode(new Reader(data.payload));
+    return decoder.decode(new BinaryReader(data.payload));
 };
 
 export class Client {
@@ -54,7 +54,7 @@ export class Client {
         return this.socket.espData$.pipe(
             filter((value: ReadData) => value.type === MessageTypes.HelloResponse),
             take(1),
-            switchMap((data: ReadData) => of(HelloResponse.decode(new Reader(data.payload)))),
+            switchMap((data: ReadData) => of(HelloResponse.decode(data.payload))),
         );
     }
 
@@ -64,17 +64,17 @@ export class Client {
         return this.socket.espData$.pipe(
             filter((value: ReadData) => value.type === MessageTypes.ConnectResponse),
             take(1),
-            switchMap((data: ReadData) => of(ConnectResponse.decode(new Reader(data.payload)))),
+            switchMap((data: ReadData) => of(ConnectResponse.decode(data.payload))),
         );
     }
 
     ping(): Observable<PingResponse> {
         const data = PingRequest.encode({}).finish();
-        this.socket.sendEspMessage(MessageTypes.ConnectRequest, data);
+        this.socket.sendEspMessage(MessageTypes.PingRequest, data);
         return this.socket.espData$.pipe(
             filter((value: ReadData) => value.type === MessageTypes.PingResponse),
             take(1),
-            switchMap((data: ReadData) => of(PingResponse.decode(new Reader(data.payload)))),
+            switchMap((data: ReadData) => of(PingResponse.decode(data.payload))),
         );
     }
 
@@ -84,19 +84,19 @@ export class Client {
         return this.socket.espData$.pipe(
             filter(({ type }: ReadData) => type === MessageTypes.DeviceInfoResponse),
             take(1),
-            switchMap(({ payload }: ReadData) => of(DeviceInfoResponse.decode(new Reader(payload)))),
+            switchMap(({ payload }: ReadData) => of(DeviceInfoResponse.decode(payload))),
         );
     }
 
     listEntities(): Observable<voidMessage> {
         const data = ListEntitiesRequest.encode({}).finish();
         this.socket.sendEspMessage(MessageTypes.ListEntitiesRequest, data);
-        return of(voidMessage.decode(new Reader(new Uint8Array())));
+        return of(voidMessage.decode(new Uint8Array()));
     }
 
     subscribeStateChange(): Observable<voidMessage> {
         const data = SubscribeStatesRequest.encode({}).finish();
         this.socket.sendEspMessage(MessageTypes.SubscribeStatesRequest, data);
-        return of(voidMessage.decode(new Reader(new Uint8Array())));
+        return of(voidMessage.decode(new Uint8Array()));
     }
 }
