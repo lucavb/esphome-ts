@@ -1,5 +1,5 @@
-import { BaseComponent, LightStateEvent } from '../../src';
-import { ComponentType, LightEntity } from '../../src/components/entities';
+import { BaseComponent, type LightStateEvent } from '../../src';
+import { type ComponentType, type LightEntity } from '../../src/components/entities';
 import { Subject } from 'rxjs';
 import { MessageTypes } from '../../src/api/requestResponseMatching';
 import { DebugConnection } from '../testHelpers/debugConnection';
@@ -57,17 +57,20 @@ describe('BaseComponent', () => {
         expect(component.ready).toBe(false);
     });
 
-    it(
-        'unblock after timeout',
-        (done) => {
+    it('unblocks the command pipeline after the 30s timeout', async () => {
+        vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] });
+        try {
+            // debounceTime arms its timer at construction, so the component must be created under the fake clock.
+            const callsBefore = debugConnection.calls.length;
+            component = new DemoComponent(listEntity, states, debugConnection);
             component.sendSomething();
             component.sendSomething();
-            expect(debugConnection.calls.length).toBe(1);
-            setTimeout(() => {
-                expect(debugConnection.calls.length).toBe(2);
-                done();
-            }, 33 * 1000);
-        },
-        40 * 1000,
-    );
+            expect(debugConnection.calls.length).toBe(callsBefore + 1);
+
+            await vi.advanceTimersByTimeAsync(30 * 1000 + 100);
+            expect(debugConnection.calls.length).toBe(callsBefore + 2);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
 });

@@ -1,11 +1,12 @@
-import { BinarySensorComponent, BinarySensorStateEvent } from '../../src';
-import { CommandInterface } from '../../src/components/commandInterface';
+import { BinarySensorComponent, type BinarySensorStateEvent } from '../../src';
+import { type CommandInterface } from '../../src/components/commandInterface';
 import { Subject } from 'rxjs';
 import { ListEntitiesBinarySensorResponse } from '../../src/api/protobuf/api';
 import { emptyCommandInterface } from '../../src/api/helpers';
 import { BinarySensorTypes } from '../../src/components/binarySensorTypes';
+import { type BinarySensorEntity } from '../../src/components/entities';
 
-describe('LightComponent', () => {
+describe('BinarySensorComponent', () => {
     let component: BinarySensorComponent;
     const commandInterface: CommandInterface = emptyCommandInterface;
     let stateObservable: Subject<BinarySensorStateEvent>;
@@ -43,7 +44,8 @@ describe('LightComponent', () => {
 
     it('returns the deviceClass from listEntity or NONE', () => {
         expect(component.deviceClass).toEqual(listEntity.deviceClass);
-        delete (listEntity as any).deviceClass;
+        const withoutDeviceClass = listEntity as Partial<BinarySensorEntity>;
+        delete withoutDeviceClass.deviceClass;
         expect(component.deviceClass).toEqual(BinarySensorTypes.NONE);
     });
 });

@@ -1,4 +1,4 @@
-import { CommandInterface } from '../../src/components/commandInterface';
+import { type CommandInterface } from '../../src/components/commandInterface';
 import { MessageTypes } from '../../src/api/requestResponseMatching';
 
 export class DebugConnection implements CommandInterface {

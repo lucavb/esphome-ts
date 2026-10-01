@@ -1,10 +1,10 @@
-import { SensorComponent, SensorStateEvent } from '../../src';
-import { CommandInterface } from '../../src/components/commandInterface';
+import { SensorComponent, type SensorStateEvent } from '../../src';
+import { type CommandInterface } from '../../src/components/commandInterface';
 import { Subject } from 'rxjs';
 import { emptyCommandInterface } from '../../src/api/helpers';
-import { SensorEntity } from '../../src/components/entities';
+import { type SensorEntity } from '../../src/components/entities';
 
-describe('LightComponent', () => {
+describe('SensorComponent', () => {
     let component: SensorComponent;
     const commandInterface: CommandInterface = emptyCommandInterface;
     let stateObservable: Subject<SensorStateEvent>;
