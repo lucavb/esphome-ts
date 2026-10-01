@@ -1,6 +1,6 @@
 import { BaseComponent } from './base';
-import { BinarySensorEntity, ComponentType } from './entities';
-import { BinarySensorStateEvent } from './states';
+import { type BinarySensorEntity, type ComponentType } from './entities';
+import { type BinarySensorStateEvent } from './states';
 import { BinarySensorTypes } from './binarySensorTypes';
 
 export class BinarySensorComponent extends BaseComponent<BinarySensorEntity, BinarySensorStateEvent> {

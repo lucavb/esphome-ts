@@ -1,4 +1,4 @@
-import { ReadData } from './connection';
+import { type ReadData } from './espSocket';
 import {
     BinarySensorStateResponse,
     CoverStateResponse,
@@ -11,30 +11,40 @@ import {
     SwitchStateResponse,
 } from './protobuf/api';
 import { MessageTypes } from './requestResponseMatching';
-import { decode } from './client';
-import { ListEntityResponses, StateResponses } from './interfaces';
-import { CommandInterface } from '../components';
+import { type ListEntityResponses, type StateResponses } from './interfaces';
+import { type CommandInterface } from '../components/commandInterface';
 import { Observable } from 'rxjs';
 import { filter } from 'rxjs/operators';
-import { BaseComponent, BinarySensorComponent, LightComponent, SensorComponent, SwitchComponent } from '..';
+import { BaseComponent } from '../components/base';
+import { BinarySensorComponent } from '../components/binarySensor';
+import { LightComponent } from '../components/light';
+import { SensorComponent } from '../components/sensor';
+import { SwitchComponent } from '../components/switch';
 
 export const stateParser = (data: ReadData): StateResponses | undefined => {
-    switch (data.type) {
-        case MessageTypes.BinarySensorStateResponse: {
-            return decode(BinarySensorStateResponse, data);
+    try {
+        switch (data.type) {
+            case MessageTypes.BinarySensorStateResponse: {
+                return BinarySensorStateResponse.decode(data.payload);
+            }
+            case MessageTypes.LightStateResponse: {
+                return LightStateResponse.decode(data.payload);
+            }
+            case MessageTypes.SensorStateResponse: {
+                return SensorStateResponse.decode(data.payload);
+            }
+            case MessageTypes.SwitchStateResponse: {
+                return SwitchStateResponse.decode(data.payload);
+            }
+            case MessageTypes.CoverStateResponse: {
+                return CoverStateResponse.decode(data.payload);
+            }
         }
-        case MessageTypes.LightStateResponse: {
-            return decode(LightStateResponse, data);
-        }
-        case MessageTypes.SensorStateResponse: {
-            return decode(SensorStateResponse, data);
-        }
-        case MessageTypes.SwitchStateResponse: {
-            return decode(SwitchStateResponse, data);
-        }
-        case MessageTypes.CoverStateResponse: {
-            return decode(CoverStateResponse, data);
-        }
+    } catch {
+        // A frame with a lying length or type byte decodes to garbage that
+        // throws here. Dropping the frame keeps every subscriber of
+        // stateEvents$ alive instead of tearing them down with the error.
+        return undefined;
     }
     return undefined;
 };
@@ -47,7 +57,7 @@ export const createComponents = (
 ): { id: string; component?: BaseComponent; state$?: Observable<StateResponses> } => {
     switch (data.type) {
         case MessageTypes.ListEntitiesBinarySensorResponse: {
-            const response: ListEntitiesBinarySensorResponse = decode(ListEntitiesBinarySensorResponse, data);
+            const response: ListEntitiesBinarySensorResponse = ListEntitiesBinarySensorResponse.decode(data.payload);
             const state$ = transformStates<BinarySensorStateResponse>(stateEvents$, response);
             return knownComponents.has(response.objectId)
                 ? {
@@ -60,7 +70,7 @@ export const createComponents = (
                   };
         }
         case MessageTypes.ListEntitiesSwitchResponse: {
-            const response: ListEntitiesSwitchResponse = decode(ListEntitiesSwitchResponse, data);
+            const response: ListEntitiesSwitchResponse = ListEntitiesSwitchResponse.decode(data.payload);
             const state$ = transformStates<SwitchStateResponse>(stateEvents$, response);
             return knownComponents.has(response.objectId)
                 ? {
@@ -73,7 +83,7 @@ export const createComponents = (
                   };
         }
         case MessageTypes.ListEntitiesLightResponse: {
-            const response: ListEntitiesLightResponse = decode(ListEntitiesLightResponse, data);
+            const response: ListEntitiesLightResponse = ListEntitiesLightResponse.decode(data.payload);
             const state$ = transformStates<LightStateResponse>(stateEvents$, response);
             return knownComponents.has(response.objectId)
                 ? {
@@ -86,7 +96,7 @@ export const createComponents = (
                   };
         }
         case MessageTypes.ListEntitiesSensorResponse: {
-            const response: ListEntitiesSensorResponse = decode(ListEntitiesSensorResponse, data);
+            const response: ListEntitiesSensorResponse = ListEntitiesSensorResponse.decode(data.payload);
             const state$ = transformStates<SensorStateResponse>(stateEvents$, response);
             return knownComponents.has(response.objectId)
                 ? {
@@ -113,8 +123,5 @@ export const transformStates = <T extends StateResponses>(
     return stateEvents$.pipe(filter((stateEvent) => stateEvent.key === listEntityResponse.key)) as Observable<T>;
 };
 
-export const isTrue = (val: unknown): val is true => val === true;
-export const isTruthy = (val: unknown): boolean => !!val;
-
-export const isFalse = (val: unknown): val is false => val === false;
-export const isFalsy = (val: unknown): boolean => !val;
+// Kept for modules that still import the guards from here; the canonical home is booleans.ts.
+export { isFalse, isTrue } from './booleans';

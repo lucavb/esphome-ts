@@ -1,4 +1,4 @@
-import { ReadData } from './connection';
+import { type ReadData } from './espSocket';
 import {
     catchError,
     distinctUntilChanged,
@@ -12,24 +12,26 @@ import {
     tap,
     timeout,
 } from 'rxjs/operators';
-import {
-    Client,
-    createComponents,
-    decode,
-    isFalse,
-    isTrue,
-    listResponses,
-    MessageTypes,
-    stateParser,
-    stateResponses,
-    StateResponses,
-} from './';
-import { BaseComponent } from '../components';
-import { BehaviorSubject, concat, merge, Observable, of, Subscription } from 'rxjs';
+import { Client } from './client';
+import { createComponents, stateParser } from './helpers';
+import { isFalse, isTrue } from './booleans';
+import { listResponses, stateResponses } from './responses';
+import { MessageTypes } from './requestResponseMatching';
+import { type StateResponses } from './interfaces';
+import { BaseComponent } from '../components/base';
+import { BehaviorSubject, concat, EMPTY, merge, Observable, of, Subject, Subscription, timer } from 'rxjs';
 import { EspSocket } from './espSocket';
-import { DeviceInfoResponse } from './protobuf/api';
+import { type ConnectResponse, DeviceInfoResponse } from './protobuf/api';
 
 const PING_TIMEOUT = 90 * 1000;
+const RETRY_DELAY = 1000;
+
+export class InvalidPasswordError extends Error {
+    constructor(host: string) {
+        super(`The ESPHome device at ${host} rejected the connection password`);
+        this.name = 'InvalidPasswordError';
+    }
+}
 
 export class EspDevice {
     private readonly socket: EspSocket;
@@ -44,6 +46,14 @@ export class EspDevice {
     private readonly discovery: BehaviorSubject<boolean>;
     public readonly discovery$: Observable<boolean>;
 
+    private readonly errors = new Subject<unknown>();
+    /**
+     * Device level failures: frames that could not be decoded and handshake
+     * problems such as an `InvalidPasswordError`. Socket level errors are
+     * available on the socket itself.
+     */
+    public readonly error$: Observable<unknown>;
+
     private readonly subscription: Subscription;
 
     public readonly alive$: Observable<boolean>;
@@ -56,6 +66,7 @@ export class EspDevice {
         this.subscription = new Subscription();
         this.discovery = new BehaviorSubject<boolean>(false);
         this.discovery$ = this.discovery.asObservable();
+        this.error$ = this.errors.asObservable();
         this.socket = new EspSocket(host, port, {
             timeout: PING_TIMEOUT,
         });
@@ -69,10 +80,15 @@ export class EspDevice {
             this.socket.espData$
                 .pipe(
                     tap((data: ReadData) => {
-                        if (listResponses.has(data.type)) {
-                            this.parseListResponse(data);
-                        } else if (data.type === MessageTypes.DeviceInfoResponse) {
-                            this.deviceInfo = decode(DeviceInfoResponse, data);
+                        try {
+                            if (listResponses.has(data.type)) {
+                                this.parseListResponse(data);
+                            } else if (data.type === MessageTypes.DeviceInfoResponse) {
+                                this.deviceInfo = DeviceInfoResponse.decode(data.payload);
+                            }
+                        } catch (error: unknown) {
+                            // A malformed frame must not tear down discovery for good.
+                            this.errors.next(error);
                         }
                     }),
                 )
@@ -91,14 +107,41 @@ export class EspDevice {
                     filter(isTrue),
                     switchMap(() => this.client.hello({ clientInfo: 'esphome-ts' })),
                     switchMap(() => this.client.connect({ password })),
+                    map((response: ConnectResponse) => {
+                        if (response.invalidPassword) {
+                            throw new InvalidPasswordError(this.host);
+                        }
+                        return response;
+                    }),
                     switchMap(() => this.client.deviceInfo()),
                     switchMap(() => this.client.listEntities()),
                     switchMap(() => this.client.subscribeStateChange()),
+                    catchError((error: unknown, caught: Observable<void>) => {
+                        this.errors.next(error);
+                        if (error instanceof InvalidPasswordError) {
+                            // A rejected password will not fix itself; retrying would only hammer the device.
+                            return EMPTY;
+                        }
+                        // Anything else (e.g. an undecodable response): keep the
+                        // reconnect logic alive and redo the handshake.
+                        return timer(RETRY_DELAY).pipe(switchMap(() => caught));
+                    }),
                 )
                 .subscribe(),
         );
 
-        this.socket.timeout$.pipe(tap(() => console.log('timeout'))).subscribe();
+        // The reconnect logic above only reacts to connected$ transitions, and a
+        // connection attempt that fails never leaves `false`. Retry those (and
+        // sends that timed out while disconnected) here, but never tear down a
+        // healthy connection because of an unrelated send error.
+        this.subscription.add(
+            this.socket.error$
+                .pipe(
+                    switchMap(() => timer(RETRY_DELAY)),
+                    filter(() => !this.socket.isConnected()),
+                )
+                .subscribe(() => this.socket.open()),
+        );
 
         this.alive$ = merge(
             this.socket.connected$,
@@ -139,8 +182,9 @@ export class EspDevice {
             component.terminate();
         });
         this.client.terminate();
-        this.socket.close(true);
         this.subscription.unsubscribe();
+        this.errors.complete();
+        this.socket.close(true);
     }
 
     private parseListResponse(data: ReadData) {

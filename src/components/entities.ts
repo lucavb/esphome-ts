@@ -7,7 +7,7 @@ export interface ListEntity {
 
 export interface SensorEntity extends ListEntity {
     accuracyDecimals: number;
-    deviceClass?: 'temperature' | 'humidity' | string;
+    deviceClass?: string;
     icon: string;
     unitOfMeasurement: string;
 }
