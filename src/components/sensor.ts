@@ -1,6 +1,6 @@
 import { BaseComponent } from './base';
-import { ComponentType, SensorEntity } from './entities';
-import { SensorStateEvent } from './states';
+import { type ComponentType, type SensorEntity } from './entities';
+import { type SensorStateEvent } from './states';
 
 export class SensorComponent extends BaseComponent<SensorEntity, SensorStateEvent> {
     public get value(): number | undefined {

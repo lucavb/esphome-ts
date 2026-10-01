@@ -1,9 +1,10 @@
-import { ComponentType, ListEntity } from './entities';
-import { StateEvent } from './states';
+import { type ComponentType, type ListEntity } from './entities';
+import { type StateEvent } from './states';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { debounceTime, filter, take, takeUntil, tap } from 'rxjs/operators';
-import { CommandInterface } from './commandInterface';
-import { isTrue, MessageTypes } from '../api';
+import { type CommandInterface } from './commandInterface';
+import { isTrue } from '../api/booleans';
+import { type MessageTypes } from '../api/requestResponseMatching';
 
 export abstract class BaseComponent<L extends ListEntity = ListEntity, S extends StateEvent = StateEvent> {
     protected readonly state = new BehaviorSubject<S | undefined>(undefined);

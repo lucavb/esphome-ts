@@ -13,18 +13,9 @@ import {
 import { type ReadData } from './espSocket';
 import { Observable, of, Subscription } from 'rxjs';
 import { MessageTypes } from './requestResponseMatching';
-import { filter, switchMap, take, tap } from 'rxjs/operators';
-import { BinaryReader } from '@bufbuild/protobuf/wire';
+import { filter, map, take, tap } from 'rxjs/operators';
+import type { MessageFns } from './protobuf/api_options';
 import { EspSocket } from './espSocket';
-import { voidMessage } from './protobuf/api_options';
-
-export interface Decoder<T> {
-    decode: (reader: BinaryReader, length?: number) => T;
-}
-
-export const decode = <T>(decoder: Decoder<T>, data: ReadData): T => {
-    return decoder.decode(new BinaryReader(data.payload));
-};
 
 export class Client {
     private readonly subscription: Subscription;
@@ -34,7 +25,7 @@ export class Client {
         this.subscription.add(
             this.socket.espData$
                 .pipe(
-                    tap((data) => {
+                    tap((data: ReadData) => {
                         if (data.type === MessageTypes.PingRequest) {
                             this.socket.sendEspMessage(MessageTypes.PingResponse, PingResponse.encode({}).finish());
                         }
@@ -48,55 +39,68 @@ export class Client {
         this.subscription.unsubscribe();
     }
 
-    hello(request: HelloRequest): Observable<HelloResponse> {
-        const data = HelloRequest.encode(request).finish();
-        this.socket.sendEspMessage(MessageTypes.HelloRequest, data);
-        return this.socket.espData$.pipe(
-            filter((value: ReadData) => value.type === MessageTypes.HelloResponse),
-            take(1),
-            switchMap((data: ReadData) => of(HelloResponse.decode(data.payload))),
+    public hello(request: HelloRequest): Observable<HelloResponse> {
+        return this.request(
+            MessageTypes.HelloRequest,
+            MessageTypes.HelloResponse,
+            HelloRequest.encode(request).finish(),
+            HelloResponse,
         );
     }
 
-    connect(request: ConnectRequest): Observable<ConnectResponse> {
-        const data = ConnectRequest.encode(request).finish();
-        this.socket.sendEspMessage(MessageTypes.ConnectRequest, data);
-        return this.socket.espData$.pipe(
-            filter((value: ReadData) => value.type === MessageTypes.ConnectResponse),
-            take(1),
-            switchMap((data: ReadData) => of(ConnectResponse.decode(data.payload))),
+    public connect(request: ConnectRequest): Observable<ConnectResponse> {
+        return this.request(
+            MessageTypes.ConnectRequest,
+            MessageTypes.ConnectResponse,
+            ConnectRequest.encode(request).finish(),
+            ConnectResponse,
         );
     }
 
-    ping(): Observable<PingResponse> {
-        const data = PingRequest.encode({}).finish();
-        this.socket.sendEspMessage(MessageTypes.PingRequest, data);
-        return this.socket.espData$.pipe(
-            filter((value: ReadData) => value.type === MessageTypes.PingResponse),
-            take(1),
-            switchMap((data: ReadData) => of(PingResponse.decode(data.payload))),
+    public ping(): Observable<PingResponse> {
+        return this.request(
+            MessageTypes.PingRequest,
+            MessageTypes.PingResponse,
+            PingRequest.encode({}).finish(),
+            PingResponse,
         );
     }
 
-    deviceInfo(): Observable<DeviceInfoResponse> {
-        const data = DeviceInfoRequest.encode({}).finish();
-        this.socket.sendEspMessage(MessageTypes.DeviceInfoRequest, data);
-        return this.socket.espData$.pipe(
-            filter(({ type }: ReadData) => type === MessageTypes.DeviceInfoResponse),
-            take(1),
-            switchMap(({ payload }: ReadData) => of(DeviceInfoResponse.decode(payload))),
+    public deviceInfo(): Observable<DeviceInfoResponse> {
+        return this.request(
+            MessageTypes.DeviceInfoRequest,
+            MessageTypes.DeviceInfoResponse,
+            DeviceInfoRequest.encode({}).finish(),
+            DeviceInfoResponse,
         );
     }
 
-    listEntities(): Observable<voidMessage> {
-        const data = ListEntitiesRequest.encode({}).finish();
-        this.socket.sendEspMessage(MessageTypes.ListEntitiesRequest, data);
-        return of(voidMessage.decode(new Uint8Array()));
+    // Fire-and-forget requests: the protocol answers ListEntitiesRequest with
+    // an unbounded stream of list responses and SubscribeStatesRequest with
+    // nothing at all, so there is no single response to await here. The
+    // observables emit once the request is on the wire and complete — callers
+    // that need the results watch EspDevice's discovery$ and component streams.
+    public listEntities(): Observable<void> {
+        this.socket.sendEspMessage(MessageTypes.ListEntitiesRequest, ListEntitiesRequest.encode({}).finish());
+        return of(undefined);
     }
 
-    subscribeStateChange(): Observable<voidMessage> {
-        const data = SubscribeStatesRequest.encode({}).finish();
-        this.socket.sendEspMessage(MessageTypes.SubscribeStatesRequest, data);
-        return of(voidMessage.decode(new Uint8Array()));
+    public subscribeStateChange(): Observable<void> {
+        this.socket.sendEspMessage(MessageTypes.SubscribeStatesRequest, SubscribeStatesRequest.encode({}).finish());
+        return of(undefined);
+    }
+
+    private request<T>(
+        type: MessageTypes,
+        responseType: MessageTypes,
+        payload: Uint8Array,
+        response: MessageFns<T>,
+    ): Observable<T> {
+        this.socket.sendEspMessage(type, payload);
+        return this.socket.espData$.pipe(
+            filter((data: ReadData) => data.type === responseType),
+            take(1),
+            map((data: ReadData) => response.decode(data.payload)),
+        );
     }
 }

@@ -27,12 +27,15 @@ export class RxjsSocket {
     private readonly timeout = new Subject<void>();
     public readonly timeout$: Observable<void>;
 
-    private readonly error = new Subject<Error>();
+    protected readonly error = new Subject<Error>();
     public readonly error$: Observable<Error>;
-
     protected readonly terminate = new Subject<void>();
 
-    constructor(private readonly host: string, private readonly port: number, config?: RxjsSocketConfiguration) {
+    constructor(
+        private readonly host: string,
+        private readonly port: number,
+        config?: RxjsSocketConfiguration,
+    ) {
         this.config = { ...defaultConfig, ...config };
         this.data$ = this.data.asObservable();
         this.connected$ = this.connected.asObservable();
@@ -58,18 +61,29 @@ export class RxjsSocket {
         if (!this.socket) {
             return;
         }
+        this.connected.next(false);
+        this.terminate.next();
         this.socket.end();
         if (forceDestroy) {
             this.destroySocket();
         }
     }
 
+    public isConnected(): boolean {
+        return this.connected.getValue();
+    }
+
     send(data: string | Uint8Array, encoding?: BufferEncoding): Observable<void> {
         return new Observable<void>((subscriber) => {
             if (this.connected.getValue() && this.socket) {
-                this.socket.write(data, encoding, (err?: Error) => {
+                this.socket.write(data, encoding, (err?: Error | null) => {
                     if (err) {
-                        throw err;
+                        // Throwing here would escape into Node's write-completion
+                        // context as an uncaught exception; erroring the
+                        // observable keeps the failure on the observable and
+                        // lets error$ consumers see it via EspSocket's sends.
+                        subscriber.error(err);
+                        return;
                     }
                     subscriber.next();
                     subscriber.complete();
@@ -86,12 +100,7 @@ export class RxjsSocket {
             return;
         }
 
-        fromEvent<Error>(this.socket, 'error')
-            .pipe(
-                tap((err: Error) => this.error.next(err)),
-                takeUntil(this.terminate),
-            )
-            .subscribe();
+        this.socket.on('error', (err: Error) => this.error.next(err));
         fromEvent<Buffer>(this.socket, 'data')
             .pipe(
                 tap((buffer: Buffer) => this.data.next(buffer)),

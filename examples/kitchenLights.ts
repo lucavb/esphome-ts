@@ -1,8 +1,13 @@
 import { filter, take, tap } from 'rxjs/operators';
-import { LightComponent } from './components/light';
-import { EspDevice, isSwitchComponent, isTrue } from './api';
+import { EspDevice, isSwitchComponent, isTrue, LightComponent } from '../src';
 
-const device = new EspDevice('172.16.0.112');
+const host = process.argv[2];
+if (!host) {
+    console.log('Usage: npx tsx examples/kitchenLights.ts <device-host>');
+    process.exit(1);
+}
+
+const device = new EspDevice(host);
 device.discovery$
     .pipe(
         filter(isTrue),
@@ -11,6 +16,7 @@ device.discovery$
             const kitchenLights = device.components['kitchen_lights:'] as LightComponent;
             const livingRoomDehumidifier = device.components['living_room_dehumidifier'];
             console.log(livingRoomDehumidifier.name);
+            console.log(`kitchen lights available: ${kitchenLights.ready}`);
 
             if (isSwitchComponent(livingRoomDehumidifier)) {
                 livingRoomDehumidifier.state$.pipe(tap(console.log)).subscribe();

@@ -1,11 +1,14 @@
-import { ComponentType, LightEntity } from './entities';
-import { LightStateEvent } from './states';
+import { type ComponentType, type LightEntity } from './entities';
+import { type LightStateEvent } from './states';
 import { convertNumbers } from './helpers';
 import { BaseComponent } from './base';
-import { hsv as hsvConvert, rgb as rgbConvert } from 'color-convert';
-import { Hsv, Rgb } from './interfaces';
+import convert from 'color-convert';
+
+const hsvConvert = convert.hsv;
+const rgbConvert = convert.rgb;
+import { type Hsv, type Rgb } from './interfaces';
 import { LightCommandRequest } from '../api/protobuf/api';
-import { MessageTypes } from '../api';
+import { MessageTypes } from '../api/requestResponseMatching';
 
 export const DEFAULT_NO_EFFECT = 'None';
 

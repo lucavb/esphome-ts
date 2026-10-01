@@ -1,7 +1,7 @@
 import { BaseComponent } from './base';
-import { ComponentType, ListEntity } from './entities';
-import { SwitchStateEvent } from './states';
-import { MessageTypes } from '../api';
+import { type ComponentType, type ListEntity } from './entities';
+import { type SwitchStateEvent } from './states';
+import { MessageTypes } from '../api/requestResponseMatching';
 import { SwitchCommandRequest } from '../api/protobuf/api';
 
 export class SwitchComponent extends BaseComponent<ListEntity, SwitchStateEvent> {

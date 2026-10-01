@@ -1,13 +1,13 @@
 import { from, Observable } from 'rxjs';
 import { filter, map, switchMap, take, takeUntil, timeout } from 'rxjs/operators';
-import { CommandInterface } from '../components/commandInterface';
-import { RxjsSocket, RxjsSocketConfiguration } from './socket';
+import { type CommandInterface } from '../components/commandInterface';
+import { RxjsSocket, type RxjsSocketConfiguration } from './socket';
 import { BytePositions, HEADER_FIRST_BYTE, HEADER_SIZE } from './bytePositions';
 import { MessageTypes } from './requestResponseMatching';
 import { isTrue } from './helpers';
 
 export interface ReadData {
-    type: number;
+    type: MessageTypes;
     payload: Uint8Array;
 }
 

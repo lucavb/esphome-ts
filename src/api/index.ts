@@ -1,10 +1,7 @@
-export * from './bytePositions';
-export * from './client';
-export * from './connection';
+export { Client } from './client';
 export * from './espDevice';
-export * from './helpers';
-export * from './interfaces';
+export { EspSocket, type ReadData } from './espSocket';
+export { isFalse, isTrue } from './booleans';
 export * from './requestResponseMatching';
-export * from './responses';
 export * from './socket';
 export * from './typeGuards';
