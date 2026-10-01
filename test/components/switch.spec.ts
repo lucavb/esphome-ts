@@ -1,5 +1,5 @@
-import { SwitchComponent, SwitchStateEvent } from '../../src';
-import { ListEntity } from '../../src/components/entities';
+import { SwitchComponent, type SwitchStateEvent } from '../../src';
+import { type ListEntity } from '../../src/components/entities';
 import { Subject } from 'rxjs';
 import { DebugConnection } from '../testHelpers/debugConnection';
 import { MessageTypes } from '../../src/api/requestResponseMatching';

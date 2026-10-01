@@ -43,9 +43,9 @@ export class EspDeviceMock {
                         .pipe(
                             map((buffer: Uint8Array) => Array.from(buffer)),
                             map(([, , type]) => type),
-                            tap((type: number) => this.receivedTypes.push(type)),
-                            tap((type: number) => this.types$.next(type)),
-                            tap((type: number) => {
+                            tap((type: MessageTypes) => this.receivedTypes.push(type)),
+                            tap((type: MessageTypes) => this.types$.next(type)),
+                            tap((type: MessageTypes) => {
                                 switch (type) {
                                     case MessageTypes.HelloRequest: {
                                         sendOverSocket(
@@ -139,10 +139,18 @@ export class EspDeviceMock {
             const callback = (err?: Error) => {
                 this.latestSocket = undefined;
                 this.connected$.next(false);
-                err ? subscriber.error(err) : subscriber.next();
+                if (err) {
+                    subscriber.error(err);
+                } else {
+                    subscriber.next();
+                }
                 subscriber.complete();
             };
-            this.server.listening ? this.server.close(callback) : callback();
+            if (this.server.listening) {
+                this.server.close(callback);
+            } else {
+                callback();
+            }
         });
     }
 }
