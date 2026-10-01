@@ -5,9 +5,12 @@ name: Node.js CI
 
 on:
     push:
-        branches: [master]
+        branches: [main]
     pull_request:
-        branches: [master]
+        branches: [main]
+
+permissions:
+    contents: read
 
 jobs:
     build:
@@ -15,17 +18,20 @@ jobs:
 
         strategy:
             matrix:
-                node-version: [16.x, 18.x, 20.x]
+                node-version: [22.x, 24.x, 26.x]
 
         steps:
-            - uses: actions/checkout@v2
+            - uses: actions/checkout@v7
             - name: Use Node.js ${{ matrix.node-version }}
-              uses: actions/setup-node@v1
+              uses: actions/setup-node@v7
               with:
                   node-version: ${{ matrix.node-version }}
+                  cache: 'npm'
             - name: Update Git
               run: git fetch --all
             - run: npm ci
-            - run: npm run lint
+            - name: Lint
+              run: npm run lint && npm run lint:commitlint
+            - run: npm run typecheck
             - run: npm run cbuild --if-present
             - run: npm test

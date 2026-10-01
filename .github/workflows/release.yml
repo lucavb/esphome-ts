@@ -2,20 +2,23 @@ name: Release
 on:
     push:
         branches:
-            - master
+            - main
+permissions:
+    contents: write
 jobs:
     release:
         name: Release
         runs-on: ubuntu-latest
         steps:
             - name: Checkout
-              uses: actions/checkout@v2
+              uses: actions/checkout@v7
               with:
                   fetch-depth: 0
             - name: Setup Node.js
-              uses: actions/setup-node@v1
+              uses: actions/setup-node@v7
               with:
-                  node-version: 20
+                  node-version: 24
+                  cache: 'npm'
             - name: Update Git
               run: git fetch --all
             - name: Install dependencies

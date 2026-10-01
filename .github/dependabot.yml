@@ -8,3 +8,7 @@ updates:
       open-pull-requests-limit: 10
       assignees:
           - lucavb
+    - package-ecosystem: github-actions
+      directory: '/'
+      schedule:
+          interval: weekly
