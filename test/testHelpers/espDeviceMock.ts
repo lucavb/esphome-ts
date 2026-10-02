@@ -1,7 +1,8 @@
 import { Server, Socket } from 'net';
-import { fromEvent, Observable, Subject } from 'rxjs';
-import { map, take, takeUntil, tap } from 'rxjs/operators';
+import { from, fromEvent, Observable, Subject } from 'rxjs';
+import { map, mergeMap, take, takeUntil, tap } from 'rxjs/operators';
 import { MessageTypes } from '../../src';
+import { createFrameParser, encodeFrame, type ReadData } from '../../src/api/framer';
 import {
     ConnectResponse,
     DeviceInfoResponse,
@@ -11,8 +12,7 @@ import {
 } from '../../src/api/protobuf/api';
 
 const sendOverSocket = (socket: Socket, type: MessageTypes, payload: Uint8Array): void => {
-    const final = new Uint8Array([0x0, payload.length, type, ...Array.from(payload)]);
-    socket.write(final);
+    socket.write(encodeFrame(type, payload));
 };
 
 export class EspDeviceMock {
@@ -39,10 +39,12 @@ export class EspDeviceMock {
                     this.sockets.push(socket);
                     const innerTeardown = new Subject<void>();
 
-                    fromEvent<Uint8Array>(socket, 'data')
+                    const frameParser = createFrameParser();
+
+                    fromEvent<Buffer>(socket, 'data')
                         .pipe(
-                            map((buffer: Uint8Array) => Array.from(buffer)),
-                            map(([, , type]) => type),
+                            mergeMap((chunk: Buffer) => from(frameParser.push(chunk))),
+                            map((frame: ReadData) => frame.type),
                             tap((type: MessageTypes) => this.receivedTypes.push(type)),
                             tap((type: MessageTypes) => this.types$.next(type)),
                             tap((type: MessageTypes) => {
