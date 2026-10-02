@@ -1,8 +1,15 @@
 import { EspSocket } from '../../src/api/espSocket';
 import { Client } from '../../src/api/client';
 import { MessageTypes } from '../../src/api/requestResponseMatching';
-import { HEADER_FIRST_BYTE } from '../../src/api/bytePositions';
-import { ConnectRequest, DeviceInfoRequest, HelloRequest, PingRequest } from '../../src/api/protobuf/api';
+import { encodeFrame } from '../../src/api/framer';
+import {
+    ConnectRequest,
+    DeviceInfoRequest,
+    HelloRequest,
+    HelloResponse,
+    PingRequest,
+} from '../../src/api/protobuf/api';
+import { firstValueFrom } from 'rxjs';
 
 interface MockNetSocket {
     emit(event: string, ...args: unknown[]): boolean;
@@ -54,23 +61,19 @@ vi.mock('net', async () => {
 
 const flush = (): Promise<void> => new Promise((resolve) => setImmediate(resolve));
 
-const expectedFrame = (type: number, payload: Uint8Array): number[] => [
-    HEADER_FIRST_BYTE,
-    payload.length,
-    type,
-    ...payload,
-];
+const expectedFrame = (type: MessageTypes, payload: Uint8Array): number[] => [...encodeFrame(type, payload)];
 
 describe('Client wire protocol', () => {
     let espSocket: EspSocket;
     let client: Client;
+    let mockSocket: MockNetSocket;
 
     beforeEach(async () => {
         registry.writes = [];
         espSocket = new EspSocket('localhost', 6053);
         client = new Client(espSocket);
         espSocket.open();
-        const mockSocket = registry.instances.at(-1) as unknown as MockNetSocket;
+        mockSocket = registry.instances.at(-1) as unknown as MockNetSocket;
         mockSocket.emit('connect');
         await flush();
     });
@@ -82,6 +85,34 @@ describe('Client wire protocol', () => {
         await flush();
         expect(registry.writes.length).toBe(1);
         expect([...registry.writes[0]]).toEqual(expectedFrame(MessageTypes.HelloRequest, payload));
+    });
+
+    it('hello() emits the HelloResponse decoded from the wire', async () => {
+        const response = firstValueFrom(client.hello({ clientInfo: 'x' }));
+
+        const payload = HelloResponse.encode({ serverInfo: 'demo', apiVersionMajor: 1, apiVersionMinor: 2 }).finish();
+        mockSocket.emit('data', Buffer.from(encodeFrame(MessageTypes.HelloResponse, payload)));
+
+        const decoded = await response;
+        expect(decoded.serverInfo).toBe('demo');
+        expect(decoded.apiVersionMinor).toBe(2);
+    });
+
+    it('ignores responses of another type while waiting', async () => {
+        const response = firstValueFrom(client.hello({ clientInfo: 'x' }));
+
+        mockSocket.emit('data', Buffer.from(encodeFrame(MessageTypes.PingResponse, new Uint8Array())));
+        const payload = HelloResponse.encode({ serverInfo: 'late', apiVersionMajor: 1, apiVersionMinor: 0 }).finish();
+        mockSocket.emit('data', Buffer.from(encodeFrame(MessageTypes.HelloResponse, payload)));
+
+        expect((await response).serverInfo).toBe('late');
+    });
+
+    it('listEntities() sends the request and emits once', async () => {
+        await expect(firstValueFrom(client.listEntities())).resolves.toBeUndefined();
+
+        expect(registry.writes.length).toBe(1);
+        expect([...registry.writes[0]][2]).toBe(MessageTypes.ListEntitiesRequest);
     });
 
     it('connect() sends a ConnectRequest frame', async () => {

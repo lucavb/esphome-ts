@@ -1,15 +1,12 @@
 import { from, Observable } from 'rxjs';
-import { filter, map, switchMap, take, takeUntil, timeout } from 'rxjs/operators';
+import { filter, mergeMap, switchMap, take, takeUntil, timeout } from 'rxjs/operators';
 import { type CommandInterface } from '../components/commandInterface';
 import { RxjsSocket, type RxjsSocketConfiguration } from './socket';
-import { BytePositions, HEADER_FIRST_BYTE, HEADER_SIZE } from './bytePositions';
+import { createFrameParser, encodeFrame, type ReadData } from './framer';
 import { MessageTypes } from './requestResponseMatching';
-import { isTrue } from './helpers';
+import { isTrue } from './booleans';
 
-export interface ReadData {
-    type: MessageTypes;
-    payload: Uint8Array;
-}
+export type { ReadData } from './framer';
 
 export class EspSocket extends RxjsSocket implements CommandInterface {
     public readonly espData$: Observable<ReadData>;
@@ -17,29 +14,18 @@ export class EspSocket extends RxjsSocket implements CommandInterface {
     constructor(host: string, port: number, config?: RxjsSocketConfiguration) {
         super(host, port, config);
 
-        this.espData$ = this.data$.pipe(
-            switchMap((buffer: Buffer) => {
-                let bytesTaken = 0;
-                const result: Buffer[] = [];
-                while (bytesTaken < buffer.length) {
-                    const subBuffer = buffer.slice(
-                        bytesTaken,
-                        bytesTaken + HEADER_SIZE + buffer[bytesTaken + BytePositions.LENGTH],
-                    );
-                    result.push(subBuffer);
-                    bytesTaken += HEADER_SIZE + buffer[bytesTaken + BytePositions.LENGTH];
-                }
-                return from(result);
+        // Each subscription owns its parser, and each connection owns its
+        // carry-over buffer: a frame is pushed into a parser exactly once per
+        // subscriber, and a parser that still holds a partial frame is dropped
+        // when the connection drops. Scoping the parser inside the switchMap is
+        // what guarantees both — a shared parser field would be fed once per
+        // subscriber and would survive reconnects.
+        this.espData$ = this.connected$.pipe(
+            filter(isTrue),
+            switchMap(() => {
+                const frameParser = createFrameParser();
+                return this.data$.pipe(mergeMap((chunk: Buffer) => from(frameParser.push(chunk))));
             }),
-            filter((buffer: Buffer) => buffer.length >= HEADER_SIZE),
-            filter((buffer: Buffer) => buffer.readUInt8(BytePositions.ZERO) === HEADER_FIRST_BYTE),
-            map((buffer: Buffer) => ({
-                type: buffer.readUInt8(BytePositions.TYPE),
-                payload: buffer.slice(
-                    BytePositions.PAYLOAD,
-                    BytePositions.PAYLOAD + buffer.readUInt8(BytePositions.LENGTH),
-                ),
-            })),
         );
     }
 
@@ -50,11 +36,19 @@ export class EspSocket extends RxjsSocket implements CommandInterface {
                 filter(isTrue),
                 take(1),
                 switchMap(() => {
-                    const final = new Uint8Array([HEADER_FIRST_BYTE, payload.length, type, ...payload]);
+                    const final = encodeFrame(type, payload);
                     return this.send(final);
                 }),
                 takeUntil(this.terminate),
             )
-            .subscribe();
+            // Fire-and-forget by design (CommandInterface): the command is
+            // silently dropped when the connection is not established within
+            // the timeout, and a payload over the wire limit is rejected by
+            // encodeFrame. Both surface on error$ instead of crashing the host.
+            .subscribe({
+                error: (error: unknown) => {
+                    this.error.next(error instanceof Error ? error : new Error(String(error)));
+                },
+            });
     }
 }
