@@ -1,4 +1,4 @@
-import { createServer, Server } from 'net';
+import { createServer, Server, Socket } from 'net';
 import { firstValueFrom } from 'rxjs';
 import { delay, distinctUntilChanged, filter, skip, switchMap, take, tap } from 'rxjs/operators';
 import { RxjsSocket } from '../../src';
@@ -11,6 +11,17 @@ const isRecord = (arg: unknown): arg is Record<string, unknown> =>
 const closeServer = (srv: Server): Promise<void> =>
     new Promise((resolve) => {
         srv.close(() => resolve());
+    });
+
+const createTestServer = (onConnection: (socket: Socket) => void): Server =>
+    createServer((socket) => {
+        // The client under test closes its sockets with end() followed by
+        // destroy(); when a chunk is still unread at that moment the TCP stack
+        // sends RST, which surfaces as ECONNRESET on the server side of the
+        // connection. That is expected during teardown, not a failure: a bare
+        // listener keeps it from escaping as an uncaught exception.
+        socket.on('error', () => undefined);
+        onConnection(socket);
     });
 
 describe('RxjsSocket', () => {
@@ -32,7 +43,7 @@ describe('RxjsSocket', () => {
         beforeEach(() => {
             client = new RxjsSocket(host, port);
 
-            server = createServer((socket) => {
+            server = createTestServer((socket) => {
                 setTimeout(() => socket.end(), 10);
             }).listen(port);
         });
@@ -52,7 +63,7 @@ describe('RxjsSocket', () => {
 
     describe('timeout', () => {
         it('emits on timeout$ and disconnects when the timeout occurs', async () => {
-            server = createServer(() => undefined).listen(port);
+            server = createTestServer(() => undefined).listen(port);
             client = new RxjsSocket(host, port, { timeout: 50 });
             const timeout$ = firstValueFrom(client.timeout$.pipe(take(1)));
             const disconnected = firstValueFrom(client.connected$.pipe(skip(1), filter(isFalse), take(1)));
@@ -64,7 +75,7 @@ describe('RxjsSocket', () => {
         it(
             'reconnects',
             async () => {
-                server = createServer((socket) => {
+                server = createTestServer((socket) => {
                     socket.write('hello');
                 }).listen(port);
                 client = new RxjsSocket(host, port, { timeout: 50, reconnectOnTimeout: true });
@@ -96,7 +107,7 @@ describe('RxjsSocket', () => {
 
         it('receives data', async () => {
             const first = [0x03, 0x03, 0x93, 0xfe];
-            server = createServer((socket) => {
+            server = createTestServer((socket) => {
                 socket.write(Uint8Array.from(first));
             }).listen(port);
             const received = firstValueFrom(
@@ -113,7 +124,7 @@ describe('RxjsSocket', () => {
     describe('send', () => {
         beforeEach(() => {
             client = new RxjsSocket(host, port);
-            server = createServer((socket) => {
+            server = createTestServer((socket) => {
                 socket.on('data', (buffer) => {
                     socket.write(buffer);
                 });
@@ -154,7 +165,7 @@ describe('RxjsSocket', () => {
             const socketEnded = new Promise<void>((resolve) => {
                 ended = resolve;
             });
-            server = createServer((socket) => {
+            server = createTestServer((socket) => {
                 socket.on('end', ended);
             }).listen(port);
             client = new RxjsSocket(host, port);
