@@ -77,11 +77,11 @@ cannot be reached), and `terminate()` tears everything down.
 Failures that cannot be fixed by reconnecting are reported on `EspDevice.error$`: an
 `InvalidPasswordError` when the device rejects the password (the handshake then stops, so
 `discovery$` never emits), and the decode error of any frame the device sent that could not be
-parsed. A standalone `EspSocket` (or `RxjsSocket`) reports its own connection errors, and commands that
-could not be sent, on its `error$`.
+parsed. `EspSocket` owns the wire format end to end: it reports its own connection errors, and
+commands that could not be sent, on its `error$`.
 
 You shouldn't really have to interact with such low level stuff. Should you decide to do this
-anyways, then the classes `Client` and `EspSocket` are of interest to you. `EspSocket` handles
-the TCP connection and the message framing, while `Client` is on a higher level and already
-allows you to send specific messages to your ESP. Underneath `EspSocket`, `RxjsSocket` is the
-raw TCP-to-RxJS layer that provides you with an observable of the responses.
+anyways, then the classes `Client` and `EspSocket` are of interest to you. `EspSocket` handles the
+connection (a real TCP path, or any `Connection` you inject) and the message framing, while
+`Client` is on a higher level and already allows you to send specific messages to your ESP. There
+is no separate raw-socket class: `EspSocket` is the lowest level the library exports.

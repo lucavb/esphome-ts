@@ -34,7 +34,7 @@ describe('Client', () => {
 
     afterEach(async () => {
         client.terminate();
-        socket.close();
+        socket.terminate();
 
         subscription.unsubscribe();
         await firstValueFrom(deviceMock.terminate());

@@ -11,8 +11,8 @@ The physical ESPHome device the library is talking to. `EspDevice` is the module
 _Avoid_: board, node
 
 **Connection**:
-The live TCP path to a Device, along which frames flow. Being connected is not the same as the Device being alive — see Liveness.
-_Avoid_: session, channel
+The live path between the library and a Device, along which frames travel as byte chunks. A Connection can be a real TCP path or an in-memory one in specs; both satisfy the same interface. Being connected is not the same as the Device being alive — see Liveness.
+_Avoid_: session, channel, transport
 
 **Frame**:
 The single wire unit: a fixed three-byte header (marker byte, length byte, type byte) followed by up to 255 payload bytes. One frame carries one message.

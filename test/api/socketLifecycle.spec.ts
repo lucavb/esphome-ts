@@ -1,5 +1,6 @@
 import { EspSocket } from '../../src/api/espSocket';
 import { EspDevice, InvalidPasswordError } from '../../src/api/espDevice';
+import { type Connection } from '../../src/api/connection';
 import { MessageTypes } from '../../src/api/requestResponseMatching';
 import { encodeFrame } from '../../src/api/framer';
 import {
@@ -8,145 +9,122 @@ import {
     HelloResponse,
     ListEntitiesDoneResponse,
 } from '../../src/api/protobuf/api';
+import { createInMemoryConnection, type InMemoryServerDriver } from '../testHelpers/inMemoryConnection';
 import { filter, firstValueFrom, take } from 'rxjs';
 import { isTrue } from '../../src/api/booleans';
 
-interface MockNetSocket {
-    emit(event: string, ...args: unknown[]): boolean;
-}
-
-const { registry } = vi.hoisted(() => ({
-    registry: {
-        instances: [] as object[],
-        writes: [] as Uint8Array[],
-    },
-}));
-
-vi.mock('net', async () => {
-    const { EventEmitter } = await import('node:events');
-    class MockSocket extends EventEmitter {
-        public connecting = false;
-
-        public connect(_port: number, _host: string): void {}
-
-        public setTimeout(_timeout: number, _callback?: () => void): this {
-            return this;
-        }
-
-        public end(_data?: Uint8Array | string): this {
-            return this;
-        }
-
-        public destroy(): void {}
-
-        public write(
-            data: Uint8Array | string,
-            _encoding?: BufferEncoding,
-            callback?: (error?: Error | null) => void,
-        ): boolean {
-            registry.writes.push(data instanceof Uint8Array ? data : Buffer.from(data));
-            callback?.(null);
-            return true;
-        }
-    }
-    class TrackedSocket extends MockSocket {
-        constructor() {
-            super();
-            registry.instances.push(this);
-        }
-    }
-    registry.instances = [];
-    return { Socket: TrackedSocket, default: { Socket: TrackedSocket } };
-});
-
 const flush = (): Promise<void> => new Promise((resolve) => setImmediate(resolve));
 
-describe('RxjsSocket lifecycle', () => {
+describe('EspSocket teardown', () => {
     let espSocket: EspSocket;
-    let mockSocket: MockNetSocket;
+    let server: InMemoryServerDriver;
 
     const openSocket = (): void => {
-        espSocket = new EspSocket('localhost', 6053);
+        const inMemory = createInMemoryConnection();
+        espSocket = new EspSocket('localhost', 6053, { connection: inMemory.connection });
+        server = inMemory.server;
         espSocket.open();
-        mockSocket = registry.instances.at(-1) as unknown as MockNetSocket;
     };
 
     beforeEach(() => {
-        registry.writes = [];
         openSocket();
     });
 
-    it('flips connected$ to false on a graceful close', () => {
+    it('flips connected$ to false on terminate', () => {
         const statuses: boolean[] = [];
         espSocket.connected$.subscribe((status: boolean) => statuses.push(status));
 
-        mockSocket.emit('connect');
+        server.connect();
         expect(statuses).toEqual([false, true]);
 
-        espSocket.close();
+        espSocket.terminate();
         expect(statuses).toEqual([false, true, false]);
     });
 
-    it('drops a pending sendEspMessage on a plain close without writing', async () => {
+    it('drops a pending sendEspMessage on a terminate without writing', async () => {
         espSocket.sendEspMessage(1, new Uint8Array([0xde, 0xad]));
 
-        espSocket.close();
+        espSocket.terminate();
+        await flush();
+        // even a reconnect afterwards must not flush the dropped send
+        server.connect();
         await flush();
 
-        expect(registry.writes.length).toBe(0);
+        expect(server.written.length).toBe(0);
     });
 
-    it('routes a late error after a graceful close to error$ without crashing', async () => {
-        mockSocket.emit('connect');
-        espSocket.close();
+    it('routes a late error after a graceful terminate to error$ without crashing', async () => {
+        server.connect();
+        espSocket.terminate();
 
         const err = new Error('ECONNRESET');
-        const errorPromise = new Promise<Error>((resolve) => espSocket.error$.subscribe(resolve));
-        mockSocket.emit('error', err);
+        const errorPromise = new Promise<Error>((resolve) => {
+            espSocket.error$.subscribe((error: unknown) => resolve(error as Error));
+        });
+        server.emitError(err);
 
         await expect(errorPromise).resolves.toBe(err);
-        expect(registry.writes.length).toBe(0);
+        expect(server.written.length).toBe(0);
     });
 });
 
 describe('EspDevice.terminate', () => {
-    beforeEach(() => {
-        registry.instances = [];
-        registry.writes = [];
-    });
+    it('does not open a new connection during teardown', async () => {
+        const inMemory = createInMemoryConnection();
+        let opens = 0;
+        const counted: Connection = {
+            ...inMemory.connection,
+            open: (): void => {
+                opens += 1;
+                inMemory.connection.open();
+            },
+        };
 
-    it('does not open a new socket during teardown', async () => {
-        const device = new EspDevice('localhost');
-        const mock = registry.instances.at(-1) as unknown as MockNetSocket;
+        const device = new EspDevice('localhost', '', 6053, { connection: counted });
+        expect(opens).toBe(1);
 
-        mock.emit('connect');
+        inMemory.server.connect();
         await flush();
 
         device.terminate();
         await flush();
 
-        expect(registry.instances.length).toBe(1);
+        expect(opens).toBe(1);
+        expect(inMemory.connection.isConnected()).toBe(false);
     });
 });
 
 describe('EspDevice protocol handling', () => {
-    const respond = (mock: MockNetSocket, type: MessageTypes, payload: Uint8Array): void => {
-        mock.emit('data', Buffer.from(encodeFrame(type, payload)));
+    const respond = (driver: InMemoryServerDriver, type: MessageTypes, payload: Uint8Array): void => {
+        driver.push(Buffer.from(encodeFrame(type, payload)));
     };
     const hello = (): Uint8Array =>
         HelloResponse.encode({ serverInfo: 'demo', apiVersionMajor: 1, apiVersionMinor: 1 }).finish();
     const connectOk = (): Uint8Array => ConnectResponse.encode({ invalidPassword: false }).finish();
-    const writtenTypes = (): number[] => registry.writes.map((write) => write[2]);
+    const writtenTypes = (): number[] => server.written.map((write) => write[2]);
     // setImmediate stays real so flush() keeps working while rxjs timers are faked
     const fakeTimers = (): void => {
         vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] });
     };
 
     let device: EspDevice;
+    let connection: Connection;
+    let server: InMemoryServerDriver;
+    let opens: () => number;
+    let opensCount = 0;
 
     beforeEach(() => {
-        registry.instances = [];
-        registry.writes = [];
+        const inMemory = createInMemoryConnection();
+        connection = {
+            ...inMemory.connection,
+            open: (): void => {
+                opensCount += 1;
+                inMemory.connection.open();
+            },
+        };
+        server = inMemory.server;
+        opens = () => opensCount;
+        opensCount = 0;
     });
 
     afterEach(() => {
@@ -156,42 +134,40 @@ describe('EspDevice protocol handling', () => {
 
     it('retries a failing connection attempt', async () => {
         fakeTimers();
-        device = new EspDevice('localhost');
-        expect(registry.instances.length).toBe(1);
+        device = new EspDevice('localhost', '', 6053, { connection });
+        expect(opens()).toBe(1);
 
-        (registry.instances[0] as MockNetSocket).emit('error', new Error('ECONNREFUSED'));
+        server.emitError(new Error('ECONNREFUSED'));
         await vi.advanceTimersByTimeAsync(1000);
-        expect(registry.instances.length).toBe(2);
+        expect(opens()).toBe(2);
 
-        (registry.instances[1] as MockNetSocket).emit('error', new Error('ECONNREFUSED'));
+        server.emitError(new Error('ECONNREFUSED'));
         await vi.advanceTimersByTimeAsync(1000);
-        expect(registry.instances.length).toBe(3);
+        expect(opens()).toBe(3);
     });
 
     it('does not reconnect a healthy connection because of an unrelated send error', async () => {
         fakeTimers();
-        device = new EspDevice('localhost');
-        const mock = registry.instances[0] as MockNetSocket;
-        mock.emit('connect');
+        device = new EspDevice('localhost', '', 6053, { connection });
+        server.connect();
         await flush();
 
-        mock.emit('error', new Error('unrelated'));
+        server.emitError(new Error('unrelated'));
         await vi.advanceTimersByTimeAsync(2000);
 
-        expect(registry.instances.length).toBe(1);
+        expect(opens()).toBe(1);
     });
 
     it('reports an invalid password and stops the handshake', async () => {
         fakeTimers();
-        device = new EspDevice('localhost');
-        const mock = registry.instances[0] as MockNetSocket;
+        device = new EspDevice('localhost', '', 6053, { connection });
         const error = firstValueFrom(device.error$.pipe(take(1)));
-        mock.emit('connect');
+        server.connect();
         await flush();
 
-        respond(mock, MessageTypes.HelloResponse, hello());
+        respond(server, MessageTypes.HelloResponse, hello());
         await flush();
-        respond(mock, MessageTypes.ConnectResponse, ConnectResponse.encode({ invalidPassword: true }).finish());
+        respond(server, MessageTypes.ConnectResponse, ConnectResponse.encode({ invalidPassword: true }).finish());
 
         await expect(error).resolves.toBeInstanceOf(InvalidPasswordError);
         await vi.advanceTimersByTimeAsync(5000);
@@ -200,27 +176,26 @@ describe('EspDevice protocol handling', () => {
 
     it('survives an undecodable device info response and rediscovers', async () => {
         fakeTimers();
-        device = new EspDevice('localhost');
-        const mock = registry.instances[0] as MockNetSocket;
+        device = new EspDevice('localhost', '', 6053, { connection });
         const error = firstValueFrom(device.error$.pipe(take(1)));
-        mock.emit('connect');
+        server.connect();
         await flush();
-        respond(mock, MessageTypes.HelloResponse, hello());
+        respond(server, MessageTypes.HelloResponse, hello());
         await flush();
-        respond(mock, MessageTypes.ConnectResponse, connectOk());
+        respond(server, MessageTypes.ConnectResponse, connectOk());
         await flush();
 
-        respond(mock, MessageTypes.DeviceInfoResponse, new Uint8Array(10).fill(0xff));
+        respond(server, MessageTypes.DeviceInfoResponse, new Uint8Array(10).fill(0xff));
         await expect(error).resolves.toBeInstanceOf(Error);
 
         // the handshake is redone on the same connection after the retry delay
         await vi.advanceTimersByTimeAsync(1000);
-        respond(mock, MessageTypes.HelloResponse, hello());
+        respond(server, MessageTypes.HelloResponse, hello());
         await flush();
-        respond(mock, MessageTypes.ConnectResponse, connectOk());
+        respond(server, MessageTypes.ConnectResponse, connectOk());
         await flush();
         respond(
-            mock,
+            server,
             MessageTypes.DeviceInfoResponse,
             DeviceInfoResponse.encode({
                 usesPassword: false,
@@ -232,7 +207,7 @@ describe('EspDevice protocol handling', () => {
                 hasDeepSleep: false,
             }).finish(),
         );
-        respond(mock, MessageTypes.ListEntitiesDoneResponse, ListEntitiesDoneResponse.encode({}).finish());
+        respond(server, MessageTypes.ListEntitiesDoneResponse, ListEntitiesDoneResponse.encode({}).finish());
 
         await expect(firstValueFrom(device.discovery$.pipe(filter(isTrue), take(1)))).resolves.toBe(true);
         expect(device.deviceInfo?.name).toBe('esp');

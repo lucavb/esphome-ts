@@ -38,13 +38,24 @@ Node >= 22.12). Import from the package root (e.g. `import { EspDevice } from 'e
 deep imports such as the previously documented `esphome-ts/dist` no longer resolve under the
 exports map. The legacy `Connection` class, the `isLightComponent` type guard and internal helpers
 (`decode`, `stateParser`, `convertNumbers`, `BytePositions`, …) are no longer exported; the public
-surface is `EspDevice` (with `InvalidPasswordError`), `Client`, `EspSocket`, `RxjsSocket`,
+surface is `EspDevice` (with `InvalidPasswordError`), `Client`, `EspSocket`, `Connection` (type),
 `MessageTypes`, `ReadData`, the `isSwitchComponent` type guard, the `isTrue`/`isFalse` filters and
 the component classes with their entity and state types. `EspDevice` now reconnects when a
 connection attempt fails, reports invalid passwords and undecodable frames on its new `error$`
 observable instead of stalling or crashing, and `Client.listEntities()` /
 `Client.subscribeStateChange()` emit `void` instead of a placeholder message. The
 generated protobuf layer now depends on `@bufbuild/protobuf` instead of `protobufjs`.
+
+The transport layer was also reworked from inheritance to composition over a `Connection`
+interface:
+
+- `RxjsSocket` is internal now — it became `TcpConnection` and is no longer exported.
+- `EspSocket` no longer exposes `data$`, `send()`, `timeout$`, `close(force)` — use
+  `sendEspMessage` and `terminate()`.
+- `reconnectOnTimeout`/`disconnectOnTimeout` are gone — an idle timeout always tears the
+  connection down, and reconnection stays driven by `EspDevice`.
+- If you need a custom transport, inject your own `Connection` via `EspDevice`'s new options
+  parameter or via `EspSocket`'s config.
 
 ## Development
 

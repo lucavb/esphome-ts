@@ -13,6 +13,7 @@ import {
     timeout,
 } from 'rxjs/operators';
 import { Client } from './client';
+import { type Connection } from './connection';
 import { createComponents, stateParser } from './helpers';
 import { isFalse, isTrue } from './booleans';
 import { listResponses, stateResponses } from './responses';
@@ -62,6 +63,7 @@ export class EspDevice {
         private readonly host: string,
         private readonly password: string = '',
         private readonly port: number = 6053,
+        options?: { connection?: Connection },
     ) {
         this.subscription = new Subscription();
         this.discovery = new BehaviorSubject<boolean>(false);
@@ -69,6 +71,7 @@ export class EspDevice {
         this.error$ = this.errors.asObservable();
         this.socket = new EspSocket(host, port, {
             timeout: PING_TIMEOUT,
+            connection: options?.connection,
         });
         this.client = new Client(this.socket);
         this.stateEvents$ = this.socket.espData$.pipe(
@@ -184,7 +187,7 @@ export class EspDevice {
         this.client.terminate();
         this.subscription.unsubscribe();
         this.errors.complete();
-        this.socket.close(true);
+        this.socket.terminate();
     }
 
     private parseListResponse(data: ReadData) {
