@@ -38,7 +38,8 @@
         "test:watch": "vitest",
         "test:coverage": "vitest run --coverage",
         "prepack": "npm run cbuild",
-        "semantic-release": "semantic-release"
+        "semantic-release": "semantic-release",
+        "prepare": "husky"
     },
     "keywords": [
         "esphome",
@@ -66,6 +67,8 @@
         "eslint-import-resolver-typescript": "4.4.5",
         "eslint-plugin-import-x": "4.17.1",
         "eslint-plugin-unused-imports": "4.4.1",
+        "husky": "9.1.7",
+        "lint-staged": "17.6.0",
         "prettier": "3.9.9",
         "rxjs": "7.8.2",
         "semantic-release": "25.0.9",

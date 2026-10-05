@@ -43,3 +43,6 @@ yarn.lock
 # test
 junit.xml
 reports/
+
+# husky generated files
+.husky/_
