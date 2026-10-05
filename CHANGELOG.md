@@ -1,3 +1,33 @@
+# [4.0.0](https://github.com/lucavb/esphome-ts/compare/v3.3.1...v4.0.0) (2026-10-05)
+
+
+* build!: migrate to ESM, TypeScript 6, ESLint 10, Vitest 5 ([5663d9d](https://github.com/lucavb/esphome-ts/commit/5663d9d376d25908186e44fb80e2994da1175e3b))
+* feat!: regenerate protobuf layer with ts-proto 2 and @bufbuild/protobuf ([4a4bf65](https://github.com/lucavb/esphome-ts/commit/4a4bf65d693b915fec18ba4709a77928c9b0761a))
+* refactor!: remove shadow connection stack, fix leaks, curate public API ([e7600ec](https://github.com/lucavb/esphome-ts/commit/e7600ecb754a5578f14761fee4b07a93d1f8d853))
+
+
+### Bug Fixes
+
+* **api:** reassemble frames split across TCP chunks ([9449e4a](https://github.com/lucavb/esphome-ts/commit/9449e4a0012946af2aab59932b4300dd128aed2e))
+
+
+### Features
+
+* **api:** add framer module owning the wire format ([2d3d61c](https://github.com/lucavb/esphome-ts/commit/2d3d61c52af2c73e1c7315b36944df5e4aab3160))
+
+
+### BREAKING CHANGES
+
+* Connection, ReadData, framing constants (BytePositions,
+HEADER_SIZE), decode/stateParser/createComponents and other internal helpers
+are no longer exported; the public surface is EspDevice, Client, RxjsSocket,
+MessageTypes, type guards and the component classes. convertNumbers and
+DEFAULT_NO_EFFECT are no longer exported either.
+* generated surface changes: ExecuteServiceArgument fields
+renamed (int_/string_/bool_/float_ to int/string/bool/float), APIConnection
+service types dropped (outputServices=false).
+* the published package is ESM-only and requires Node >=22.12.0; CommonJS consumers must go through require(esm) on Node 22.12+/24.15+.
+
 ## [3.3.1](https://github.com/lucavb/esphome-ts/compare/v3.3.0...v3.3.1) (2023-05-07)
 
 
