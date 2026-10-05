@@ -7,10 +7,10 @@ a RxJS based interface to it.
 
 ```typescript
 import { EspDevice, SwitchComponent } from 'esphome-ts';
-import { filter, tap } from 'rxjs/operators';
+import { filter, tap } from 'rxjs';
 
 const device = new EspDevice('my_esp.local');
-device.discovery$
+const subscription = device.discovery$
     .pipe(
         filter((value) => value),
         tap(() => {
@@ -21,6 +21,9 @@ device.discovery$
         }),
     )
     .subscribe();
+
+// Call `subscription.unsubscribe()` to stop watching, and `device.terminate()`
+// to tear the device down for good.
 ```
 
 You always want to start with an instance of `EspDevice`. This is your starting
@@ -42,6 +45,8 @@ supported. Every component inherits from `BaseComponent` and exposes a state
 observable `state$`. Depending on the component, different pieces of information
 will be shared. This provides rather raw access to the underlying state and should
 probably only be used to call the methods on the component itself.
+Identical re-sent states are de-duplicated: `state$` emits only when the state
+actually changes.
 
 ### Light component
 
@@ -76,8 +81,9 @@ cannot be reached), and `terminate()` tears everything down.
 
 Failures that cannot be fixed by reconnecting are reported on `EspDevice.error$`: an
 `InvalidPasswordError` when the device rejects the password (the handshake then stops, so
-`discovery$` never emits), and the decode error of any frame the device sent that could not be
-parsed. `EspSocket` owns the wire format end to end: it reports its own connection errors, and
+`discovery$` never emits), and the decode error of any discovery frame the device sent that
+could not be parsed — undecodable state frames are dropped silently. `EspSocket` owns the
+wire format end to end: it reports its own connection errors, and
 commands that could not be sent, on its `error$`.
 
 You shouldn't really have to interact with such low level stuff. Should you decide to do this

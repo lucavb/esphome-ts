@@ -1,17 +1,4 @@
-import { type ReadData } from './espSocket';
-import {
-    catchError,
-    distinctUntilChanged,
-    filter,
-    map,
-    mapTo,
-    shareReplay,
-    switchMap,
-    take,
-    takeUntil,
-    tap,
-    timeout,
-} from 'rxjs/operators';
+import { EspSocket, type ReadData } from './espSocket';
 import { Client } from './client';
 import { type Connection } from './connection';
 import { createComponents, stateParser } from './helpers';
@@ -20,8 +7,27 @@ import { listResponses, stateResponses } from './responses';
 import { MessageTypes } from './requestResponseMatching';
 import { type StateResponses } from './interfaces';
 import { BaseComponent } from '../components/base';
-import { BehaviorSubject, concat, EMPTY, merge, Observable, of, Subject, Subscription, timer } from 'rxjs';
-import { EspSocket } from './espSocket';
+import {
+    BehaviorSubject,
+    concat,
+    defer,
+    distinctUntilChanged,
+    EMPTY,
+    filter,
+    map,
+    merge,
+    Observable,
+    of,
+    retry,
+    share,
+    shareReplay,
+    Subject,
+    Subscription,
+    switchMap,
+    takeUntil,
+    tap,
+    timer,
+} from 'rxjs';
 import { type ConnectResponse, DeviceInfoResponse } from './protobuf/api';
 
 const PING_TIMEOUT = 90 * 1000;
@@ -56,6 +62,10 @@ export class EspDevice {
     public readonly error$: Observable<unknown>;
 
     private readonly subscription: Subscription;
+    private retrySubscription?: Subscription;
+    // Latched when the device rejects the constructed password: terminal for
+    // auto-reconnect until provideRetryObservable() explicitly re-arms it.
+    private passwordRejected = false;
 
     public readonly alive$: Observable<boolean>;
 
@@ -63,6 +73,10 @@ export class EspDevice {
         private readonly host: string,
         private readonly password: string = '',
         private readonly port: number = 6053,
+        /**
+         * An injected Connection owns its own liveness/idle teardown — the
+         * socket-level `PING_TIMEOUT` does not apply to it.
+         */
         options?: { connection?: Connection },
     ) {
         this.subscription = new Subscription();
@@ -78,6 +92,9 @@ export class EspDevice {
             filter((data: ReadData) => stateResponses.has(data.type)),
             map((data: ReadData) => stateParser(data)),
             filter((parsed): parsed is StateResponses => !!parsed),
+            // One decode shared by all components: without this, every discovered
+            // component re-runs the filter+decode chain for the same state frame.
+            share(),
         );
         this.subscription.add(
             this.socket.espData$
@@ -103,32 +120,51 @@ export class EspDevice {
                 .pipe(
                     distinctUntilChanged(),
                     tap((connected: boolean) => {
-                        if (!connected) {
+                        if (!connected && !this.passwordRejected) {
                             this.socket.open();
                         }
                     }),
-                    filter(isTrue),
-                    switchMap(() => this.client.hello({ clientInfo: 'esphome-ts' })),
-                    switchMap(() => this.client.connect({ password })),
-                    map((response: ConnectResponse) => {
-                        if (response.invalidPassword) {
-                            throw new InvalidPasswordError(this.host);
-                        }
-                        return response;
-                    }),
-                    switchMap(() => this.client.deviceInfo()),
-                    switchMap(() => this.client.listEntities()),
-                    switchMap(() => this.client.subscribeStateChange()),
-                    catchError((error: unknown, caught: Observable<void>) => {
-                        this.errors.next(error);
-                        if (error instanceof InvalidPasswordError) {
-                            // A rejected password will not fix itself; retrying would only hammer the device.
-                            return EMPTY;
-                        }
-                        // Anything else (e.g. an undecodable response): keep the
-                        // reconnect logic alive and redo the handshake.
-                        return timer(RETRY_DELAY).pipe(switchMap(() => caught));
-                    }),
+                    filter((connected: boolean) => connected && !this.passwordRejected),
+                    switchMap(() =>
+                        // defer() re-runs this factory on every retry:
+                        // Client.request() sends eagerly when called (not on
+                        // subscription), so without it a retried handshake
+                        // would never put a fresh HelloRequest on the wire —
+                        // and a real device only answers HelloRequest, never
+                        // speaks first.
+                        defer(() => this.client.hello({ clientInfo: 'esphome-ts' })).pipe(
+                            switchMap(() => this.client.connect({ password })),
+                            map((response: ConnectResponse) => {
+                                if (response.invalidPassword) {
+                                    throw new InvalidPasswordError(this.host);
+                                }
+                                return response;
+                            }),
+                            switchMap(() => this.client.deviceInfo()),
+                            switchMap(() => this.client.listEntities()),
+                            switchMap(() => this.client.subscribeStateChange()),
+                            retry({
+                                delay: (error: unknown) => {
+                                    this.errors.next(error);
+                                    if (error instanceof InvalidPasswordError) {
+                                        // The password is fixed at construction, so a rejection cannot
+                                        // fix itself: it is terminal for auto-reconnect. Drop the
+                                        // half-authenticated session so we stop auto-answering the
+                                        // device's keepalive pings; provideRetryObservable() is the
+                                        // explicit opt-in re-arm.
+                                        this.passwordRejected = true;
+                                        this.socket.terminate();
+                                        return EMPTY;
+                                    }
+                                    // Anything else (e.g. an undecodable
+                                    // response): redo the whole handshake after a
+                                    // pause; the connection logic above stays
+                                    // armed for a future reconnect either way.
+                                    return timer(RETRY_DELAY);
+                                },
+                            }),
+                        ),
+                    ),
                 )
                 .subscribe(),
         );
@@ -141,43 +177,48 @@ export class EspDevice {
             this.socket.error$
                 .pipe(
                     switchMap(() => timer(RETRY_DELAY)),
-                    filter(() => !this.socket.isConnected()),
+                    filter(() => !this.passwordRejected && !this.socket.isConnected()),
                 )
                 .subscribe(() => this.socket.open()),
         );
 
+        // Liveness: connected$ reports transport state; the watchdog reports a
+        // silently silent peer. Every frame re-arms the PING_TIMEOUT timer via
+        // switchMap teardown — a frame arriving first cancels the pending timer.
         this.alive$ = merge(
             this.socket.connected$,
-            this.socket.espData$.pipe(
-                switchMap(() => {
-                    return concat(
-                        of(true),
-                        this.socket.espData$.pipe(
-                            mapTo(true),
-                            timeout(PING_TIMEOUT),
-                            catchError(() => of(false)),
-                            take(1),
-                        ),
-                    );
-                }),
-            ),
-        ).pipe(distinctUntilChanged(), shareReplay(1));
+            this.socket.espData$.pipe(switchMap(() => concat(of(true), timer(PING_TIMEOUT).pipe(map(() => false))))),
+        ).pipe(
+            distinctUntilChanged(),
+            // refCount releases the watchdog source and its pending timer when
+            // the last subscriber leaves, e.g. after terminate().
+            shareReplay({ bufferSize: 1, refCount: true }),
+        );
     }
 
+    /**
+     * Provides the reconnect cadence used while the device is unreachable.
+     * Calling this again replaces the previously provided retry signal, so
+     * repeated calls cannot stack parallel reconnect loops. Providing a cadence
+     * is also the explicit opt-in re-arm after a password rejection.
+     */
     public provideRetryObservable(retryWhen$: Observable<unknown>): void {
-        this.subscription.add(
-            this.alive$
-                .pipe(
-                    filter(isFalse),
-                    switchMap(() =>
-                        retryWhen$.pipe(
-                            tap(() => this.socket.open()),
-                            takeUntil(this.alive$.pipe(filter(isTrue))),
-                        ),
+        // Explicit opt-in re-arm: re-providing a retry cadence re-enables
+        // auto-reconnect after a password rejection.
+        this.passwordRejected = false;
+        this.retrySubscription?.unsubscribe();
+        this.retrySubscription = this.alive$
+            .pipe(
+                filter(isFalse),
+                switchMap(() =>
+                    retryWhen$.pipe(
+                        tap(() => this.socket.open()),
+                        takeUntil(this.alive$.pipe(filter(isTrue))),
                     ),
-                )
-                .subscribe(),
-        );
+                ),
+            )
+            .subscribe();
+        this.subscription.add(this.retrySubscription);
     }
 
     public terminate(): void {

@@ -1,4 +1,4 @@
-import { filter, take, tap } from 'rxjs/operators';
+import { filter, take, tap } from 'rxjs';
 import { EspDevice, isSwitchComponent, isTrue, LightComponent } from '../src';
 
 const host = process.argv[2];

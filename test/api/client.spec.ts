@@ -1,7 +1,6 @@
 import { EspDeviceMock } from '../testHelpers/espDeviceMock';
 import { Client, MessageTypes } from '../../src';
-import { filter, take, tap } from 'rxjs/operators';
-import { combineLatest, firstValueFrom, Subscription } from 'rxjs';
+import { combineLatest, filter, firstValueFrom, Subscription, take, tap } from 'rxjs';
 import { EspSocket } from '../../src/api/espSocket';
 
 describe('Client', () => {

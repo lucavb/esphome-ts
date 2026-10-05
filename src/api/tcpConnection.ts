@@ -1,6 +1,5 @@
 import { Socket } from 'net';
-import { BehaviorSubject, fromEvent, Observable, Subject } from 'rxjs';
-import { take, takeUntil, tap } from 'rxjs/operators';
+import { BehaviorSubject, fromEvent, Observable, Subject, take, takeUntil, tap } from 'rxjs';
 import { type Connection } from './connection';
 
 export class TcpConnection implements Connection {
@@ -20,8 +19,9 @@ export class TcpConnection implements Connection {
     // Internal teardown signal; ends the socket event subscriptions.
     private readonly teardown = new Subject<void>();
 
-    // Cancels a pending graceful termination when a new connection is opened.
-    private gracefulDestroy?: () => void;
+    // Cancel closure for a pending graceful termination; invoked when a new
+    // connection is opened to cancel it.
+    private pendingGracefulDestroy?: () => void;
 
     constructor(
         private readonly host: string,
@@ -49,7 +49,7 @@ export class TcpConnection implements Connection {
     }
 
     terminate(): void {
-        if (!this.socket || this.gracefulDestroy) {
+        if (!this.socket || this.pendingGracefulDestroy) {
             return;
         }
         this.connected.next(false);
@@ -63,11 +63,17 @@ export class TcpConnection implements Connection {
         const socket = this.socket;
         let settled = false;
         const finish = (): void => {
+            clearTimeout(safety);
             if (settled) {
                 return;
             }
             settled = true;
-            this.gracefulDestroy = undefined;
+            this.pendingGracefulDestroy = undefined;
+            // Identity guard, NOT defensiveness: the 250ms safety timer can
+            // fire after open() has already replaced this.socket with a fresh
+            // one (the abandoned grace path — see the open()-during-grace
+            // spec). Destroying then would kill the new path; only the socket
+            // this graceful close was started for may be force-destroyed.
             if (this.socket === socket) {
                 this.destroySocket();
             }
@@ -79,9 +85,9 @@ export class TcpConnection implements Connection {
             settled = true;
             clearTimeout(safety);
             socket.removeListener('close', finish);
-            this.gracefulDestroy = undefined;
+            this.pendingGracefulDestroy = undefined;
         };
-        this.gracefulDestroy = cancel;
+        this.pendingGracefulDestroy = cancel;
     }
 
     isConnected(): boolean {
@@ -139,7 +145,11 @@ export class TcpConnection implements Connection {
             .subscribe();
 
         // The socket is idle: wait no longer, tear the connection down.
-        // Reconnection stays driven by EspDevice.
+        // Reconnection stays driven by EspDevice. The socket event pipes (incl.
+        // the still-live 'close' pipe) are torn down BEFORE destroySocket()
+        // flips connected$ to false, so this path emits exactly ONE raw false
+        // on connected$ (distinctUntilChanged consumers would absorb a
+        // duplicate anyway).
         if (this.timeout && this.timeout > 0) {
             fromEvent<void>(socket, 'timeout')
                 .pipe(
@@ -154,15 +164,13 @@ export class TcpConnection implements Connection {
     }
 
     private teardownSocket(): void {
-        this.gracefulDestroy?.();
-        this.gracefulDestroy = undefined;
+        this.pendingGracefulDestroy?.();
+        this.pendingGracefulDestroy = undefined;
         if (!this.socket) {
             return;
         }
         this.teardown.next();
-        this.socket.destroy();
-        this.socket = undefined;
-        this.connected.next(false);
+        this.destroySocket();
     }
 
     private destroySocket(): void {

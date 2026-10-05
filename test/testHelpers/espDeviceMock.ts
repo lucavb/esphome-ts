@@ -1,6 +1,5 @@
 import { Server, Socket } from 'net';
-import { from, fromEvent, Observable, Subject } from 'rxjs';
-import { map, mergeMap, take, takeUntil, tap } from 'rxjs/operators';
+import { from, fromEvent, map, mergeMap, Observable, Subject, take, takeUntil, tap } from 'rxjs';
 import { MessageTypes } from '../../src';
 import { createFrameParser, encodeFrame, type ReadData } from '../../src/api/framer';
 import {

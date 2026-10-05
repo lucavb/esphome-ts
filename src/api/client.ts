@@ -10,12 +10,10 @@ import {
     PingResponse,
     SubscribeStatesRequest,
 } from './protobuf/api';
-import { type ReadData } from './espSocket';
-import { Observable, of, Subscription } from 'rxjs';
+import { EspSocket, type ReadData } from './espSocket';
 import { MessageTypes } from './requestResponseMatching';
-import { filter, map, take, tap } from 'rxjs/operators';
+import { filter, map, Observable, of, Subscription, take, tap } from 'rxjs';
 import type { MessageFns } from './protobuf/api_options';
-import { EspSocket } from './espSocket';
 
 export class Client {
     private readonly subscription: Subscription;

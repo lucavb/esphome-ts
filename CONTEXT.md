@@ -11,7 +11,7 @@ The physical ESPHome device the library is talking to. `EspDevice` is the module
 _Avoid_: board, node
 
 **Connection**:
-The live path between the library and a Device, along which frames travel as byte chunks. A Connection can be a real TCP path or an in-memory one in specs; both satisfy the same interface. Being connected is not the same as the Device being alive — see Liveness.
+The live path between the library and a Device, along which frames travel as byte chunks. The TCP path is the production Connection; any implementation satisfying the same interface may substitute for it. Being connected is not the same as the Device being alive — see Liveness.
 _Avoid_: session, channel, transport
 
 **Frame**:

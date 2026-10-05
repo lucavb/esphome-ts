@@ -17,21 +17,29 @@ export interface InMemoryServerDriver {
 /**
  * Minimal in-memory Connection with a server-side driver: specs play the device.
  * No idle-timeout simulation, no evasion — disconnects are always driver-driven.
+ * Mirrors the TCP adapter contract: silent-drop write, guarded terminate,
+ * and no chunks while disconnected.
  */
 export function createInMemoryConnection(): { connection: Connection; server: InMemoryServerDriver } {
     const connected = new BehaviorSubject<boolean>(false);
     const chunks = new Subject<Buffer>();
     const error = new Subject<Error>();
-    const terminate$ = new Subject<void>();
     const written: Uint8Array[] = [];
+    // No terminate latch needed: terminate() below only acts while a path is
+    // open, so first and repeat calls with nothing open are no-ops by
+    // construction. The server driver's connect() is the fake's connect
+    // point — the TCP adapter re-arms via open() instead.
 
     const connection: Connection = {
         open(): void {
             // Repeatable no-op: EspDevice and EspSocket may call open() on retry.
         },
         terminate(): void {
-            connected.next(false);
-            terminate$.next();
+            // Emit only when a path is actually open: terminate() with nothing
+            // open is a no-op — first or repeat call alike (the contract).
+            if (connected.getValue()) {
+                connected.next(false);
+            }
         },
         isConnected(): boolean {
             return connected.getValue();
@@ -56,6 +64,10 @@ export function createInMemoryConnection(): { connection: Connection; server: In
             connected.next(false);
         },
         push: (chunk: Buffer): void => {
+            // Mirrors the TCP adapter contract: no chunks while disconnected.
+            if (!connected.getValue()) {
+                return;
+            }
             chunks.next(chunk);
         },
         emitError: (err: Error): void => {

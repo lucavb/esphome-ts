@@ -13,8 +13,7 @@ import {
 import { MessageTypes } from './requestResponseMatching';
 import { type ListEntityResponses, type StateResponses } from './interfaces';
 import { type CommandInterface } from '../components/commandInterface';
-import { Observable } from 'rxjs';
-import { filter } from 'rxjs/operators';
+import { filter, Observable } from 'rxjs';
 import { BaseComponent } from '../components/base';
 import { BinarySensorComponent } from '../components/binarySensor';
 import { LightComponent } from '../components/light';
@@ -122,6 +121,3 @@ export const transformStates = <T extends StateResponses>(
 ): Observable<T> => {
     return stateEvents$.pipe(filter((stateEvent) => stateEvent.key === listEntityResponse.key)) as Observable<T>;
 };
-
-// Kept for modules that still import the guards from here; the canonical home is booleans.ts.
-export { isFalse, isTrue } from './booleans';

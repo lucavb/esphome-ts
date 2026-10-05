@@ -6,10 +6,10 @@ This is a client library for use with [esphome](https://esphome.io).
 
 ```typescript
 import { EspDevice, SwitchComponent } from 'esphome-ts';
-import { filter, tap } from 'rxjs/operators';
+import { filter, tap } from 'rxjs';
 
 const device = new EspDevice('my_esp.local');
-device.discovery$
+const subscription = device.discovery$
     .pipe(
         filter((value) => value),
         tap(() => {
@@ -20,6 +20,9 @@ device.discovery$
         }),
     )
     .subscribe();
+
+// Call `subscription.unsubscribe()` to stop watching, and `device.terminate()`
+// to tear the device down for good.
 ```
 
 `rxjs` (>= 7.8) is a peer dependency: install it next to the library (`npm install esphome-ts rxjs`).
@@ -38,16 +41,17 @@ Node >= 22.12). Import from the package root (e.g. `import { EspDevice } from 'e
 deep imports such as the previously documented `esphome-ts/dist` no longer resolve under the
 exports map. The legacy `Connection` class, the `isLightComponent` type guard and internal helpers
 (`decode`, `stateParser`, `convertNumbers`, `BytePositions`, …) are no longer exported; the public
-surface is `EspDevice` (with `InvalidPasswordError`), `Client`, `EspSocket`, `Connection` (type),
-`MessageTypes`, `ReadData`, the `isSwitchComponent` type guard, the `isTrue`/`isFalse` filters and
+surface is `EspDevice` (with `InvalidPasswordError`), `Client`, `EspSocket`, `RxjsSocket`,
+`MessageTypes`, `ReadData` (type), the `isSwitchComponent` type guard, the `isTrue`/`isFalse` filters and
 the component classes with their entity and state types. `EspDevice` now reconnects when a
-connection attempt fails, reports invalid passwords and undecodable frames on its new `error$`
-observable instead of stalling or crashing, and `Client.listEntities()` /
+connection attempt fails, reports invalid passwords and undecodable discovery frames on its
+new `error$` observable instead of stalling or crashing, and `Client.listEntities()` /
 `Client.subscribeStateChange()` emit `void` instead of a placeholder message. The
 generated protobuf layer now depends on `@bufbuild/protobuf` instead of `protobufjs`.
 
-The transport layer was also reworked from inheritance to composition over a `Connection`
-interface:
+## Upgrading to v5
+
+v5 replaces the exported inheritance-based socket stack with the `Connection` seam:
 
 - `RxjsSocket` is internal now — it became `TcpConnection` and is no longer exported.
 - `EspSocket` no longer exposes `data$`, `send()`, `timeout$`, `close(force)` — use
@@ -55,7 +59,11 @@ interface:
 - `reconnectOnTimeout`/`disconnectOnTimeout` are gone — an idle timeout always tears the
   connection down, and reconnection stays driven by `EspDevice`.
 - If you need a custom transport, inject your own `Connection` via `EspDevice`'s new options
-  parameter or via `EspSocket`'s config.
+  parameter or via `EspSocket`'s config. The new `Connection` is an exported interface TYPE for
+  custom transports — unrelated to the legacy `Connection` class that v4 removed.
+- ESPHome re-sends identical states; `state$` now de-duplicates them (shallow compare,
+  `Object.is` per field) and emits only on actual changes — subscribers no longer see phantom
+  re-emissions.
 
 ## Development
 

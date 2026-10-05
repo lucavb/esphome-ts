@@ -4,8 +4,7 @@ import { encodeFrame } from '../../src/api/framer';
 import { type ReadData } from '../../src/api/espSocket';
 import { type Connection } from '../../src/api/connection';
 import { createInMemoryConnection, type InMemoryServerDriver } from '../testHelpers/inMemoryConnection';
-import { firstValueFrom, TimeoutError } from 'rxjs';
-import { take } from 'rxjs/operators';
+import { firstValueFrom, take, TimeoutError } from 'rxjs';
 
 const frame = (type: number, payload: number[]): Uint8Array => encodeFrame(type, Uint8Array.from(payload));
 
@@ -60,6 +59,10 @@ describe('EspSocket framing', () => {
             expect(subscriberFrames[0]?.type).toBe(MessageTypes.HelloResponse);
             expect([...subscriberFrames[0].payload]).toEqual([0x01, 0x02, 0x03]);
         }
+        // share() multicasts the shared parse pipeline: every subscriber gets
+        // the SAME parsed frame instance — no per-subscriber clone/re-emit.
+        expect(first[0]).toBe(received[0]);
+        expect(second[0]).toBe(received[0]);
     });
 
     it('never leaks a partial frame from a dead connection into the next one', async () => {
@@ -195,11 +198,34 @@ describe('EspSocket sendEspMessage', () => {
     });
 
     it('stops a pending send when the socket terminates', async () => {
-        espSocket.sendEspMessage(MessageTypes.HelloRequest, new Uint8Array([0x11]));
+        vi.useFakeTimers();
+        try {
+            const errors: unknown[] = [];
+            espSocket.error$.subscribe((error: unknown) => errors.push(error));
+            espSocket.sendEspMessage(MessageTypes.HelloRequest, new Uint8Array([0x11]));
 
-        espSocket.terminate();
+            espSocket.terminate();
+            // terminate() must win the race against the 5s send timeout: no
+            // abandoned write and no TimeoutError either.
+            await vi.advanceTimersByTimeAsync(5000);
+            expect(server.written.length).toBe(0);
+            expect(errors).toEqual([]);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('flushes a command that was pending across an open() when the connection returns', async () => {
+        // open() deliberately does NOT kill a pending send: a command issued
+        // during a blip rides the reconnect within its 5-second window and
+        // flushes as soon as the connection reports ready again.
+        espSocket.sendEspMessage(MessageTypes.HelloRequest, new Uint8Array([0x11]));
+        espSocket.open(); // no-op on the fake — pins that open() does NOT kill the pending send
+
+        server.connect();
         await flush();
-        expect(server.written.length).toBe(0);
+        expect(server.written.length).toBe(1);
+        expect([...server.written[0]]).toEqual([...encodeFrame(MessageTypes.HelloRequest, new Uint8Array([0x11]))]);
     });
 
     it('encodes a zero payload into a bare three byte frame', async () => {
@@ -210,5 +236,37 @@ describe('EspSocket sendEspMessage', () => {
 
         await flush();
         expect([...server.written[0]]).toEqual([...encodeFrame(MessageTypes.PingResponse, new Uint8Array())]);
+    });
+});
+
+describe('Connection contract (in-memory)', () => {
+    const setUp = (): { connection: Connection; server: InMemoryServerDriver } => createInMemoryConnection();
+
+    it('terminate() with nothing open is a no-op — first and repeat call alike', () => {
+        const { connection } = setUp();
+        const statuses: boolean[] = [];
+        connection.connected$.subscribe((status: boolean) => statuses.push(status));
+
+        connection.terminate();
+        connection.terminate();
+
+        // Only the synchronous BehaviorSubject seed: neither call may emit a
+        // spurious `false` for a path that was never open.
+        expect(statuses).toEqual([false]);
+    });
+
+    it('drops chunks pushed while disconnected', () => {
+        const { connection, server } = setUp();
+        const chunks: Buffer[] = [];
+        connection.chunks$.subscribe((chunk: Buffer) => chunks.push(chunk));
+
+        const dropped = Buffer.from([0xaa]);
+        server.push(dropped); // disconnected: silently dropped
+        server.connect();
+        const delivered = Buffer.from([0xbb]);
+        server.push(delivered);
+
+        expect(chunks).toEqual([delivered]);
+        expect(chunks[0]).toBe(delivered);
     });
 });

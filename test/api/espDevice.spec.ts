@@ -1,8 +1,20 @@
 import { EspDevice, isFalse, isTrue, MessageTypes } from '../../src';
 import { EspDeviceMock } from '../testHelpers/espDeviceMock';
-import { catchError, delay, filter, switchMap, switchMapTo, take, tap, timeout } from 'rxjs/operators';
 import { ListEntitiesLightResponse, ListEntitiesSwitchResponse } from '../../src/api/protobuf/api';
-import { firstValueFrom, of, Subject, TimeoutError } from 'rxjs';
+import {
+    catchError,
+    delay,
+    filter,
+    firstValueFrom,
+    of,
+    Subject,
+    switchMap,
+    switchMapTo,
+    take,
+    tap,
+    timeout,
+    TimeoutError,
+} from 'rxjs';
 
 const listEntitySwitch = {
     key: 1337,
@@ -114,22 +126,43 @@ describe('espDevice', () => {
                 // alive$ must be subscribed only after discovery: connected$ is a
                 // BehaviorSubject(false) in the merge, so an earlier subscription would
                 // catch the initial false before the device is even connected.
+                const emissions: boolean[] = [];
                 const dead = firstValueFrom(
                     device.discovery$.pipe(
                         filter(isTrue),
                         tap(() => deviceMock.ping()),
                         switchMapTo(device.alive$),
+                        tap((alive: boolean) => emissions.push(alive)),
                         filter(isFalse),
                         take(1),
                     ),
                 );
-                // The mock answers one ping (the client auto-responds with PingResponse);
-                // from then on the device sees silence and alive$ should flip to false
-                // after the 90s ping timeout. Waiting for the response guarantees the
-                // last espData emission already re-armed the 90s countdown.
+                // A single advance to just past 90s cannot tell the two watchdog
+                // arming strategies apart: whether the countdown is armed at
+                // connection time or re-armed by every frame, both would fire by
+                // 91s. So the countdown is re-armed with a real frame halfway
+                // through instead. The mock answers one ping (the client
+                // auto-responds with PingResponse); waiting for the response
+                // guarantees the frame is fully processed before faking more time.
                 await firstValueFrom(deviceMock.types$.pipe(filter((type) => type === MessageTypes.PingResponse)));
-                await vi.advanceTimersByTimeAsync(90 * 1000 + 1000);
+                // T=50s. The ping frame just re-armed the countdown, so an
+                // armed-at-connect mutant would fire at T=90s...
+                await vi.advanceTimersByTimeAsync(50 * 1000);
+                deviceMock.ping();
+                // T=50s: the second ping's response, fully processed.
+                await firstValueFrom(deviceMock.types$.pipe(filter((type) => type === MessageTypes.PingResponse)));
+                // T=100s. The last frame arrived 50s ago — well within the 90s
+                // ping timeout. alive$ must still only have emitted the initial
+                // true: the frame from T=50s re-armed the countdown, while an
+                // armed-at-connect mutant would already have emitted false.
+                await vi.advanceTimersByTimeAsync(50 * 1000);
+                expect(emissions).toEqual([true]);
+                // T=145s. The last frame is now 95s old — past the 90s ping
+                // timeout — so a device that received no frames for 90s is still
+                // correctly reported as dead.
+                await vi.advanceTimersByTimeAsync(45 * 1000);
                 expect(await dead).toBe(false);
+                expect(emissions).toEqual([true, false]);
             } finally {
                 vi.useRealTimers();
             }
@@ -140,7 +173,10 @@ describe('espDevice', () => {
     it(
         'should not crash on a non existent esphome device abc',
         async () => {
-            device = new EspDevice('localhost', '', 33333);
+            // 33445, not 33333: client.spec.ts binds its fake server on 33333,
+            // and vitest runs spec files in parallel workers, so this test's
+            // expect-refused connect must not race against that server.
+            device = new EspDevice('localhost', '', 33445);
             await firstValueFrom(
                 device.discovery$.pipe(
                     filter(isTrue),
