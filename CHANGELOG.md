@@ -1,3 +1,26 @@
+# [5.0.0](https://github.com/lucavb/esphome-ts/compare/v4.0.0...v5.0.0) (2026-10-06)
+
+
+* feat(api)!: de-duplicate state events and make password rejection terminal ([f237939](https://github.com/lucavb/esphome-ts/commit/f2379397ee6faf06b84f869704d526159ff78eb0))
+* refactor(api)!: collapse the socket stack into the Connection seam ([79f3c04](https://github.com/lucavb/esphome-ts/commit/79f3c04dba2a17db5d542fae3c99cf64b5109c42))
+
+
+### BREAKING CHANGES
+
+* component state$ no longer re-emits identical re-sent
+states; subscribers observe actual changes only. A rejected password no
+longer auto-retries: call provideRetryObservable() to re-arm
+auto-reconnect after an InvalidPasswordError.
+* RxjsSocket and RxjsSocketConfiguration are no longer
+exported; the class lives on as internal TcpConnection. EspSocket loses
+data$, send(), timeout$ and close(force?) -- use sendEspMessage() and
+terminate(); unframed bytes are no longer reachable. The
+reconnectOnTimeout and disconnectOnTimeout knobs are removed: the idle
+timeout now always tears the connection down, and reconnection stays
+driven by EspDevice. EspDevice gains an additive options constructor
+parameter ({ connection }) and the Connection type is exported for
+custom transports.
+
 # [4.0.0](https://github.com/lucavb/esphome-ts/compare/v3.3.1...v4.0.0) (2026-10-05)
 
 
