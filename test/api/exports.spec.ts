@@ -1,4 +1,5 @@
 import * as api from '../../src';
+import { CoverOperation, LegacyCoverState } from '../../src/api/protobuf/api';
 
 describe('package export surface', () => {
     it('exposes the documented runtime exports', () => {
@@ -20,6 +21,7 @@ describe('package export surface', () => {
         expect(api.LightComponent).toBeDefined();
         expect(api.SensorComponent).toBeDefined();
         expect(api.SwitchComponent).toBeDefined();
+        expect(api.CoverComponent).toBeDefined();
     });
 
     it('exposes BinarySensorTypes through the root barrel', () => {
@@ -28,12 +30,20 @@ describe('package export surface', () => {
         expect(api.BinarySensorTypes).toBeDefined();
     });
 
+    it('exposes the cover enums downstream code needs at runtime', () => {
+        expect(api.CoverOperation).toBe(CoverOperation);
+        expect(api.LegacyCoverState).toBe(LegacyCoverState);
+    });
+
     it('does not leak internal helpers on the root namespace', () => {
         const surface = api as unknown as Record<string, unknown>;
         // isLightComponent is an internal helper; if a future export adds it to
         // the barrel, this tripwire fails loudly instead of silently widening
         // the public surface.
         expect(surface.isLightComponent).toBeUndefined();
+        expect(surface.stateParser).toBeUndefined();
+        expect(surface.createComponents).toBeUndefined();
+        expect(surface.transformStates).toBeUndefined();
     });
 
     it('no longer exports the removed RxjsSocket', () => {

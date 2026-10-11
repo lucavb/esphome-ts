@@ -4,6 +4,7 @@ import {
     LegacyCoverState,
     LightStateResponse,
     ListEntitiesBinarySensorResponse,
+    ListEntitiesCoverResponse,
     ListEntitiesLightResponse,
     ListEntitiesSensorResponse,
     ListEntitiesSwitchResponse,
@@ -14,7 +15,13 @@ import {
 import { MessageTypes } from '../../src/api/requestResponseMatching';
 import { type StateResponses } from '../../src/api/interfaces';
 import { createComponents, emptyCommandInterface, stateParser, transformStates } from '../../src/api/helpers';
-import { BinarySensorComponent, LightComponent, SensorComponent, SwitchComponent } from '../../src/components';
+import {
+    BinarySensorComponent,
+    CoverComponent,
+    LightComponent,
+    SensorComponent,
+    SwitchComponent,
+} from '../../src/components';
 import { type ReadData } from '../../src/api/espSocket';
 import { Subject, firstValueFrom } from 'rxjs';
 import { DebugConnection } from '../testHelpers/debugConnection';
@@ -204,6 +211,45 @@ describe('helpers', () => {
             expect(lightComponent.supportsRgb).toBe(true);
             expect(lightComponent.supportsBrightness).toBe(true);
             expect(lightComponent.availableEffects()).toEqual(['None', 'Rainbow']);
+        });
+
+        it('creates a cover component with its entity details', () => {
+            const payload = ListEntitiesCoverResponse.encode({
+                objectId: 'created_cover',
+                key: 9,
+                name: 'Garage door',
+                uniqueId: 'uid_cover',
+                assumedState: true,
+                supportsPosition: true,
+                supportsTilt: false,
+                deviceClass: 'garage',
+            }).finish();
+            const { id, component } = createComponents(
+                readData(MessageTypes.ListEntitiesCoverResponse, payload),
+                stateEvents$,
+                debugConnection,
+                new Set(),
+            );
+
+            expect(id).toBe('created_cover');
+            expect(component).toBeInstanceOf(CoverComponent);
+            const coverComponent = component as CoverComponent;
+            expect(coverComponent.type).toBe('cover');
+            expect(coverComponent.supportsPosition).toBe(true);
+            expect(coverComponent.supportsTilt).toBe(false);
+            expect(coverComponent.assumedState).toBe(true);
+            expect(coverComponent.tilt).toBeUndefined();
+
+            stateEvents$.next({
+                key: 9,
+                legacyState: LegacyCoverState.LEGACY_COVER_STATE_CLOSED,
+                position: 0.4,
+                tilt: 0,
+                currentOperation: CoverOperation.COVER_OPERATION_IS_CLOSING,
+            });
+            expect(coverComponent.position).toBeCloseTo(0.4);
+            expect(coverComponent.operation).toBe(CoverOperation.COVER_OPERATION_IS_CLOSING);
+            expect(coverComponent.isClosed).toBe(false);
         });
 
         it('creates a sensor component with its entity details and state', () => {

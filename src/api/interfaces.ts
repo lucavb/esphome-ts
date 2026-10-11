@@ -3,6 +3,7 @@ import {
     CoverStateResponse,
     LightStateResponse,
     ListEntitiesBinarySensorResponse,
+    ListEntitiesCoverResponse,
     ListEntitiesLightResponse,
     ListEntitiesSensorResponse,
     ListEntitiesSwitchResponse,
@@ -12,6 +13,7 @@ import {
 
 export type ListEntityResponses =
     | ListEntitiesBinarySensorResponse
+    | ListEntitiesCoverResponse
     | ListEntitiesLightResponse
     | ListEntitiesSensorResponse
     | ListEntitiesSwitchResponse;

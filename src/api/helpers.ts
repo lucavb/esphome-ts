@@ -4,6 +4,7 @@ import {
     CoverStateResponse,
     LightStateResponse,
     ListEntitiesBinarySensorResponse,
+    ListEntitiesCoverResponse,
     ListEntitiesLightResponse,
     ListEntitiesSensorResponse,
     ListEntitiesSwitchResponse,
@@ -16,6 +17,7 @@ import { type CommandInterface } from '../components/commandInterface';
 import { filter, Observable } from 'rxjs';
 import { BaseComponent } from '../components/base';
 import { BinarySensorComponent } from '../components/binarySensor';
+import { CoverComponent } from '../components/cover';
 import { LightComponent } from '../components/light';
 import { SensorComponent } from '../components/sensor';
 import { SwitchComponent } from '../components/switch';
@@ -66,6 +68,19 @@ export const createComponents = (
                 : {
                       id: response.objectId,
                       component: new BinarySensorComponent(response, state$, emptyCommandInterface),
+                  };
+        }
+        case MessageTypes.ListEntitiesCoverResponse: {
+            const response: ListEntitiesCoverResponse = ListEntitiesCoverResponse.decode(data.payload);
+            const state$ = transformStates<CoverStateResponse>(stateEvents$, response);
+            return knownComponents.has(response.objectId)
+                ? {
+                      id: response.objectId,
+                      state$,
+                  }
+                : {
+                      id: response.objectId,
+                      component: new CoverComponent(response, state$, connection),
                   };
         }
         case MessageTypes.ListEntitiesSwitchResponse: {
