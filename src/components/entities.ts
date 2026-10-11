@@ -16,10 +16,17 @@ export interface BinarySensorEntity extends ListEntity {
     deviceClass: string;
 }
 
+export interface CoverEntity extends ListEntity {
+    assumedState: boolean;
+    supportsPosition: boolean;
+    supportsTilt: boolean;
+    deviceClass: string;
+}
+
 export interface LightEntity extends ListEntity {
     effects: string[];
     supportsBrightness: boolean;
     supportsRgb: boolean;
 }
 
-export type ComponentType = 'light' | 'binarySensor' | 'sensor' | 'switch';
+export type ComponentType = 'light' | 'binarySensor' | 'sensor' | 'switch' | 'cover';
