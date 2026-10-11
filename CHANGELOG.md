@@ -1,3 +1,10 @@
+# [5.1.0](https://github.com/lucavb/esphome-ts/compare/v5.0.0...v5.1.0) (2026-10-11)
+
+
+### Features
+
+* **cover:** add cover component with open, close, stop, position and tilt ([417ec7e](https://github.com/lucavb/esphome-ts/commit/417ec7e780379a55640badf46874a6cbec1f7c6a)), closes [#676](https://github.com/lucavb/esphome-ts/issues/676)
+
 # [5.0.0](https://github.com/lucavb/esphome-ts/compare/v4.0.0...v5.0.0) (2026-10-06)
 
 
