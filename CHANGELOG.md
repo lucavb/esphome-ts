@@ -1,3 +1,10 @@
+## [5.1.1](https://github.com/lucavb/esphome-ts/compare/v5.1.0...v5.1.1) (2026-11-22)
+
+
+### Bug Fixes
+
+* **cover:** respect negotiated protocol capabilities ([26c8ce4](https://github.com/lucavb/esphome-ts/commit/26c8ce45ba35fa068b8d6b9173ecfe83e8c0d938))
+
 # [5.1.0](https://github.com/lucavb/esphome-ts/compare/v5.0.0...v5.1.0) (2026-10-11)
 
 
