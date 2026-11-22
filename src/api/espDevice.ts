@@ -28,7 +28,7 @@ import {
     tap,
     timer,
 } from 'rxjs';
-import { type ConnectResponse, DeviceInfoResponse } from './protobuf/api';
+import { ConnectResponse, DeviceInfoResponse } from './protobuf/api';
 
 const PING_TIMEOUT = 90 * 1000;
 const RETRY_DELAY = 1000;
@@ -110,6 +110,12 @@ export class EspDevice {
                                 this.parseListResponse(data);
                             } else if (data.type === MessageTypes.DeviceInfoResponse) {
                                 this.deviceInfo = DeviceInfoResponse.decode(data.payload);
+                            } else if (data.type === MessageTypes.ConnectResponse) {
+                                if (ConnectResponse.decode(data.payload).invalidPassword && !this.passwordRejected) {
+                                    this.passwordRejected = true;
+                                    this.errors.next(new InvalidPasswordError(this.host));
+                                    this.socket.terminate();
+                                }
                             }
                         } catch (error: unknown) {
                             // A malformed frame must not tear down discovery for good.
@@ -142,29 +148,18 @@ export class EspDevice {
                                 this.apiVersion.major = helloResponse.apiVersionMajor;
                                 this.apiVersion.minor = helloResponse.apiVersionMinor;
                             }),
-                            switchMap(() => this.client.connect({ password })),
-                            map((response: ConnectResponse) => {
-                                if (response.invalidPassword) {
-                                    throw new InvalidPasswordError(this.host);
-                                }
-                                return response;
+                            switchMap(() => {
+                                // Legacy devices respond to authentication, but newer ESPHome
+                                // releases ignore it. Send it before other requests and handle
+                                // any rejection independently rather than waiting for a reply.
+                                this.client.connect({ password });
+                                return this.passwordRejected ? EMPTY : this.client.deviceInfo();
                             }),
-                            switchMap(() => this.client.deviceInfo()),
                             switchMap(() => this.client.listEntities()),
                             switchMap(() => this.client.subscribeStateChange()),
                             retry({
                                 delay: (error: unknown) => {
                                     this.errors.next(error);
-                                    if (error instanceof InvalidPasswordError) {
-                                        // The password is fixed at construction, so a rejection cannot
-                                        // fix itself: it is terminal for auto-reconnect. Drop the
-                                        // half-authenticated session so we stop auto-answering the
-                                        // device's keepalive pings; provideRetryObservable() is the
-                                        // explicit opt-in re-arm.
-                                        this.passwordRejected = true;
-                                        this.socket.terminate();
-                                        return EMPTY;
-                                    }
                                     // Anything else (e.g. an undecodable
                                     // response): redo the whole handshake after a
                                     // pause; the connection logic above stays
@@ -244,7 +239,9 @@ export class EspDevice {
         if (data.type === MessageTypes.ListEntitiesDoneResponse) {
             this.discovery.next(true);
         } else {
-            const knownComponents = new Set<string>(Object.keys(this.components));
+            const knownComponents = new Map<string, number>(
+                Object.entries(this.components).map(([id, component]) => [id, component.key]),
+            );
             const { id, component, state$ } = createComponents(
                 data,
                 this.stateEvents$,
@@ -255,7 +252,9 @@ export class EspDevice {
             if (component) {
                 this.components[id] = this.components[id] ?? component;
             } else if (state$) {
-                this.components[id].provideStateObservable(state$);
+                // createComponents resolves a known entity by its numeric key,
+                // retaining the original public id when object_id changes.
+                this.components[id]?.provideStateObservable(state$);
             }
         }
     }

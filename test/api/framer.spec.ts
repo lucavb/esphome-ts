@@ -1,7 +1,17 @@
 import { createFrameParser, encodeFrame, type ReadData } from '../../src/api/framer';
 import { MessageTypes } from '../../src/api/requestResponseMatching';
 
-const frame = (type: number, payload: number[]): Buffer => Buffer.from([0x00, payload.length, type, ...payload]);
+const varint = (value: number): number[] => {
+    const bytes: number[] = [];
+    while (value >= 0x80) {
+        bytes.push((value & 0x7f) | 0x80);
+        value = Math.floor(value / 0x80);
+    }
+    return [...bytes, value];
+};
+
+const frame = (type: number, payload: number[]): Buffer =>
+    Buffer.from([0x00, ...varint(payload.length), ...varint(type), ...payload]);
 
 const parser = (): { push(chunk: Buffer): ReadData[] } => createFrameParser();
 
@@ -133,29 +143,60 @@ describe('frame parser reassembly', () => {
         expect([...frames[1].payload]).toEqual([0x02, 0x03]);
     });
 
-    describe('payload of exactly 255 bytes', () => {
-        const payload = Array.from({ length: 255 }, (_, i) => i & 0xff);
+    it.each([
+        [127, [0x7f]],
+        [128, [0x80, 0x01]],
+        [255, [0xff, 0x01]],
+        [256, [0x80, 0x02]],
+        [16384, [0x80, 0x80, 0x01]],
+        [65535, [0xff, 0xff, 0x03]],
+    ])('parses the independent wire fixture for a %i-byte payload', (size, lengthBytes) => {
+        const payload = new Uint8Array(size).fill(0xab);
+        // Explicit protocol bytes (rather than encodeFrame output) keep this a
+        // wire fixture and catch a matching encoder/parser bug.
+        const fixture = Buffer.from([0x00, ...lengthBytes, 0x0a, ...payload]);
+        const result = parser().push(fixture);
 
-        it('parses in a single chunk', () => {
-            const result = parser().push(frame(MessageTypes.DeviceInfoResponse, payload));
+        expect(result).toHaveLength(1);
+        expect(result[0].type).toBe(MessageTypes.DeviceInfoResponse);
+        expect(result[0].payload).toEqual(payload);
+    });
 
-            expect(result.length).toBe(1);
-            expect(result[0].type).toBe(MessageTypes.DeviceInfoResponse);
-            expect([...result[0].payload]).toEqual(payload);
-        });
+    it.each([1, 2, 3, 4, 5])('reassembles a frame split at header boundary %i', (splitIndex) => {
+        // length 128 => 80 01; message type 300 => ac 02.
+        const fixture = Buffer.concat([Buffer.from([0x00, 0x80, 0x01, 0xac, 0x02]), Buffer.alloc(128, 0xaa)]);
+        const instance = parser();
 
-        it('parses reassembled across a chunk split', () => {
-            const full = frame(MessageTypes.DeviceInfoResponse, payload);
-            const instance = parser();
+        expect(instance.push(fixture.subarray(0, splitIndex))).toEqual([]);
+        const result = instance.push(fixture.subarray(splitIndex));
+        expect(result).toHaveLength(1);
+        expect(result[0].type).toBe(300);
+        expect(result[0].payload).toHaveLength(128);
+        expect([...result[0].payload.subarray(0, 2)]).toEqual([0xaa, 0xaa]);
+    });
 
-            const first = instance.push(full.subarray(0, 130));
-            const second = instance.push(full.subarray(130));
+    it('drops an over-limit payload header and resynchronizes at the next marker', () => {
+        const result = parser().push(Buffer.from([0x00, 0x80, 0x80, 0x04, 0x00, 0x01, 0x07, 0xaa]));
 
-            expect(first).toEqual([]);
-            expect(second.length).toBe(1);
-            expect(second[0].type).toBe(MessageTypes.DeviceInfoResponse);
-            expect([...second[0].payload]).toEqual(payload);
-        });
+        expect(result).toHaveLength(1);
+        expect(result[0].type).toBe(7);
+        expect([...result[0].payload]).toEqual([0xaa]);
+    });
+
+    it('drops overlong length and type varints without retaining an unbounded header', () => {
+        const instance = parser();
+        expect(instance.push(Buffer.from([0x00, 0x80, 0x80, 0x80, 0x80, 0x80]))).toEqual([]);
+        // The invalid fifth byte was rejected, so this independent frame is parsed immediately.
+        const result = instance.push(Buffer.from([0x00, 0x01, 0x80, 0x80, 0x80, 0x80, 0x10, 0x00, 0x00, 0x07]));
+        expect(result).toHaveLength(1);
+        expect(result[0].type).toBe(7);
+    });
+
+    it('accepts the largest message type and skips one above the firmware limit', () => {
+        const result = parser().push(
+            Buffer.from([0x00, 0x00, 0xff, 0xff, 0x03, 0x00, 0x00, 0x80, 0x80, 0x04, 0x00, 0x00, 0x07]),
+        );
+        expect(result.map(({ type }) => type)).toEqual([65535, 7]);
     });
 
     it('keeps two parser instances isolated from each other', () => {
@@ -182,20 +223,34 @@ describe('encodeFrame', () => {
         expect([...result[0].payload]).toEqual([0xde, 0xad, 0xbe, 0xef]);
     });
 
-    it('throws a RangeError for an oversized payload', () => {
-        expect(() => encodeFrame(MessageTypes.PingRequest, new Uint8Array(256))).toThrow(RangeError);
+    it('throws a RangeError for a payload above the 65535-byte limit', () => {
+        expect(() => encodeFrame(MessageTypes.PingRequest, new Uint8Array(65536))).toThrow(RangeError);
     });
 
-    it('accepts a payload of exactly 255 bytes', () => {
-        const encoded = encodeFrame(MessageTypes.DeviceInfoResponse, new Uint8Array(255).fill(0xab));
-
-        expect(encoded.length).toBe(258);
-        expect([...encoded.subarray(0, 3)]).toEqual([0x00, 255, MessageTypes.DeviceInfoResponse]);
+    it.each([
+        [127, [0x7f]],
+        [128, [0x80, 0x01]],
+        [255, [0xff, 0x01]],
+        [256, [0x80, 0x02]],
+        [16384, [0x80, 0x80, 0x01]],
+        [65535, [0xff, 0xff, 0x03]],
+    ])('encodes exact independent bytes for a %i-byte payload', (size, lengthBytes) => {
+        const payload = new Uint8Array(size).fill(0xab);
+        const encoded = encodeFrame(MessageTypes.DeviceInfoResponse, payload);
+        expect([...encoded]).toEqual([0x00, ...lengthBytes, 0x0a, ...payload]);
     });
 
-    it('pins the exact byte layout of a frame with payload', () => {
-        const encoded = encodeFrame(MessageTypes.HelloRequest, new Uint8Array([1, 2, 3]));
+    it('encodes a multibyte message type and keeps short frames correct', () => {
+        expect([...encodeFrame(MessageTypes.HelloRequest, new Uint8Array([1, 2, 3]))]).toEqual([
+            0x00, 0x03, 0x01, 1, 2, 3,
+        ]);
+        expect([...encodeFrame(300 as MessageTypes, new Uint8Array([0xaa]))]).toEqual([0x00, 0x01, 0xac, 0x02, 0xaa]);
+    });
 
-        expect([...encoded]).toEqual([0x00, 0x03, MessageTypes.HelloRequest, 1, 2, 3]);
+    it('accepts uint16 message types and rejects out-of-range types', () => {
+        expect([...encodeFrame(65535 as MessageTypes, new Uint8Array())]).toEqual([0x00, 0x00, 0xff, 0xff, 0x03]);
+        expect(() => encodeFrame(-1 as MessageTypes, new Uint8Array())).toThrow(RangeError);
+        expect(() => encodeFrame(65536 as MessageTypes, new Uint8Array())).toThrow(RangeError);
+        expect(() => encodeFrame(1.5 as MessageTypes, new Uint8Array())).toThrow(RangeError);
     });
 });

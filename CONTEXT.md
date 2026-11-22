@@ -15,7 +15,7 @@ The live path between the library and a Device, along which frames travel as byt
 _Avoid_: session, channel, transport
 
 **Frame**:
-The single wire unit: a fixed three-byte header (marker byte, length byte, type byte) followed by up to 255 payload bytes. One frame carries one message.
+The single wire unit: marker byte `0x00`, unsigned-varint payload length, unsigned-varint message type, then up to 65535 payload bytes. One frame carries one message.
 _Avoid_: packet, chunk
 
 **Message**:

@@ -35,8 +35,18 @@ querying the device for information on its component(s).
 
 Once this process is done, `true` will be emitted through `discovery$` observable,
 hence the filter pipe. Afterwards, you can access the discovered components via the
-`components` dictionary. You just have to know the name of your component.
-_Beware of the naming scheme of esphome here_.
+`components` dictionary. When ESPHome supplies an object ID, that ID is normally the dictionary key.
+Newer devices can omit object IDs; those components receive a key derived from their numeric
+entity key instead. Use `Object.values(device.components)` and component properties when you
+cannot rely on an object ID. If an entity's object ID changes on reconnect, the existing
+component instance and its original dictionary key are retained by numeric entity key. If
+different entities report the same nonempty object ID, the first keeps that dictionary key and
+later collisions use a key-derived fallback instead.
+Numeric entity keys are not guaranteed to remain the same across device changes.
+
+ESPHome 2026.1 removed native API password authentication. For older devices a supplied password
+is still sent and a rejection is reported on `error$`; newer devices may not send an authentication
+response. This library does not support ESPHome's Noise-encrypted API connections.
 
 ## Supported components
 

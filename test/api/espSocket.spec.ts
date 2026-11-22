@@ -191,7 +191,7 @@ describe('EspSocket sendEspMessage', () => {
         await flush();
 
         const error = firstValueFrom(espSocket.error$.pipe(take(1)));
-        espSocket.sendEspMessage(MessageTypes.LightCommandRequest, new Uint8Array(256));
+        espSocket.sendEspMessage(MessageTypes.LightCommandRequest, new Uint8Array(65536));
 
         await expect(error).resolves.toBeInstanceOf(RangeError);
         expect(server.written.length).toBe(0);

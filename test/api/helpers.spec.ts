@@ -14,7 +14,13 @@ import {
 } from '../../src/api/protobuf/api';
 import { MessageTypes } from '../../src/api/requestResponseMatching';
 import { type StateResponses } from '../../src/api/interfaces';
-import { createComponents, emptyCommandInterface, stateParser, transformStates } from '../../src/api/helpers';
+import {
+    createComponents,
+    emptyCommandInterface,
+    fallbackEntityId,
+    stateParser,
+    transformStates,
+} from '../../src/api/helpers';
 import {
     BinarySensorComponent,
     CoverComponent,
@@ -350,6 +356,112 @@ describe('helpers', () => {
 
             const received = await firstMatchingEvent;
             expect(received).toEqual({ key: 55, state: false });
+        });
+
+        it('uses deterministic key-based IDs for empty object IDs across every supported entity type', () => {
+            const entities = [
+                [
+                    MessageTypes.ListEntitiesBinarySensorResponse,
+                    ListEntitiesBinarySensorResponse.encode({
+                        ...ListEntitiesBinarySensorResponse.decode(new Uint8Array()),
+                        key: 101,
+                    }).finish(),
+                    BinarySensorComponent,
+                ],
+                [
+                    MessageTypes.ListEntitiesCoverResponse,
+                    ListEntitiesCoverResponse.encode({
+                        ...ListEntitiesCoverResponse.decode(new Uint8Array()),
+                        key: 102,
+                    }).finish(),
+                    CoverComponent,
+                ],
+                [
+                    MessageTypes.ListEntitiesSwitchResponse,
+                    ListEntitiesSwitchResponse.encode({
+                        ...ListEntitiesSwitchResponse.decode(new Uint8Array()),
+                        key: 103,
+                    }).finish(),
+                    SwitchComponent,
+                ],
+                [
+                    MessageTypes.ListEntitiesLightResponse,
+                    ListEntitiesLightResponse.encode({
+                        ...ListEntitiesLightResponse.decode(new Uint8Array()),
+                        key: 104,
+                    }).finish(),
+                    LightComponent,
+                ],
+                [
+                    MessageTypes.ListEntitiesSensorResponse,
+                    ListEntitiesSensorResponse.encode({
+                        ...ListEntitiesSensorResponse.decode(new Uint8Array()),
+                        key: 105,
+                    }).finish(),
+                    SensorComponent,
+                ],
+            ] as const;
+
+            for (const [type, payload, componentType] of entities) {
+                const result = createComponents(readData(type, payload), stateEvents$, debugConnection, new Set());
+                expect(result.id).toBe(fallbackEntityId(result.key!));
+                expect(result.component).toBeInstanceOf(componentType);
+                expect(result.fallback).toBe(true);
+            }
+        });
+
+        it('avoids a fallback ID already occupied by a different object ID', () => {
+            const id = fallbackEntityId(17);
+            const response = ListEntitiesSensorResponse.encode({
+                ...ListEntitiesSensorResponse.decode(new Uint8Array()),
+                key: 17,
+            }).finish();
+            const result = createComponents(
+                readData(MessageTypes.ListEntitiesSensorResponse, response),
+                stateEvents$,
+                debugConnection,
+                new Map([[id, 99]]),
+            );
+
+            expect(result.id).toBe(`${id}_1`);
+            expect(result.component).toBeInstanceOf(SensorComponent);
+        });
+
+        it('reuses the existing ID by numeric key when object ID changes', () => {
+            const existingId = 'sensor_before';
+            const response = ListEntitiesSensorResponse.encode({
+                ...ListEntitiesSensorResponse.decode(new Uint8Array()),
+                objectId: '',
+                key: 18,
+            }).finish();
+            const result = createComponents(
+                readData(MessageTypes.ListEntitiesSensorResponse, response),
+                stateEvents$,
+                debugConnection,
+                new Map([[existingId, 18]]),
+            );
+
+            expect(result.id).toBe(existingId);
+            expect(result.component).toBeUndefined();
+            expect(result.state$).toBeDefined();
+        });
+
+        it('does not overwrite a different entity with a duplicate nonempty object ID', () => {
+            const response = ListEntitiesSwitchResponse.encode({
+                ...ListEntitiesSwitchResponse.decode(new Uint8Array()),
+                objectId: 'duplicate_object_id',
+                key: 19,
+            }).finish();
+            const result = createComponents(
+                readData(MessageTypes.ListEntitiesSwitchResponse, response),
+                stateEvents$,
+                debugConnection,
+                new Map([['duplicate_object_id', 20]]),
+            );
+
+            expect(result.id).toBe(fallbackEntityId(19));
+            expect(result.fallback).toBe(true);
+            expect(result.component).toBeInstanceOf(SwitchComponent);
         });
 
         it('returns an empty entry for list entity message types outside the component switch', () => {

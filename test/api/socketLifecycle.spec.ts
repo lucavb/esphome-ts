@@ -4,17 +4,29 @@ import { type Connection } from '../../src/api/connection';
 import { MessageTypes } from '../../src/api/requestResponseMatching';
 import { encodeFrame } from '../../src/api/framer';
 import {
+    ConnectRequest,
     ConnectResponse,
     DeviceInfoResponse,
     HelloResponse,
+    ListEntitiesBinarySensorResponse,
     ListEntitiesCoverResponse,
     ListEntitiesDoneResponse,
+    ListEntitiesLightResponse,
+    ListEntitiesSensorResponse,
+    ListEntitiesSwitchResponse,
+    BinarySensorStateResponse,
+    CoverStateResponse,
+    LightStateResponse,
+    SensorStateResponse,
+    SwitchStateResponse,
     PingRequest,
 } from '../../src/api/protobuf/api';
 import { createInMemoryConnection, type InMemoryServerDriver } from '../testHelpers/inMemoryConnection';
 import { filter, firstValueFrom, Subject, take } from 'rxjs';
 import { isTrue } from '../../src/api/booleans';
 import { CoverComponent } from '../../src/components/cover';
+import { BinarySensorComponent, LightComponent, SensorComponent, SwitchComponent } from '../../src/components';
+import { fallbackEntityId } from '../../src/api/helpers';
 
 const flush = (): Promise<void> => new Promise((resolve) => setImmediate(resolve));
 
@@ -198,9 +210,87 @@ describe('EspDevice protocol handling', () => {
         expect(opens()).toBe(1);
     });
 
+    it('discovers a modern device that does not respond to authentication', async () => {
+        device = new EspDevice('localhost', '', 6053, { connection });
+        server.connect();
+        await flush();
+        respond(server, MessageTypes.HelloResponse, hello(14));
+        await flush();
+
+        expect(writtenTypes()).toEqual([
+            MessageTypes.HelloRequest,
+            MessageTypes.ConnectRequest,
+            MessageTypes.DeviceInfoRequest,
+        ]);
+        respond(server, MessageTypes.DeviceInfoResponse, deviceInfo());
+        await flush();
+        respond(server, MessageTypes.ListEntitiesDoneResponse, ListEntitiesDoneResponse.encode({}).finish());
+        await expect(firstValueFrom(device.discovery$.pipe(filter(isTrue), take(1)))).resolves.toBe(true);
+        expect(writtenTypes()).toEqual([
+            MessageTypes.HelloRequest,
+            MessageTypes.ConnectRequest,
+            MessageTypes.DeviceInfoRequest,
+            MessageTypes.ListEntitiesRequest,
+            MessageTypes.SubscribeStatesRequest,
+        ]);
+    });
+
+    it('discovers modern entities after a varint-framed device info response', async () => {
+        device = new EspDevice('localhost', '', 6053, { connection });
+        server.connect();
+        await flush();
+        respond(server, MessageTypes.HelloResponse, hello(19));
+        await flush();
+
+        // ESPHome 2026.10.2 includes friendly_name (field 13) even though our
+        // older protobuf schema does not. This yields a 130-byte payload, whose
+        // length must be encoded as the two-byte varint 0x82 0x01.
+        const payload = Buffer.concat([
+            DeviceInfoResponse.encode({
+                usesPassword: false,
+                name: 'esp',
+                macAddress: '00:00:00:00:00:01',
+                esphomeVersion: '2026.10.2',
+                compilationTime: 'Nov 22 2026 10:00:00',
+                model: 'nodemcuv2',
+                hasDeepSleep: false,
+            }).finish(),
+            Buffer.from([0x6a, 60]),
+            Buffer.alloc(60, 0x4c),
+        ]);
+        expect(payload.length).toBe(130);
+        const frame = Buffer.concat([Buffer.from([0x00, 0x82, 0x01, MessageTypes.DeviceInfoResponse]), payload]);
+        server.push(frame.subarray(0, 2));
+        server.push(frame.subarray(2));
+        await flush();
+
+        expect(device.deviceInfo?.esphomeVersion).toBe('2026.10.2');
+        expect(writtenTypes()).toContain(MessageTypes.ListEntitiesRequest);
+        respond(
+            server,
+            MessageTypes.ListEntitiesSwitchResponse,
+            ListEntitiesSwitchResponse.encode({
+                ...ListEntitiesSwitchResponse.decode(new Uint8Array()),
+                key: 42,
+                name: 'Power',
+            }).finish(),
+        );
+        respond(server, MessageTypes.ListEntitiesDoneResponse, ListEntitiesDoneResponse.encode({}).finish());
+        await expect(firstValueFrom(device.discovery$.pipe(filter(isTrue), take(1)))).resolves.toBe(true);
+        const component = device.components[fallbackEntityId(42)];
+        expect(component).toBeInstanceOf(SwitchComponent);
+        const state = firstValueFrom(component.state$);
+        respond(
+            server,
+            MessageTypes.SwitchStateResponse,
+            SwitchStateResponse.encode({ key: 42, state: true }).finish(),
+        );
+        expect(await state).toMatchObject({ key: 42, state: true });
+    });
+
     it('reports an invalid password and latches it as terminal for auto-reconnect', async () => {
         fakeTimers();
-        device = new EspDevice('localhost', '', 6053, { connection });
+        device = new EspDevice('localhost', 'wrong-password', 6053, { connection });
         const errors: unknown[] = [];
         device.error$.subscribe((error: unknown) => errors.push(error));
         server.connect();
@@ -208,13 +298,18 @@ describe('EspDevice protocol handling', () => {
 
         respond(server, MessageTypes.HelloResponse, hello());
         await flush();
+        expect(ConnectRequest.decode(server.written[1].subarray(3)).password).toBe('wrong-password');
         respond(server, MessageTypes.ConnectResponse, ConnectResponse.encode({ invalidPassword: true }).finish());
 
         await flush();
         await vi.advanceTimersByTimeAsync(5000);
         expect(errors.length).toBe(1);
         expect(errors[0]).toBeInstanceOf(InvalidPasswordError);
-        expect(writtenTypes()).toEqual([MessageTypes.HelloRequest, MessageTypes.ConnectRequest]);
+        expect(writtenTypes()).toEqual([
+            MessageTypes.HelloRequest,
+            MessageTypes.ConnectRequest,
+            MessageTypes.DeviceInfoRequest,
+        ]);
 
         // the half-authenticated session is dropped and any later connect
         // flip must not re-fire tap→open→handshake: the password is fixed at
@@ -225,8 +320,26 @@ describe('EspDevice protocol handling', () => {
         await flush();
         await vi.advanceTimersByTimeAsync(5000);
 
-        expect(writtenTypes()).toEqual([MessageTypes.HelloRequest, MessageTypes.ConnectRequest]);
+        expect(writtenTypes()).toEqual([
+            MessageTypes.HelloRequest,
+            MessageTypes.ConnectRequest,
+            MessageTypes.DeviceInfoRequest,
+        ]);
         expect(errors.length).toBe(1);
+    });
+
+    it('still reports a delayed password rejection after discovery', async () => {
+        device = new EspDevice('localhost', 'wrong-password', 6053, { connection });
+        const errors: unknown[] = [];
+        device.error$.subscribe((error: unknown) => errors.push(error));
+        await completeHandshake();
+
+        respond(server, MessageTypes.ConnectResponse, ConnectResponse.encode({ invalidPassword: true }).finish());
+        await flush();
+
+        expect(errors).toHaveLength(1);
+        expect(errors[0]).toBeInstanceOf(InvalidPasswordError);
+        expect(connection.isConnected()).toBe(false);
     });
 
     it('survives an undecodable device info response and rediscovers', async () => {
@@ -324,6 +437,157 @@ describe('EspDevice protocol handling', () => {
         expect(cover.supportsStop).toBe(false);
     });
 
+    it('preserves entity instances and routes state across reconnects with empty object IDs', async () => {
+        device = new EspDevice('localhost', '', 6053, { connection });
+        const respondEntities = (emptySwitchObjectId: boolean): void => {
+            respond(
+                server,
+                MessageTypes.ListEntitiesBinarySensorResponse,
+                ListEntitiesBinarySensorResponse.encode({
+                    ...ListEntitiesBinarySensorResponse.decode(new Uint8Array()),
+                    key: 201,
+                    name: 'Door',
+                }).finish(),
+            );
+            respond(
+                server,
+                MessageTypes.ListEntitiesCoverResponse,
+                ListEntitiesCoverResponse.encode({
+                    ...ListEntitiesCoverResponse.decode(new Uint8Array()),
+                    key: 202,
+                    name: 'Cover',
+                }).finish(),
+            );
+            respond(
+                server,
+                MessageTypes.ListEntitiesSwitchResponse,
+                ListEntitiesSwitchResponse.encode({
+                    ...ListEntitiesSwitchResponse.decode(new Uint8Array()),
+                    objectId: emptySwitchObjectId ? '' : 'legacy_switch_id',
+                    key: 203,
+                    name: 'Switch',
+                }).finish(),
+            );
+            respond(
+                server,
+                MessageTypes.ListEntitiesLightResponse,
+                ListEntitiesLightResponse.encode({
+                    ...ListEntitiesLightResponse.decode(new Uint8Array()),
+                    key: 204,
+                    name: 'Light',
+                }).finish(),
+            );
+            respond(
+                server,
+                MessageTypes.ListEntitiesSensorResponse,
+                ListEntitiesSensorResponse.encode({
+                    ...ListEntitiesSensorResponse.decode(new Uint8Array()),
+                    key: 205,
+                    name: 'Sensor',
+                }).finish(),
+            );
+            respond(server, MessageTypes.ListEntitiesDoneResponse, ListEntitiesDoneResponse.encode({}).finish());
+        };
+        const completeDiscovery = async (switchObjectIdEmpty: boolean): Promise<void> => {
+            server.connect();
+            await flush();
+            respond(server, MessageTypes.HelloResponse, hello());
+            await flush();
+            respond(server, MessageTypes.ConnectResponse, connectOk());
+            await flush();
+            respond(server, MessageTypes.DeviceInfoResponse, deviceInfo());
+            await flush();
+            respondEntities(switchObjectIdEmpty);
+            await flush();
+        };
+
+        await completeDiscovery(false);
+        const initial = { ...device.components };
+        expect(Object.keys(initial).sort()).toEqual(
+            [
+                fallbackEntityId(201),
+                fallbackEntityId(202),
+                'legacy_switch_id',
+                fallbackEntityId(204),
+                fallbackEntityId(205),
+            ].sort(),
+        );
+        const components = [
+            initial[fallbackEntityId(201)] as BinarySensorComponent,
+            initial[fallbackEntityId(202)] as CoverComponent,
+            initial.legacy_switch_id as SwitchComponent,
+            initial[fallbackEntityId(204)] as LightComponent,
+            initial[fallbackEntityId(205)] as SensorComponent,
+        ];
+
+        server.disconnect();
+        await flush();
+        await completeDiscovery(true);
+
+        expect(device.components.legacy_switch_id).toBe(components[2]);
+        expect(device.components[fallbackEntityId(201)]).toBe(components[0]);
+        expect(device.components[fallbackEntityId(202)]).toBe(components[1]);
+        expect(device.components[fallbackEntityId(204)]).toBe(components[3]);
+        expect(device.components[fallbackEntityId(205)]).toBe(components[4]);
+        expect(Object.keys(device.components)).toHaveLength(5);
+
+        const statePromises = components.map((component) => firstValueFrom(component.state$));
+        respond(
+            server,
+            MessageTypes.BinarySensorStateResponse,
+            BinarySensorStateResponse.encode({
+                ...BinarySensorStateResponse.decode(new Uint8Array()),
+                key: 201,
+                state: true,
+            }).finish(),
+        );
+        respond(
+            server,
+            MessageTypes.CoverStateResponse,
+            CoverStateResponse.encode({
+                ...CoverStateResponse.decode(new Uint8Array()),
+                key: 202,
+                position: 0.75,
+            }).finish(),
+        );
+        respond(
+            server,
+            MessageTypes.SwitchStateResponse,
+            SwitchStateResponse.encode({ key: 203, state: true }).finish(),
+        );
+        respond(
+            server,
+            MessageTypes.LightStateResponse,
+            LightStateResponse.encode({
+                ...LightStateResponse.decode(new Uint8Array()),
+                key: 204,
+                state: true,
+                brightness: 0.5,
+            }).finish(),
+        );
+        respond(
+            server,
+            MessageTypes.SensorStateResponse,
+            SensorStateResponse.encode({
+                ...SensorStateResponse.decode(new Uint8Array()),
+                key: 205,
+                state: 22.5,
+            }).finish(),
+        );
+        await flush();
+        const states = await Promise.all(statePromises);
+        expect((states[0] as BinarySensorStateResponse).key).toBe(201);
+        expect((states[1] as CoverStateResponse).key).toBe(202);
+        expect((states[2] as SwitchStateResponse).key).toBe(203);
+        expect((states[3] as LightStateResponse).key).toBe(204);
+        expect((states[4] as SensorStateResponse).key).toBe(205);
+        expect((states[0] as BinarySensorStateResponse).state).toBe(true);
+        expect((states[1] as CoverStateResponse).position).toBe(0.75);
+        expect((states[2] as SwitchStateResponse).state).toBe(true);
+        expect((states[3] as LightStateResponse).brightness).toBe(0.5);
+        expect((states[4] as SensorStateResponse).state).toBe(22.5);
+    });
+
     it('re-arms auto-reconnect when provideRetryObservable is called after a password rejection', async () => {
         fakeTimers();
         device = new EspDevice('localhost', '', 6053, { connection });
@@ -336,7 +600,11 @@ describe('EspDevice protocol handling', () => {
         respond(server, MessageTypes.ConnectResponse, ConnectResponse.encode({ invalidPassword: true }).finish());
         await flush();
         await vi.advanceTimersByTimeAsync(5000);
-        expect(writtenTypes()).toEqual([MessageTypes.HelloRequest, MessageTypes.ConnectRequest]);
+        expect(writtenTypes()).toEqual([
+            MessageTypes.HelloRequest,
+            MessageTypes.ConnectRequest,
+            MessageTypes.DeviceInfoRequest,
+        ]);
         expect(errors.length).toBe(1);
 
         // re-providing a cadence is the explicit opt-in re-arm after a
@@ -353,8 +621,10 @@ describe('EspDevice protocol handling', () => {
         expect(writtenTypes()).toEqual([
             MessageTypes.HelloRequest,
             MessageTypes.ConnectRequest,
+            MessageTypes.DeviceInfoRequest,
             MessageTypes.HelloRequest,
             MessageTypes.ConnectRequest,
+            MessageTypes.DeviceInfoRequest,
         ]);
         // the re-armed handshake re-latches: the rejection marks auto-reconnect
         // terminal again
