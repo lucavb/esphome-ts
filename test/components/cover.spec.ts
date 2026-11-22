@@ -1,9 +1,16 @@
 import { CoverComponent, type CoverStateEvent } from '../../src';
 import { type CoverEntity } from '../../src/components/entities';
-import { CoverCommandRequest, CoverOperation, LegacyCoverCommand } from '../../src/api/protobuf/api';
+import {
+    CoverCommandRequest,
+    CoverOperation,
+    CoverStateResponse,
+    LegacyCoverCommand,
+    LegacyCoverState,
+} from '../../src/api/protobuf/api';
 import { Subject } from 'rxjs';
 import { DebugConnection } from '../testHelpers/debugConnection';
 import { MessageTypes } from '../../src/api/requestResponseMatching';
+import { stateParser } from '../../src/api/helpers';
 
 describe('CoverComponent', () => {
     let component: CoverComponent;
@@ -22,6 +29,7 @@ describe('CoverComponent', () => {
             assumedState: false,
             supportsPosition: true,
             supportsTilt: true,
+            supportsStop: true,
             deviceClass: 'garage',
         };
         state = new Subject<CoverStateEvent>();
@@ -33,7 +41,7 @@ describe('CoverComponent', () => {
         state.complete();
     });
 
-    it('open/close/stop send position and stop commands', () => {
+    it('open/close/stop send modern position and stop commands', () => {
         // The open → close → stop sequence also pins the disableSerialise
         // choice: a serialized command would wait for a state response that
         // feedback-less covers never send, so the later calls would never go
@@ -151,7 +159,7 @@ describe('CoverComponent', () => {
         expect(sentCommand().hasPosition).toBe(false);
 
         state.next({ key: listEntity.key, position: 1, tilt: 0.25 });
-        expect(tiltOnlyCover.position).toBeUndefined();
+        expect(tiltOnlyCover.position).toBeCloseTo(1);
         expect(tiltOnlyCover.tilt).toBeCloseTo(0.25);
         expect(tiltOnlyCover.isClosed).toBe(false);
         expect(tiltOnlyCover.isOpen).toBe(true);
@@ -192,7 +200,7 @@ describe('CoverComponent', () => {
             tilt: 0,
             currentOperation: CoverOperation.COVER_OPERATION_IDLE,
         });
-        expect(statelessCover.position).toBeUndefined();
+        expect(statelessCover.position).toBeCloseTo(0);
         expect(statelessCover.tilt).toBeUndefined();
         expect(statelessCover.isClosed).toBe(true);
         expect(statelessCover.isOpen).toBe(false);
@@ -201,7 +209,168 @@ describe('CoverComponent', () => {
     it('reports its type and entity details', () => {
         expect(component.type).toBe('cover');
         expect(component.supportsPosition).toBe(true);
+        expect(component.supportsStop).toBe(true);
         expect(component.supportsTilt).toBe(true);
         expect(component.assumedState).toBe(false);
+    });
+
+    it('uses legacy state and legacy commands for API versions before 1.1', () => {
+        const legacyCover = new CoverComponent(listEntity, state, debugConnection, { major: 1, minor: 0 });
+        const legacyState = stateParser({
+            type: MessageTypes.CoverStateResponse,
+            payload: CoverStateResponse.encode({
+                key: listEntity.key,
+                legacyState: LegacyCoverState.LEGACY_COVER_STATE_CLOSED,
+                position: 0,
+                tilt: 0,
+                currentOperation: CoverOperation.COVER_OPERATION_IDLE,
+            }).finish(),
+        });
+        state.next(legacyState as CoverStateEvent);
+        expect(legacyCover.isClosed).toBe(true);
+        expect(legacyCover.isOpen).toBe(false);
+        expect(legacyCover.position).toBeUndefined();
+
+        legacyCover.open();
+        let command = sentCommand();
+        expect(command.hasLegacyCommand).toBe(true);
+        expect(command.legacyCommand).toBe(LegacyCoverCommand.LEGACY_COVER_COMMAND_OPEN);
+        expect(command.hasPosition).toBe(false);
+
+        debugConnection.calls = [];
+        legacyCover.close();
+        command = sentCommand();
+        expect(command.hasLegacyCommand).toBe(true);
+        expect(command.legacyCommand).toBe(LegacyCoverCommand.LEGACY_COVER_COMMAND_CLOSE);
+        expect(command.hasPosition).toBe(false);
+
+        debugConnection.calls = [];
+        legacyCover.stop();
+        command = sentCommand();
+        expect(command.hasLegacyCommand).toBe(true);
+        expect(command.legacyCommand).toBe(LegacyCoverCommand.LEGACY_COVER_COMMAND_STOP);
+        expect(command.stop).toBe(false);
+
+        debugConnection.calls = [];
+        legacyCover.setPosition(0.5);
+        legacyCover.setTilt(0.5);
+        expect(debugConnection.calls).toHaveLength(0);
+    });
+
+    it('uses position state from API 1.1 even when legacy state conflicts', () => {
+        const modernCover = new CoverComponent(listEntity, state, debugConnection, { major: 1, minor: 1 });
+        state.next({
+            key: listEntity.key,
+            legacyState: 1,
+            position: 0.75,
+        });
+        expect(modernCover.isClosed).toBe(false);
+        expect(modernCover.isOpen).toBe(false);
+        expect(modernCover.position).toBeCloseTo(0.75);
+    });
+
+    it('exposes effective position and tilt support as the negotiated version changes', () => {
+        const negotiatedVersion = { major: 1, minor: 0 };
+        const versionedCover = new CoverComponent(listEntity, state, debugConnection, negotiatedVersion);
+
+        state.next({
+            key: listEntity.key,
+            legacyState: LegacyCoverState.LEGACY_COVER_STATE_CLOSED,
+            position: 0,
+            tilt: 0,
+        });
+        expect(versionedCover.supportsPosition).toBe(false);
+        expect(versionedCover.supportsTilt).toBe(false);
+        expect(versionedCover.position).toBeUndefined();
+        expect(versionedCover.isClosed).toBe(true);
+        versionedCover.setPosition(0.5);
+        versionedCover.setTilt(0.5);
+        expect(debugConnection.calls).toHaveLength(0);
+
+        // EspDevice updates this shared version object when a reconnect
+        // negotiates a new API version. The same existing component should
+        // immediately expose and allow protocol-supported controls.
+        negotiatedVersion.minor = 1;
+        state.next({
+            key: listEntity.key,
+            legacyState: LegacyCoverState.LEGACY_COVER_STATE_CLOSED,
+            position: 0.4,
+            tilt: 0.3,
+        });
+        expect(versionedCover.supportsPosition).toBe(true);
+        expect(versionedCover.supportsTilt).toBe(true);
+        expect(versionedCover.position).toBeCloseTo(0.4);
+        expect(versionedCover.tilt).toBeCloseTo(0.3);
+        expect(versionedCover.isClosed).toBe(false);
+        versionedCover.setPosition(0.6);
+        expect(sentCommand().hasPosition).toBe(true);
+
+        debugConnection.calls = [];
+        versionedCover.setTilt(0.7);
+        expect(sentCommand().hasTilt).toBe(true);
+
+        negotiatedVersion.minor = 0;
+        expect(versionedCover.supportsPosition).toBe(false);
+        expect(versionedCover.supportsTilt).toBe(false);
+        expect(versionedCover.position).toBeUndefined();
+        expect(versionedCover.isClosed).toBe(true);
+    });
+
+    it('normalizes stop support across the API 1.8 boundary', () => {
+        const supportsStopEntity: CoverEntity = { ...listEntity, supportsStop: true };
+        const noStopEntity: CoverEntity = { ...listEntity, supportsStop: false };
+        expect(new CoverComponent(noStopEntity, state, debugConnection, { major: 1, minor: 7 }).supportsStop).toBe(
+            true,
+        );
+        expect(new CoverComponent(noStopEntity, state, debugConnection, { major: 1, minor: 8 }).supportsStop).toBe(
+            false,
+        );
+        expect(
+            new CoverComponent(supportsStopEntity, state, debugConnection, { major: 1, minor: 8 }).supportsStop,
+        ).toBe(true);
+        expect(new CoverComponent(noStopEntity, state, debugConnection, { major: 2, minor: 0 }).supportsStop).toBe(
+            false,
+        );
+    });
+
+    it('only sends stop when the negotiated API supports it', () => {
+        const noStopCover = new CoverComponent({ ...listEntity, supportsStop: false }, state, debugConnection, {
+            major: 1,
+            minor: 8,
+        });
+        noStopCover.stop();
+        expect(debugConnection.calls).toHaveLength(0);
+
+        const stopCover = new CoverComponent({ ...listEntity, supportsStop: true }, state, debugConnection, {
+            major: 1,
+            minor: 8,
+        });
+        stopCover.stop();
+        expect(debugConnection.calls).toHaveLength(1);
+        expect(sentCommand().stop).toBe(true);
+
+        debugConnection.calls = [];
+        const pre18Cover = new CoverComponent({ ...listEntity, supportsStop: false }, state, debugConnection, {
+            major: 1,
+            minor: 7,
+        });
+        expect(pre18Cover.supportsStop).toBe(true);
+        pre18Cover.stop();
+        expect(debugConnection.calls).toHaveLength(1);
+        expect(sentCommand().stop).toBe(true);
+    });
+
+    it('does not suppress position feedback when position control is unsupported', () => {
+        const endstopEntity: CoverEntity = {
+            ...listEntity,
+            supportsPosition: false,
+            supportsTilt: false,
+        };
+        const endstopCover = new CoverComponent(endstopEntity, state, debugConnection);
+        state.next({ key: listEntity.key, position: 0.35 });
+        expect(endstopCover.position).toBeCloseTo(0.35);
+        expect(endstopCover.supportsPosition).toBe(false);
+        expect(endstopCover.setPosition(0.5)).toBeUndefined();
+        expect(debugConnection.calls).toHaveLength(0);
     });
 });

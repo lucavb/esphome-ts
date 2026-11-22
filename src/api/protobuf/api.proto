@@ -241,6 +241,7 @@ message ListEntitiesCoverResponse {
   bool supports_position = 6;
   bool supports_tilt = 7;
   string device_class = 8;
+  bool supports_stop = 12;
 }
 
 enum LegacyCoverState {

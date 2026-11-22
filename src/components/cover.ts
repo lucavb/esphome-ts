@@ -1,31 +1,64 @@
 import { BaseComponent } from './base';
 import { type ComponentType, type CoverEntity } from './entities';
 import { type CoverStateEvent } from './states';
+import { type CommandInterface } from './commandInterface';
 import { MessageTypes } from '../api/requestResponseMatching';
-import { CoverCommandRequest, type CoverOperation, LegacyCoverCommand } from '../api/protobuf/api';
+import { CoverCommandRequest, type CoverOperation, LegacyCoverCommand, LegacyCoverState } from '../api/protobuf/api';
+import { type Observable } from 'rxjs';
+
+export interface ApiVersion {
+    major: number;
+    minor: number;
+}
+
+const DEFAULT_API_VERSION: ApiVersion = { major: 1, minor: 8 };
 
 export class CoverComponent extends BaseComponent<CoverEntity, CoverStateEvent> {
+    constructor(
+        listEntity: CoverEntity,
+        state: Observable<CoverStateEvent>,
+        commandInterface: CommandInterface,
+        private readonly apiVersion: ApiVersion = DEFAULT_API_VERSION,
+    ) {
+        super(listEntity, state, commandInterface);
+    }
+
     public open(): void {
-        this.sendCommand({ position: 1 });
+        if (this.usesLegacyProtocol) {
+            this.sendCommand({ legacyCommand: LegacyCoverCommand.LEGACY_COVER_COMMAND_OPEN });
+        } else {
+            this.sendCommand({ position: 1 });
+        }
     }
 
     public close(): void {
-        this.sendCommand({ position: 0 });
+        if (this.usesLegacyProtocol) {
+            this.sendCommand({ legacyCommand: LegacyCoverCommand.LEGACY_COVER_COMMAND_CLOSE });
+        } else {
+            this.sendCommand({ position: 0 });
+        }
     }
 
     public stop(): void {
-        this.sendCommand({ stop: true });
+        if (!this.supportsStop) {
+            return;
+        }
+        if (this.usesLegacyProtocol) {
+            this.sendCommand({ legacyCommand: LegacyCoverCommand.LEGACY_COVER_COMMAND_STOP });
+        } else {
+            this.sendCommand({ stop: true });
+        }
     }
 
     public setPosition(position: number): void {
-        if (!this.supportsPosition) {
+        if (this.usesLegacyProtocol || !this.supportsPosition) {
             return;
         }
         this.sendCommand({ position });
     }
 
     public setTilt(tilt: number): void {
-        if (!this.supportsTilt) {
+        if (this.usesLegacyProtocol || !this.supportsTilt) {
             return;
         }
         this.sendCommand({ tilt });
@@ -40,19 +73,24 @@ export class CoverComponent extends BaseComponent<CoverEntity, CoverStateEvent> 
     }
 
     public get supportsPosition(): boolean {
-        return this.listEntity.supportsPosition;
+        return this.isApiVersionAtLeast(1, 1) && this.listEntity.supportsPosition;
+    }
+
+    public get supportsStop(): boolean {
+        return !this.isApiVersionAtLeast(1, 8) || (this.listEntity.supportsStop ?? false);
     }
 
     public get supportsTilt(): boolean {
-        return this.listEntity.supportsTilt;
+        return this.isApiVersionAtLeast(1, 1) && this.listEntity.supportsTilt;
     }
 
     /**
-     * Current position between 0 (closed) and 1 (open). Undefined until the
-     * first state was received or when the cover does not support positions.
+     * Current position between 0 (closed) and 1 (open). This is feedback from
+     * the state response and is independent of position-control support. API
+     * versions before 1.1 do not report position values.
      */
     public get position(): number | undefined {
-        if (!this.supportsPosition) {
+        if (this.usesLegacyProtocol) {
             return undefined;
         }
         return this.state.getValue()?.position;
@@ -70,22 +108,34 @@ export class CoverComponent extends BaseComponent<CoverEntity, CoverStateEvent> 
     }
 
     /**
-     * Whether the cover is fully closed. Derived from the position field the
-     * device always sends, exactly like aioesphomeapi derives is_closed
-     * (position == 0). Undefined until the first state was received.
+     * Whether the cover is fully closed. API versions before 1.1 report this
+     * using the legacy state enum; newer versions report the position.
      */
     public get isClosed(): boolean | undefined {
-        const position = this.state.getValue()?.position;
+        const state = this.state.getValue();
+        if (state === undefined) {
+            return undefined;
+        }
+        if (this.usesLegacyProtocol) {
+            return state.legacyState === LegacyCoverState.LEGACY_COVER_STATE_CLOSED;
+        }
+        const position = state.position;
         return position === undefined ? undefined : position === 0;
     }
 
     /**
-     * Whether the cover is fully open. Derived from the position field the
-     * device always sends. Undefined until the first state was received; a
-     * partially open cover is neither open nor closed.
+     * Whether the cover is fully open. Uses the legacy state before API 1.1
+     * and position thereafter; a partially open cover is neither open nor closed.
      */
     public get isOpen(): boolean | undefined {
-        const position = this.state.getValue()?.position;
+        const state = this.state.getValue();
+        if (state === undefined) {
+            return undefined;
+        }
+        if (this.usesLegacyProtocol) {
+            return state.legacyState === LegacyCoverState.LEGACY_COVER_STATE_OPEN;
+        }
+        const position = state.position;
         return position === undefined ? undefined : position === 1;
     }
 
@@ -97,19 +147,29 @@ export class CoverComponent extends BaseComponent<CoverEntity, CoverStateEvent> 
         return this.state.getValue()?.currentOperation;
     }
 
-    private sendCommand(command: { position?: number; tilt?: number; stop?: boolean }): void {
+    private get usesLegacyProtocol(): boolean {
+        return !this.isApiVersionAtLeast(1, 1);
+    }
+
+    private isApiVersionAtLeast(major: number, minor: number): boolean {
+        return this.apiVersion.major > major || (this.apiVersion.major === major && this.apiVersion.minor >= minor);
+    }
+
+    private sendCommand(command: {
+        legacyCommand?: LegacyCoverCommand;
+        position?: number;
+        tilt?: number;
+        stop?: boolean;
+    }): void {
         this.queueCommand(
             MessageTypes.CoverCommandRequest,
             () =>
                 CoverCommandRequest.encode({
                     key: this.key,
-                    // The legacy command fields are dead: Home Assistant last
-                    // sent them to pre-2019 devices and firmware dropped their
-                    // handling in 2025.8.0. Only the values below reach the
-                    // wire; these two are wire-inert defaults that satisfy
-                    // the generated message type.
-                    hasLegacyCommand: false,
-                    legacyCommand: LegacyCoverCommand.LEGACY_COVER_COMMAND_OPEN,
+                    // API 1.0 predates position/stop commands; retain the
+                    // legacy enum command for those firmware versions.
+                    hasLegacyCommand: command.legacyCommand !== undefined,
+                    legacyCommand: command.legacyCommand ?? LegacyCoverCommand.LEGACY_COVER_COMMAND_OPEN,
                     hasPosition: command.position !== undefined,
                     position: command.position ?? 0,
                     hasTilt: command.tilt !== undefined,

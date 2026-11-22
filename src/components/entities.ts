@@ -20,6 +20,7 @@ export interface CoverEntity extends ListEntity {
     assumedState: boolean;
     supportsPosition: boolean;
     supportsTilt: boolean;
+    supportsStop?: boolean;
     deviceClass: string;
 }
 

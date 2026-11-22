@@ -17,7 +17,7 @@ import { type CommandInterface } from '../components/commandInterface';
 import { filter, Observable } from 'rxjs';
 import { BaseComponent } from '../components/base';
 import { BinarySensorComponent } from '../components/binarySensor';
-import { CoverComponent } from '../components/cover';
+import { CoverComponent, type ApiVersion } from '../components/cover';
 import { LightComponent } from '../components/light';
 import { SensorComponent } from '../components/sensor';
 import { SwitchComponent } from '../components/switch';
@@ -55,6 +55,7 @@ export const createComponents = (
     stateEvents$: Observable<StateResponses>,
     connection: CommandInterface,
     knownComponents: Set<string>,
+    apiVersion: ApiVersion = { major: 1, minor: 8 },
 ): { id: string; component?: BaseComponent; state$?: Observable<StateResponses> } => {
     switch (data.type) {
         case MessageTypes.ListEntitiesBinarySensorResponse: {
@@ -80,7 +81,7 @@ export const createComponents = (
                   }
                 : {
                       id: response.objectId,
-                      component: new CoverComponent(response, state$, connection),
+                      component: new CoverComponent(response, state$, connection, apiVersion),
                   };
         }
         case MessageTypes.ListEntitiesSwitchResponse: {

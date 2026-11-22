@@ -691,6 +691,7 @@ export interface ListEntitiesCoverResponse {
   supportsPosition: boolean;
   supportsTilt: boolean;
   deviceClass: string;
+  supportsStop: boolean;
 }
 
 export interface CoverStateResponse {
@@ -2232,6 +2233,7 @@ function createBaseListEntitiesCoverResponse(): ListEntitiesCoverResponse {
     supportsPosition: false,
     supportsTilt: false,
     deviceClass: "",
+    supportsStop: false,
   };
 }
 
@@ -2260,6 +2262,9 @@ export const ListEntitiesCoverResponse: MessageFns<ListEntitiesCoverResponse> = 
     }
     if (message.deviceClass !== "") {
       writer.uint32(66).string(message.deviceClass);
+    }
+    if (message.supportsStop !== false) {
+      writer.uint32(96).bool(message.supportsStop);
     }
     return writer;
   },
@@ -2341,6 +2346,14 @@ export const ListEntitiesCoverResponse: MessageFns<ListEntitiesCoverResponse> = 
             message.deviceClass = reader.string();
             continue;
           }
+          case 12: {
+            if (tag !== 96) {
+              break;
+            }
+
+            message.supportsStop = reader.bool();
+            continue;
+          }
         }
         if ((tag & 7) === 4 || tag === 0) {
           break;
@@ -2387,6 +2400,11 @@ export const ListEntitiesCoverResponse: MessageFns<ListEntitiesCoverResponse> = 
         : isSet(object.device_class)
         ? globalThis.String(object.device_class)
         : "",
+      supportsStop: isSet(object.supportsStop)
+        ? globalThis.Boolean(object.supportsStop)
+        : isSet(object.supports_stop)
+        ? globalThis.Boolean(object.supports_stop)
+        : false,
     };
   },
 
@@ -2416,6 +2434,9 @@ export const ListEntitiesCoverResponse: MessageFns<ListEntitiesCoverResponse> = 
     if (message.deviceClass !== "") {
       obj.deviceClass = message.deviceClass;
     }
+    if (message.supportsStop !== false) {
+      obj.supportsStop = message.supportsStop;
+    }
     return obj;
   },
 
@@ -2432,6 +2453,7 @@ export const ListEntitiesCoverResponse: MessageFns<ListEntitiesCoverResponse> = 
     message.supportsPosition = object.supportsPosition ?? false;
     message.supportsTilt = object.supportsTilt ?? false;
     message.deviceClass = object.deviceClass ?? "";
+    message.supportsStop = object.supportsStop ?? false;
     return message;
   },
 };

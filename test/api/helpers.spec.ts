@@ -89,6 +89,16 @@ describe('helpers', () => {
         it('falls back to the protobuf defaults for an empty payload', () => {
             const parsed = stateParser(readData(MessageTypes.SensorStateResponse, new Uint8Array()));
             expect(parsed as SensorStateResponse).toEqual({ key: 0, state: 0, missingState: false });
+
+            const emptyCover = stateParser(readData(MessageTypes.CoverStateResponse, new Uint8Array()));
+            expect(emptyCover as CoverStateResponse).toEqual({
+                key: 0,
+                legacyState: LegacyCoverState.LEGACY_COVER_STATE_OPEN,
+                position: 0,
+                tilt: 0,
+                currentOperation: CoverOperation.COVER_OPERATION_IDLE,
+            });
+            expect(ListEntitiesCoverResponse.decode(new Uint8Array()).supportsStop).toBe(false);
         });
 
         it('returns undefined instead of throwing for a malformed payload', () => {
@@ -222,6 +232,7 @@ describe('helpers', () => {
                 assumedState: true,
                 supportsPosition: true,
                 supportsTilt: false,
+                supportsStop: true,
                 deviceClass: 'garage',
             }).finish();
             const { id, component } = createComponents(
@@ -236,6 +247,7 @@ describe('helpers', () => {
             const coverComponent = component as CoverComponent;
             expect(coverComponent.type).toBe('cover');
             expect(coverComponent.supportsPosition).toBe(true);
+            expect(coverComponent.supportsStop).toBe(true);
             expect(coverComponent.supportsTilt).toBe(false);
             expect(coverComponent.assumedState).toBe(true);
             expect(coverComponent.tilt).toBeUndefined();

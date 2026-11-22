@@ -7,12 +7,14 @@ import {
     ConnectResponse,
     DeviceInfoResponse,
     HelloResponse,
+    ListEntitiesCoverResponse,
     ListEntitiesDoneResponse,
     PingRequest,
 } from '../../src/api/protobuf/api';
 import { createInMemoryConnection, type InMemoryServerDriver } from '../testHelpers/inMemoryConnection';
 import { filter, firstValueFrom, Subject, take } from 'rxjs';
 import { isTrue } from '../../src/api/booleans';
+import { CoverComponent } from '../../src/components/cover';
 
 const flush = (): Promise<void> => new Promise((resolve) => setImmediate(resolve));
 
@@ -113,8 +115,8 @@ describe('EspDevice protocol handling', () => {
     const respond = (driver: InMemoryServerDriver, type: MessageTypes, payload: Uint8Array): void => {
         driver.push(Buffer.from(encodeFrame(type, payload)));
     };
-    const hello = (): Uint8Array =>
-        HelloResponse.encode({ serverInfo: 'demo', apiVersionMajor: 1, apiVersionMinor: 1 }).finish();
+    const hello = (apiVersionMinor = 1): Uint8Array =>
+        HelloResponse.encode({ serverInfo: 'demo', apiVersionMajor: 1, apiVersionMinor }).finish();
     const connectOk = (): Uint8Array => ConnectResponse.encode({ invalidPassword: false }).finish();
     const deviceInfo = (): Uint8Array =>
         DeviceInfoResponse.encode({
@@ -273,6 +275,53 @@ describe('EspDevice protocol handling', () => {
 
         await expect(firstValueFrom(device.discovery$.pipe(filter(isTrue), take(1)))).resolves.toBe(true);
         expect(device.deviceInfo?.name).toBe('esp');
+    });
+
+    it('updates cover stop support from negotiated API version across reconnects', async () => {
+        device = new EspDevice('localhost', '', 6053, { connection });
+        const objectId = 'cover_object_id';
+        const coverResponse = ListEntitiesCoverResponse.encode({
+            objectId,
+            key: 7,
+            name: 'Cover',
+            uniqueId: 'cover_uid',
+            assumedState: false,
+            supportsPosition: true,
+            supportsTilt: false,
+            supportsStop: false,
+            deviceClass: 'garage',
+        }).finish();
+
+        server.connect();
+        await flush();
+        respond(server, MessageTypes.HelloResponse, hello(7));
+        await flush();
+        respond(server, MessageTypes.ConnectResponse, connectOk());
+        await flush();
+        respond(server, MessageTypes.DeviceInfoResponse, deviceInfo());
+        await flush();
+        respond(server, MessageTypes.ListEntitiesCoverResponse, coverResponse);
+        respond(server, MessageTypes.ListEntitiesDoneResponse, ListEntitiesDoneResponse.encode({}).finish());
+        await expect(firstValueFrom(device.discovery$.pipe(filter(isTrue), take(1)))).resolves.toBe(true);
+
+        const cover = device.components[objectId] as CoverComponent;
+        expect(cover.supportsStop).toBe(true);
+
+        server.disconnect();
+        await flush();
+        server.connect();
+        await flush();
+        respond(server, MessageTypes.HelloResponse, hello(8));
+        await flush();
+        expect(cover.supportsStop).toBe(false);
+        respond(server, MessageTypes.ConnectResponse, connectOk());
+        await flush();
+        respond(server, MessageTypes.DeviceInfoResponse, deviceInfo());
+        await flush();
+        respond(server, MessageTypes.ListEntitiesCoverResponse, coverResponse);
+        respond(server, MessageTypes.ListEntitiesDoneResponse, ListEntitiesDoneResponse.encode({}).finish());
+        await flush();
+        expect(cover.supportsStop).toBe(false);
     });
 
     it('re-arms auto-reconnect when provideRetryObservable is called after a password rejection', async () => {

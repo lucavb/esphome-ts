@@ -48,6 +48,11 @@ export class EspDevice {
 
     public deviceInfo?: DeviceInfoResponse;
 
+    // The HelloResponse selects the protocol version for each connection. Keep
+    // one mutable per-device value so covers created on discovery and reused
+    // after reconnects see the version negotiated on the latest handshake.
+    private readonly apiVersion = { major: 0, minor: 0 };
+
     public readonly components: { [key: string]: BaseComponent } = {};
 
     private readonly discovery: BehaviorSubject<boolean>;
@@ -133,6 +138,10 @@ export class EspDevice {
                         // and a real device only answers HelloRequest, never
                         // speaks first.
                         defer(() => this.client.hello({ clientInfo: 'esphome-ts' })).pipe(
+                            tap((helloResponse) => {
+                                this.apiVersion.major = helloResponse.apiVersionMajor;
+                                this.apiVersion.minor = helloResponse.apiVersionMinor;
+                            }),
                             switchMap(() => this.client.connect({ password })),
                             map((response: ConnectResponse) => {
                                 if (response.invalidPassword) {
@@ -236,7 +245,13 @@ export class EspDevice {
             this.discovery.next(true);
         } else {
             const knownComponents = new Set<string>(Object.keys(this.components));
-            const { id, component, state$ } = createComponents(data, this.stateEvents$, this.socket, knownComponents);
+            const { id, component, state$ } = createComponents(
+                data,
+                this.stateEvents$,
+                this.socket,
+                knownComponents,
+                this.apiVersion,
+            );
             if (component) {
                 this.components[id] = this.components[id] ?? component;
             } else if (state$) {
