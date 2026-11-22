@@ -1,3 +1,10 @@
+## [5.1.2](https://github.com/lucavb/esphome-ts/compare/v5.1.1...v5.1.2) (2026-11-22)
+
+
+### Bug Fixes
+
+* **api:** support modern ESPHome discovery ([8f3439c](https://github.com/lucavb/esphome-ts/commit/8f3439c0733cf7c65f031f99c39e43d112321df5))
+
 ## [5.1.1](https://github.com/lucavb/esphome-ts/compare/v5.1.0...v5.1.1) (2026-11-22)
 
 
