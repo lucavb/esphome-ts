@@ -1,5 +1,4 @@
 import {
-    EMPTY,
     filter,
     from,
     merge,
@@ -10,6 +9,7 @@ import {
     switchMap,
     take,
     takeUntil,
+    tap,
     timeout,
 } from 'rxjs';
 import { type CommandInterface } from '../components/commandInterface';
@@ -80,10 +80,9 @@ export class EspSocket implements CommandInterface {
                 timeout(5000),
                 filter(isTrue),
                 take(1),
-                switchMap(() => {
+                tap(() => {
                     const final = encodeFrame(type, payload);
                     this.connection.write(final);
-                    return EMPTY;
                 }),
                 // terminate() kills a pending send, but open() deliberately does
                 // NOT: a command issued during a blip rides the reconnect within

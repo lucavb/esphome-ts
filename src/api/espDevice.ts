@@ -101,31 +101,38 @@ export class EspDevice {
             // component re-runs the filter+decode chain for the same state frame.
             share(),
         );
-        this.subscription.add(
-            this.socket.espData$
-                .pipe(
-                    tap((data: ReadData) => {
-                        try {
-                            if (listResponses.has(data.type)) {
-                                this.parseListResponse(data);
-                            } else if (data.type === MessageTypes.DeviceInfoResponse) {
-                                this.deviceInfo = DeviceInfoResponse.decode(data.payload);
-                            } else if (data.type === MessageTypes.ConnectResponse) {
-                                if (ConnectResponse.decode(data.payload).invalidPassword && !this.passwordRejected) {
-                                    this.passwordRejected = true;
-                                    this.errors.next(new InvalidPasswordError(this.host));
-                                    this.socket.terminate();
-                                }
-                            }
-                        } catch (error: unknown) {
-                            // A malformed frame must not tear down discovery for good.
-                            this.errors.next(error);
-                        }
-                    }),
-                )
-                .subscribe(),
-        );
+        // Subscribe in this order: frame handling must be ready before opening
+        // the connection and sending the first handshake request.
+        this.watchDeviceMessages();
+        this.watchConnection();
+        this.retryFailedConnections();
+        this.alive$ = this.createLivenessObservable();
+    }
 
+    private watchDeviceMessages(): void {
+        this.subscription.add(this.socket.espData$.subscribe((data) => this.handleDeviceMessage(data)));
+    }
+
+    private handleDeviceMessage(data: ReadData): void {
+        try {
+            if (listResponses.has(data.type)) {
+                this.parseListResponse(data);
+            } else if (data.type === MessageTypes.DeviceInfoResponse) {
+                this.deviceInfo = DeviceInfoResponse.decode(data.payload);
+            } else if (data.type === MessageTypes.ConnectResponse) {
+                if (ConnectResponse.decode(data.payload).invalidPassword && !this.passwordRejected) {
+                    this.passwordRejected = true;
+                    this.errors.next(new InvalidPasswordError(this.host));
+                    this.socket.terminate();
+                }
+            }
+        } catch (error: unknown) {
+            // A malformed frame must not tear down discovery for good.
+            this.errors.next(error);
+        }
+    }
+
+    private watchConnection(): void {
         this.subscription.add(
             this.socket.connected$
                 .pipe(
@@ -136,44 +143,39 @@ export class EspDevice {
                         }
                     }),
                     filter((connected: boolean) => connected && !this.passwordRejected),
-                    switchMap(() =>
-                        // defer() re-runs this factory on every retry:
-                        // Client.request() sends eagerly when called (not on
-                        // subscription), so without it a retried handshake
-                        // would never put a fresh HelloRequest on the wire —
-                        // and a real device only answers HelloRequest, never
-                        // speaks first.
-                        defer(() => this.client.hello({ clientInfo: 'esphome-ts' })).pipe(
-                            tap((helloResponse) => {
-                                this.apiVersion.major = helloResponse.apiVersionMajor;
-                                this.apiVersion.minor = helloResponse.apiVersionMinor;
-                            }),
-                            switchMap(() => {
-                                // Legacy devices respond to authentication, but newer ESPHome
-                                // releases ignore it. Send it before other requests and handle
-                                // any rejection independently rather than waiting for a reply.
-                                this.client.connect({ password });
-                                return this.passwordRejected ? EMPTY : this.client.deviceInfo();
-                            }),
-                            switchMap(() => this.client.listEntities()),
-                            switchMap(() => this.client.subscribeStateChange()),
-                            retry({
-                                delay: (error: unknown) => {
-                                    this.errors.next(error);
-                                    // Anything else (e.g. an undecodable
-                                    // response): redo the whole handshake after a
-                                    // pause; the connection logic above stays
-                                    // armed for a future reconnect either way.
-                                    return timer(RETRY_DELAY);
-                                },
-                            }),
-                        ),
-                    ),
+                    // A new connection cancels the previous handshake and its retry timer.
+                    switchMap(() => this.handshake()),
                 )
                 .subscribe(),
         );
+    }
 
-        // The reconnect logic above only reacts to connected$ transitions, and a
+    private handshake(): Observable<void> {
+        // Client requests send eagerly. defer sends a fresh HelloRequest on every retry.
+        return defer(() => this.client.hello({ clientInfo: 'esphome-ts' })).pipe(
+            tap((helloResponse) => {
+                this.apiVersion.major = helloResponse.apiVersionMajor;
+                this.apiVersion.minor = helloResponse.apiVersionMinor;
+            }),
+            switchMap(() => {
+                // Newer devices ignore authentication; send it without waiting for
+                // a response. A rejection is handled by watchDeviceMessages().
+                this.client.connect({ password: this.password });
+                return this.passwordRejected ? EMPTY : this.client.deviceInfo();
+            }),
+            switchMap(() => this.client.listEntities()),
+            switchMap(() => this.client.subscribeStateChange()),
+            retry({
+                delay: (error: unknown) => {
+                    this.errors.next(error);
+                    return timer(RETRY_DELAY);
+                },
+            }),
+        );
+    }
+
+    private retryFailedConnections(): void {
+        // watchConnection() only reacts to connected$ transitions, and a
         // connection attempt that fails never leaves `false`. Retry those (and
         // sends that timed out while disconnected) here, but never tear down a
         // healthy connection because of an unrelated send error.
@@ -185,14 +187,16 @@ export class EspDevice {
                 )
                 .subscribe(() => this.socket.open()),
         );
+    }
 
+    private createLivenessObservable(): Observable<boolean> {
         // Liveness: connected$ reports transport state; the watchdog reports a
         // silently silent peer. Every frame re-arms the PING_TIMEOUT timer via
         // switchMap teardown — a frame arriving first cancels the pending timer.
-        this.alive$ = merge(
-            this.socket.connected$,
-            this.socket.espData$.pipe(switchMap(() => concat(of(true), timer(PING_TIMEOUT).pipe(map(() => false))))),
-        ).pipe(
+        const trafficLiveness$ = this.socket.espData$.pipe(
+            switchMap(() => concat(of(true), timer(PING_TIMEOUT).pipe(map(() => false)))),
+        );
+        return merge(this.socket.connected$, trafficLiveness$).pipe(
             distinctUntilChanged(),
             // refCount releases the watchdog source and its pending timer when
             // the last subscriber leaves, e.g. after terminate().

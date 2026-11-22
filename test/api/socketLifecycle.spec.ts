@@ -645,8 +645,8 @@ describe('EspDevice protocol handling', () => {
         respond(server, MessageTypes.DeviceInfoResponse, new Uint8Array(10).fill(0xff));
         await flush();
 
-        // the disconnect tears the retrying handshake chain down (cancelling
-        // the armed timer); the fresh connection starts handshake attempt #2
+        // The fresh connection replaces the retrying handshake, cancelling its
+        // armed timer, and starts handshake attempt #2.
         server.disconnect();
         await flush();
         server.connect();
@@ -712,6 +712,19 @@ describe('EspDevice protocol handling', () => {
         second$.next();
         await flush();
         expect(opens()).toBe(opensBefore + 1);
+    });
+
+    it('reports a disconnect and the next connection through alive$', () => {
+        device = new EspDevice('localhost', '', 6053, { connection });
+        const states: boolean[] = [];
+        const subscription = device.alive$.subscribe((alive) => states.push(alive));
+
+        server.connect();
+        server.disconnect();
+        server.connect();
+
+        expect(states).toEqual([false, true, false, true]);
+        subscription.unsubscribe();
     });
 
     it('recovers alive$ when the watchdog expires without a disconnect', async () => {

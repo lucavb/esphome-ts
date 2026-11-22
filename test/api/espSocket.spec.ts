@@ -161,6 +161,22 @@ describe('EspSocket sendEspMessage', () => {
         expect([...server.written[0]]).toEqual([...encodeFrame(MessageTypes.HelloRequest, new Uint8Array([0x11]))]);
     });
 
+    it('writes multiple pending sends once and in order on connection', () => {
+        const first = new Uint8Array([0x11]);
+        const second = new Uint8Array([0x22]);
+        espSocket.sendEspMessage(MessageTypes.HelloRequest, first);
+        espSocket.sendEspMessage(MessageTypes.ConnectRequest, second);
+
+        server.connect();
+        server.disconnect();
+        server.connect();
+
+        expect(server.written).toEqual([
+            encodeFrame(MessageTypes.HelloRequest, first),
+            encodeFrame(MessageTypes.ConnectRequest, second),
+        ]);
+    });
+
     it('abandons a pending send after five seconds without connect', async () => {
         vi.useFakeTimers();
         try {
