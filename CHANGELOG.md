@@ -1,3 +1,10 @@
+## [5.1.3](https://github.com/lucavb/esphome-ts/compare/v5.1.2...v5.1.3) (2026-11-23)
+
+
+### Bug Fixes
+
+* **deps:** update vulnerable vite resolution ([40fda84](https://github.com/lucavb/esphome-ts/commit/40fda848f683b42cf50cfff50a318e2d65e96c6b))
+
 ## [5.1.2](https://github.com/lucavb/esphome-ts/compare/v5.1.1...v5.1.2) (2026-11-22)
 
 
