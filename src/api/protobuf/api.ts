@@ -730,26 +730,44 @@ export interface ListEntitiesFanResponse {
   supportsOscillation: boolean;
   supportsSpeed: boolean;
   supportsDirection: boolean;
+  supportedSpeedCount: number;
+  /**
+   * Fields 9 (disabled_by_default), 10 (icon), 11 (entity_category) and
+   * 13 (device_id) are intentionally not modelled: they do not affect fan
+   * behaviour.
+   */
+  supportedPresetModes: string[];
 }
 
 export interface FanStateResponse {
   key: number;
   state: boolean;
   oscillating: boolean;
+  /** Deprecated in API version 1.6; only sent by firmware older than that. */
   speed: FanSpeed;
   direction: FanDirection;
+  speedLevel: number;
+  presetMode: string;
 }
 
 export interface FanCommandRequest {
   key: number;
   hasState: boolean;
   state: boolean;
+  /**
+   * Deprecated in API version 1.6; still the only speed control older
+   * firmware understands.
+   */
   hasSpeed: boolean;
   speed: FanSpeed;
   hasOscillating: boolean;
   oscillating: boolean;
   hasDirection: boolean;
   direction: FanDirection;
+  hasSpeedLevel: boolean;
+  speedLevel: number;
+  hasPresetMode: boolean;
+  presetMode: string;
 }
 
 /** ==================== LIGHT ==================== */
@@ -2814,6 +2832,8 @@ function createBaseListEntitiesFanResponse(): ListEntitiesFanResponse {
     supportsOscillation: false,
     supportsSpeed: false,
     supportsDirection: false,
+    supportedSpeedCount: 0,
+    supportedPresetModes: [],
   };
 }
 
@@ -2839,6 +2859,12 @@ export const ListEntitiesFanResponse: MessageFns<ListEntitiesFanResponse> = {
     }
     if (message.supportsDirection !== false) {
       writer.uint32(56).bool(message.supportsDirection);
+    }
+    if (message.supportedSpeedCount !== 0) {
+      writer.uint32(64).int32(message.supportedSpeedCount);
+    }
+    for (const v of message.supportedPresetModes) {
+      writer.uint32(98).string(v!);
     }
     return writer;
   },
@@ -2912,6 +2938,22 @@ export const ListEntitiesFanResponse: MessageFns<ListEntitiesFanResponse> = {
             message.supportsDirection = reader.bool();
             continue;
           }
+          case 8: {
+            if (tag !== 64) {
+              break;
+            }
+
+            message.supportedSpeedCount = reader.int32();
+            continue;
+          }
+          case 12: {
+            if (tag !== 98) {
+              break;
+            }
+
+            message.supportedPresetModes.push(reader.string());
+            continue;
+          }
         }
         if ((tag & 7) === 4 || tag === 0) {
           break;
@@ -2953,6 +2995,16 @@ export const ListEntitiesFanResponse: MessageFns<ListEntitiesFanResponse> = {
         : isSet(object.supports_direction)
         ? globalThis.Boolean(object.supports_direction)
         : false,
+      supportedSpeedCount: isSet(object.supportedSpeedCount)
+        ? globalThis.Number(object.supportedSpeedCount)
+        : isSet(object.supported_speed_count)
+        ? globalThis.Number(object.supported_speed_count)
+        : 0,
+      supportedPresetModes: globalThis.Array.isArray(object?.supportedPresetModes)
+        ? object.supportedPresetModes.map((e: any) => globalThis.String(e))
+        : globalThis.Array.isArray(object?.supported_preset_modes)
+        ? object.supported_preset_modes.map((e: any) => globalThis.String(e))
+        : [],
     };
   },
 
@@ -2979,6 +3031,12 @@ export const ListEntitiesFanResponse: MessageFns<ListEntitiesFanResponse> = {
     if (message.supportsDirection !== false) {
       obj.supportsDirection = message.supportsDirection;
     }
+    if (message.supportedSpeedCount !== 0) {
+      obj.supportedSpeedCount = Math.round(message.supportedSpeedCount);
+    }
+    if (message.supportedPresetModes?.length) {
+      obj.supportedPresetModes = message.supportedPresetModes;
+    }
     return obj;
   },
 
@@ -2994,12 +3052,14 @@ export const ListEntitiesFanResponse: MessageFns<ListEntitiesFanResponse> = {
     message.supportsOscillation = object.supportsOscillation ?? false;
     message.supportsSpeed = object.supportsSpeed ?? false;
     message.supportsDirection = object.supportsDirection ?? false;
+    message.supportedSpeedCount = object.supportedSpeedCount ?? 0;
+    message.supportedPresetModes = object.supportedPresetModes?.map((e) => e) || [];
     return message;
   },
 };
 
 function createBaseFanStateResponse(): FanStateResponse {
-  return { key: 0, state: false, oscillating: false, speed: 0, direction: 0 };
+  return { key: 0, state: false, oscillating: false, speed: 0, direction: 0, speedLevel: 0, presetMode: "" };
 }
 
 export const FanStateResponse: MessageFns<FanStateResponse> = {
@@ -3018,6 +3078,12 @@ export const FanStateResponse: MessageFns<FanStateResponse> = {
     }
     if (message.direction !== 0) {
       writer.uint32(40).int32(message.direction);
+    }
+    if (message.speedLevel !== 0) {
+      writer.uint32(48).int32(message.speedLevel);
+    }
+    if (message.presetMode !== "") {
+      writer.uint32(58).string(message.presetMode);
     }
     return writer;
   },
@@ -3075,6 +3141,22 @@ export const FanStateResponse: MessageFns<FanStateResponse> = {
             message.direction = reader.int32() as any;
             continue;
           }
+          case 6: {
+            if (tag !== 48) {
+              break;
+            }
+
+            message.speedLevel = reader.int32();
+            continue;
+          }
+          case 7: {
+            if (tag !== 58) {
+              break;
+            }
+
+            message.presetMode = reader.string();
+            continue;
+          }
         }
         if ((tag & 7) === 4 || tag === 0) {
           break;
@@ -3094,6 +3176,16 @@ export const FanStateResponse: MessageFns<FanStateResponse> = {
       oscillating: isSet(object.oscillating) ? globalThis.Boolean(object.oscillating) : false,
       speed: isSet(object.speed) ? fanSpeedFromJSON(object.speed) : 0,
       direction: isSet(object.direction) ? fanDirectionFromJSON(object.direction) : 0,
+      speedLevel: isSet(object.speedLevel)
+        ? globalThis.Number(object.speedLevel)
+        : isSet(object.speed_level)
+        ? globalThis.Number(object.speed_level)
+        : 0,
+      presetMode: isSet(object.presetMode)
+        ? globalThis.String(object.presetMode)
+        : isSet(object.preset_mode)
+        ? globalThis.String(object.preset_mode)
+        : "",
     };
   },
 
@@ -3114,6 +3206,12 @@ export const FanStateResponse: MessageFns<FanStateResponse> = {
     if (message.direction !== 0) {
       obj.direction = fanDirectionToJSON(message.direction);
     }
+    if (message.speedLevel !== 0) {
+      obj.speedLevel = Math.round(message.speedLevel);
+    }
+    if (message.presetMode !== "") {
+      obj.presetMode = message.presetMode;
+    }
     return obj;
   },
 
@@ -3127,6 +3225,8 @@ export const FanStateResponse: MessageFns<FanStateResponse> = {
     message.oscillating = object.oscillating ?? false;
     message.speed = object.speed ?? 0;
     message.direction = object.direction ?? 0;
+    message.speedLevel = object.speedLevel ?? 0;
+    message.presetMode = object.presetMode ?? "";
     return message;
   },
 };
@@ -3142,6 +3242,10 @@ function createBaseFanCommandRequest(): FanCommandRequest {
     oscillating: false,
     hasDirection: false,
     direction: 0,
+    hasSpeedLevel: false,
+    speedLevel: 0,
+    hasPresetMode: false,
+    presetMode: "",
   };
 }
 
@@ -3173,6 +3277,18 @@ export const FanCommandRequest: MessageFns<FanCommandRequest> = {
     }
     if (message.direction !== 0) {
       writer.uint32(72).int32(message.direction);
+    }
+    if (message.hasSpeedLevel !== false) {
+      writer.uint32(80).bool(message.hasSpeedLevel);
+    }
+    if (message.speedLevel !== 0) {
+      writer.uint32(88).int32(message.speedLevel);
+    }
+    if (message.hasPresetMode !== false) {
+      writer.uint32(96).bool(message.hasPresetMode);
+    }
+    if (message.presetMode !== "") {
+      writer.uint32(106).string(message.presetMode);
     }
     return writer;
   },
@@ -3262,6 +3378,38 @@ export const FanCommandRequest: MessageFns<FanCommandRequest> = {
             message.direction = reader.int32() as any;
             continue;
           }
+          case 10: {
+            if (tag !== 80) {
+              break;
+            }
+
+            message.hasSpeedLevel = reader.bool();
+            continue;
+          }
+          case 11: {
+            if (tag !== 88) {
+              break;
+            }
+
+            message.speedLevel = reader.int32();
+            continue;
+          }
+          case 12: {
+            if (tag !== 96) {
+              break;
+            }
+
+            message.hasPresetMode = reader.bool();
+            continue;
+          }
+          case 13: {
+            if (tag !== 106) {
+              break;
+            }
+
+            message.presetMode = reader.string();
+            continue;
+          }
         }
         if ((tag & 7) === 4 || tag === 0) {
           break;
@@ -3301,6 +3449,26 @@ export const FanCommandRequest: MessageFns<FanCommandRequest> = {
         ? globalThis.Boolean(object.has_direction)
         : false,
       direction: isSet(object.direction) ? fanDirectionFromJSON(object.direction) : 0,
+      hasSpeedLevel: isSet(object.hasSpeedLevel)
+        ? globalThis.Boolean(object.hasSpeedLevel)
+        : isSet(object.has_speed_level)
+        ? globalThis.Boolean(object.has_speed_level)
+        : false,
+      speedLevel: isSet(object.speedLevel)
+        ? globalThis.Number(object.speedLevel)
+        : isSet(object.speed_level)
+        ? globalThis.Number(object.speed_level)
+        : 0,
+      hasPresetMode: isSet(object.hasPresetMode)
+        ? globalThis.Boolean(object.hasPresetMode)
+        : isSet(object.has_preset_mode)
+        ? globalThis.Boolean(object.has_preset_mode)
+        : false,
+      presetMode: isSet(object.presetMode)
+        ? globalThis.String(object.presetMode)
+        : isSet(object.preset_mode)
+        ? globalThis.String(object.preset_mode)
+        : "",
     };
   },
 
@@ -3333,6 +3501,18 @@ export const FanCommandRequest: MessageFns<FanCommandRequest> = {
     if (message.direction !== 0) {
       obj.direction = fanDirectionToJSON(message.direction);
     }
+    if (message.hasSpeedLevel !== false) {
+      obj.hasSpeedLevel = message.hasSpeedLevel;
+    }
+    if (message.speedLevel !== 0) {
+      obj.speedLevel = Math.round(message.speedLevel);
+    }
+    if (message.hasPresetMode !== false) {
+      obj.hasPresetMode = message.hasPresetMode;
+    }
+    if (message.presetMode !== "") {
+      obj.presetMode = message.presetMode;
+    }
     return obj;
   },
 
@@ -3350,6 +3530,10 @@ export const FanCommandRequest: MessageFns<FanCommandRequest> = {
     message.oscillating = object.oscillating ?? false;
     message.hasDirection = object.hasDirection ?? false;
     message.direction = object.direction ?? 0;
+    message.hasSpeedLevel = object.hasSpeedLevel ?? false;
+    message.speedLevel = object.speedLevel ?? 0;
+    message.hasPresetMode = object.hasPresetMode ?? false;
+    message.presetMode = object.presetMode ?? "";
     return message;
   },
 };

@@ -30,4 +30,17 @@ export interface LightEntity extends ListEntity {
     supportsRgb: boolean;
 }
 
-export type ComponentType = 'light' | 'binarySensor' | 'sensor' | 'switch' | 'cover';
+export interface FanEntity extends ListEntity {
+    supportsOscillation: boolean;
+    supportsSpeed: boolean;
+    supportsDirection: boolean;
+    /**
+     * 0 when the firmware does not report a count. Firmware before API 1.4
+     * omits the field; FanComponent then falls back to three levels. Modern
+     * firmware that reports 0 is treated as having no usable speed control.
+     */
+    supportedSpeedCount: number;
+    supportedPresetModes: string[];
+}
+
+export type ComponentType = 'light' | 'binarySensor' | 'sensor' | 'switch' | 'cover' | 'fan';

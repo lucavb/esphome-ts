@@ -1,5 +1,5 @@
 import * as api from '../../src';
-import { CoverOperation, LegacyCoverState } from '../../src/api/protobuf/api';
+import { CoverOperation, FanDirection, FanSpeed, LegacyCoverState } from '../../src/api/protobuf/api';
 
 describe('package export surface', () => {
     it('exposes the documented runtime exports', () => {
@@ -43,6 +43,7 @@ describe('package export surface', () => {
         expect(api.SensorComponent).toBeDefined();
         expect(api.SwitchComponent).toBeDefined();
         expect(api.CoverComponent).toBeDefined();
+        expect(api.FanComponent).toBeDefined();
     });
 
     it('exposes BinarySensorTypes through the root barrel', () => {
@@ -51,9 +52,11 @@ describe('package export surface', () => {
         expect(api.BinarySensorTypes).toBeDefined();
     });
 
-    it('exposes the cover enums downstream code needs at runtime', () => {
+    it('exposes the cover and fan enums downstream code needs at runtime', () => {
         expect(api.CoverOperation).toBe(CoverOperation);
         expect(api.LegacyCoverState).toBe(LegacyCoverState);
+        expect(api.FanDirection).toBe(FanDirection);
+        expect(api.FanSpeed).toBe(FanSpeed);
     });
 
     it('does not leak internal helpers on the root namespace', () => {

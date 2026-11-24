@@ -4,6 +4,6 @@ export { ConnectionHandshakeError, EspSocket, type ReadData } from './espSocket'
 export type { Connection } from './connection';
 export * from './noise/errors';
 export { isFalse, isTrue } from './booleans';
-export { CoverOperation, LegacyCoverState } from './protobuf/api';
+export { CoverOperation, FanDirection, FanSpeed, LegacyCoverState } from './protobuf/api';
 export * from './requestResponseMatching';
 export * from './typeGuards';

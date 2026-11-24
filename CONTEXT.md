@@ -71,9 +71,9 @@ _Avoid_: action, request
 ### What is on a device
 
 **Component**:
-One named entity on a Device: a Switch, Light, Sensor, or BinarySensor.
+One named entity on a Device: a Switch, Light, Sensor, BinarySensor, Cover, or Fan.
 _Avoid_: entity, accessory
 
 **Component kind**:
-Which of the four shapes a Component has.
+Which of the supported shapes a Component has.
 _Avoid_: flavor, device type

@@ -11,11 +11,14 @@ import {
     ListEntitiesBinarySensorResponse,
     ListEntitiesCoverResponse,
     ListEntitiesDoneResponse,
+    ListEntitiesFanResponse,
     ListEntitiesLightResponse,
     ListEntitiesSensorResponse,
     ListEntitiesSwitchResponse,
     BinarySensorStateResponse,
     CoverStateResponse,
+    FanDirection,
+    FanStateResponse,
     LightStateResponse,
     SensorStateResponse,
     SwitchStateResponse,
@@ -25,7 +28,13 @@ import { createInMemoryConnection, type InMemoryServerDriver } from '../testHelp
 import { filter, firstValueFrom, Subject, take } from 'rxjs';
 import { isTrue } from '../../src/api/booleans';
 import { CoverComponent } from '../../src/components/cover';
-import { BinarySensorComponent, LightComponent, SensorComponent, SwitchComponent } from '../../src/components';
+import {
+    BinarySensorComponent,
+    FanComponent,
+    LightComponent,
+    SensorComponent,
+    SwitchComponent,
+} from '../../src/components';
 import { fallbackEntityId } from '../../src/api/helpers';
 
 const flush = (): Promise<void> => new Promise((resolve) => setImmediate(resolve));
@@ -506,12 +515,28 @@ describe('EspDevice protocol handling', () => {
                     name: 'Sensor',
                 }).finish(),
             );
+            respond(
+                server,
+                MessageTypes.ListEntitiesFanResponse,
+                ListEntitiesFanResponse.encode({
+                    ...ListEntitiesFanResponse.decode(new Uint8Array()),
+                    key: 206,
+                    name: 'Fan',
+                    supportsSpeed: true,
+                    supportsOscillation: true,
+                    supportsDirection: true,
+                    supportedSpeedCount: 3,
+                    supportedPresetModes: ['auto'],
+                }).finish(),
+            );
             respond(server, MessageTypes.ListEntitiesDoneResponse, ListEntitiesDoneResponse.encode({}).finish());
         };
         const completeDiscovery = async (switchObjectIdEmpty: boolean): Promise<void> => {
             server.connect();
             await flush();
-            respond(server, MessageTypes.HelloResponse, hello());
+            // Modern API version so the fan's speed_level is interpreted as
+            // such (legacy firmware would use the FanSpeed enum instead).
+            respond(server, MessageTypes.HelloResponse, hello(20));
             await flush();
             respond(server, MessageTypes.ConnectResponse, connectOk());
             await flush();
@@ -530,6 +555,7 @@ describe('EspDevice protocol handling', () => {
                 'legacy_switch_id',
                 fallbackEntityId(204),
                 fallbackEntityId(205),
+                fallbackEntityId(206),
             ].sort(),
         );
         const components = [
@@ -538,6 +564,7 @@ describe('EspDevice protocol handling', () => {
             initial.legacy_switch_id as SwitchComponent,
             initial[fallbackEntityId(204)] as LightComponent,
             initial[fallbackEntityId(205)] as SensorComponent,
+            initial[fallbackEntityId(206)] as FanComponent,
         ];
 
         server.disconnect();
@@ -549,7 +576,8 @@ describe('EspDevice protocol handling', () => {
         expect(device.components[fallbackEntityId(202)]).toBe(components[1]);
         expect(device.components[fallbackEntityId(204)]).toBe(components[3]);
         expect(device.components[fallbackEntityId(205)]).toBe(components[4]);
-        expect(Object.keys(device.components)).toHaveLength(5);
+        expect(device.components[fallbackEntityId(206)]).toBe(components[5]);
+        expect(Object.keys(device.components)).toHaveLength(6);
 
         const statePromises = components.map((component) => firstValueFrom(component.state$));
         respond(
@@ -594,6 +622,19 @@ describe('EspDevice protocol handling', () => {
                 state: 22.5,
             }).finish(),
         );
+        respond(
+            server,
+            MessageTypes.FanStateResponse,
+            FanStateResponse.encode({
+                ...FanStateResponse.decode(new Uint8Array()),
+                key: 206,
+                state: true,
+                oscillating: true,
+                speedLevel: 2,
+                direction: FanDirection.FAN_DIRECTION_REVERSE,
+                presetMode: 'auto',
+            }).finish(),
+        );
         await flush();
         const states = await Promise.all(statePromises);
         expect((states[0] as BinarySensorStateResponse).key).toBe(201);
@@ -606,6 +647,12 @@ describe('EspDevice protocol handling', () => {
         expect((states[2] as SwitchStateResponse).state).toBe(true);
         expect((states[3] as LightStateResponse).brightness).toBe(0.5);
         expect((states[4] as SensorStateResponse).state).toBe(22.5);
+        expect((states[5] as FanStateResponse).key).toBe(206);
+        expect((states[5] as FanStateResponse).speedLevel).toBe(2);
+        expect((components[5] as FanComponent).speedPercentage).toBe(66);
+        expect((components[5] as FanComponent).oscillating).toBe(true);
+        expect((components[5] as FanComponent).direction).toBe(FanDirection.FAN_DIRECTION_REVERSE);
+        expect((components[5] as FanComponent).presetMode).toBe('auto');
     });
 
     it('re-arms auto-reconnect when provideRetryObservable is called after a password rejection', async () => {

@@ -308,6 +308,11 @@ message ListEntitiesFanResponse {
   bool supports_oscillation = 5;
   bool supports_speed = 6;
   bool supports_direction = 7;
+  int32 supported_speed_count = 8;
+  // Fields 9 (disabled_by_default), 10 (icon), 11 (entity_category) and
+  // 13 (device_id) are intentionally not modelled: they do not affect fan
+  // behaviour.
+  repeated string supported_preset_modes = 12;
 }
 enum FanSpeed {
   FAN_SPEED_LOW = 0;
@@ -327,8 +332,11 @@ message FanStateResponse {
   fixed32 key = 1;
   bool state = 2;
   bool oscillating = 3;
+  // Deprecated in API version 1.6; only sent by firmware older than that.
   FanSpeed speed = 4;
   FanDirection direction = 5;
+  int32 speed_level = 6;
+  string preset_mode = 7;
 }
 message FanCommandRequest {
   option (id) = 31;
@@ -339,12 +347,18 @@ message FanCommandRequest {
   fixed32 key = 1;
   bool has_state = 2;
   bool state = 3;
+  // Deprecated in API version 1.6; still the only speed control older
+  // firmware understands.
   bool has_speed = 4;
   FanSpeed speed = 5;
   bool has_oscillating = 6;
   bool oscillating = 7;
   bool has_direction = 8;
   FanDirection direction = 9;
+  bool has_speed_level = 10;
+  int32 speed_level = 11;
+  bool has_preset_mode = 12;
+  string preset_mode = 13;
 }
 
 // ==================== LIGHT ====================

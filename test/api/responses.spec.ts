@@ -7,6 +7,7 @@ describe('responses', () => {
             new Set([
                 MessageTypes.ListEntitiesBinarySensorResponse,
                 MessageTypes.ListEntitiesCoverResponse,
+                MessageTypes.ListEntitiesFanResponse,
                 MessageTypes.ListEntitiesLightResponse,
                 MessageTypes.ListEntitiesSensorResponse,
                 MessageTypes.ListEntitiesSwitchResponse,
@@ -20,6 +21,7 @@ describe('responses', () => {
             new Set([
                 MessageTypes.BinarySensorStateResponse,
                 MessageTypes.CoverStateResponse,
+                MessageTypes.FanStateResponse,
                 MessageTypes.LightStateResponse,
                 MessageTypes.SensorStateResponse,
                 MessageTypes.SwitchStateResponse,

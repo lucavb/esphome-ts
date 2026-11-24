@@ -2,9 +2,11 @@ import { type ReadData } from './espSocket';
 import {
     BinarySensorStateResponse,
     CoverStateResponse,
+    FanStateResponse,
     LightStateResponse,
     ListEntitiesBinarySensorResponse,
     ListEntitiesCoverResponse,
+    ListEntitiesFanResponse,
     ListEntitiesLightResponse,
     ListEntitiesSensorResponse,
     ListEntitiesSwitchResponse,
@@ -18,6 +20,7 @@ import { filter, Observable } from 'rxjs';
 import { BaseComponent } from '../components/base';
 import { BinarySensorComponent } from '../components/binarySensor';
 import { CoverComponent, type ApiVersion } from '../components/cover';
+import { FanComponent } from '../components/fan';
 import { LightComponent } from '../components/light';
 import { SensorComponent } from '../components/sensor';
 import { SwitchComponent } from '../components/switch';
@@ -39,6 +42,9 @@ export const stateParser = (data: ReadData): StateResponses | undefined => {
             }
             case MessageTypes.CoverStateResponse: {
                 return CoverStateResponse.decode(data.payload);
+            }
+            case MessageTypes.FanStateResponse: {
+                return FanStateResponse.decode(data.payload);
             }
         }
     } catch {
@@ -127,6 +133,24 @@ export const createComponents = (
                       key: response.key,
                       fallback: entity.fallback,
                       component: new CoverComponent(response, state$, connection, apiVersion),
+                  };
+        }
+        case MessageTypes.ListEntitiesFanResponse: {
+            const response: ListEntitiesFanResponse = ListEntitiesFanResponse.decode(data.payload);
+            const state$ = transformStates<FanStateResponse>(stateEvents$, response);
+            const entity = identity(response.objectId, response.key);
+            return entity.known
+                ? {
+                      id: entity.id,
+                      key: response.key,
+                      fallback: entity.fallback,
+                      state$,
+                  }
+                : {
+                      id: entity.id,
+                      key: response.key,
+                      fallback: entity.fallback,
+                      component: new FanComponent(response, state$, connection, apiVersion),
                   };
         }
         case MessageTypes.ListEntitiesSwitchResponse: {

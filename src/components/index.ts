@@ -3,10 +3,12 @@ export { BinarySensorComponent } from './binarySensor';
 export { BinarySensorTypes } from './binarySensorTypes';
 export { type CommandInterface } from './commandInterface';
 export { CoverComponent } from './cover';
+export { FanComponent } from './fan';
 export {
     type BinarySensorEntity,
     type ComponentType,
     type CoverEntity,
+    type FanEntity,
     type LightEntity,
     type ListEntity,
     type SensorEntity,
@@ -17,6 +19,7 @@ export { SensorComponent } from './sensor';
 export {
     type BinarySensorStateEvent,
     type CoverStateEvent,
+    type FanStateEvent,
     type LightStateEvent,
     type SensorStateEvent,
     type StateEvent,

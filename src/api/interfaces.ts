@@ -1,9 +1,11 @@
 import {
     BinarySensorStateResponse,
     CoverStateResponse,
+    FanStateResponse,
     LightStateResponse,
     ListEntitiesBinarySensorResponse,
     ListEntitiesCoverResponse,
+    ListEntitiesFanResponse,
     ListEntitiesLightResponse,
     ListEntitiesSensorResponse,
     ListEntitiesSwitchResponse,
@@ -14,9 +16,15 @@ import {
 export type ListEntityResponses =
     | ListEntitiesBinarySensorResponse
     | ListEntitiesCoverResponse
+    | ListEntitiesFanResponse
     | ListEntitiesLightResponse
     | ListEntitiesSensorResponse
     | ListEntitiesSwitchResponse;
 
 export type StateResponses =
-    BinarySensorStateResponse | CoverStateResponse | LightStateResponse | SensorStateResponse | SwitchStateResponse;
+    | BinarySensorStateResponse
+    | CoverStateResponse
+    | FanStateResponse
+    | LightStateResponse
+    | SensorStateResponse
+    | SwitchStateResponse;

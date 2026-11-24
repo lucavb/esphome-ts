@@ -1,10 +1,14 @@
 import {
     CoverOperation,
     CoverStateResponse,
+    FanDirection,
+    FanSpeed,
+    FanStateResponse,
     LegacyCoverState,
     LightStateResponse,
     ListEntitiesBinarySensorResponse,
     ListEntitiesCoverResponse,
+    ListEntitiesFanResponse,
     ListEntitiesLightResponse,
     ListEntitiesSensorResponse,
     ListEntitiesSwitchResponse,
@@ -24,6 +28,7 @@ import {
 import {
     BinarySensorComponent,
     CoverComponent,
+    FanComponent,
     LightComponent,
     SensorComponent,
     SwitchComponent,
@@ -92,6 +97,60 @@ describe('helpers', () => {
             expect(parsed.currentOperation).toBe(CoverOperation.COVER_OPERATION_IS_OPENING);
         });
 
+        it('decodes a fan state response', () => {
+            const payload = FanStateResponse.encode({
+                key: 11,
+                state: true,
+                oscillating: true,
+                speed: FanSpeed.FAN_SPEED_MEDIUM,
+                direction: FanDirection.FAN_DIRECTION_REVERSE,
+                speedLevel: 2,
+                presetMode: 'auto',
+            }).finish();
+            const parsed = stateParser(readData(MessageTypes.FanStateResponse, payload)) as FanStateResponse;
+            expect(parsed.key).toBe(11);
+            expect(parsed.state).toBe(true);
+            expect(parsed.oscillating).toBe(true);
+            expect(parsed.speed).toBe(FanSpeed.FAN_SPEED_MEDIUM);
+            expect(parsed.direction).toBe(FanDirection.FAN_DIRECTION_REVERSE);
+            expect(parsed.speedLevel).toBe(2);
+            expect(parsed.presetMode).toBe('auto');
+        });
+
+        it('decodes a fan state response from golden wire bytes', () => {
+            // Pin the state field numbers independently of the generated
+            // encoder: key=134 fixed32 (1), state (2), oscillating (3),
+            // direction=REVERSE (5), speed_level=2 (6), preset_mode="auto" (7).
+            const payload = new Uint8Array([
+                0x0d, 0x86, 0x00, 0x00, 0x00, 0x10, 0x01, 0x18, 0x01, 0x28, 0x01, 0x30, 0x02, 0x3a, 0x04, 0x61, 0x75,
+                0x74, 0x6f,
+            ]);
+            const parsed = stateParser(readData(MessageTypes.FanStateResponse, payload)) as FanStateResponse;
+            expect(parsed).toEqual({
+                key: 134,
+                state: true,
+                oscillating: true,
+                speed: FanSpeed.FAN_SPEED_LOW,
+                direction: FanDirection.FAN_DIRECTION_REVERSE,
+                speedLevel: 2,
+                presetMode: 'auto',
+            });
+        });
+
+        it('decodes a fan list response from golden wire bytes', () => {
+            // Pin the hand-added list fields independently of the generated
+            // encoder: key=7 fixed32 (2), supports_speed (6),
+            // supported_speed_count=3 (8), supported_preset_modes=["auto"] (12).
+            const payload = new Uint8Array([
+                0x15, 0x07, 0x00, 0x00, 0x00, 0x30, 0x01, 0x40, 0x03, 0x62, 0x04, 0x61, 0x75, 0x74, 0x6f,
+            ]);
+            const parsed = ListEntitiesFanResponse.decode(payload);
+            expect(parsed.key).toBe(7);
+            expect(parsed.supportsSpeed).toBe(true);
+            expect(parsed.supportedSpeedCount).toBe(3);
+            expect(parsed.supportedPresetModes).toEqual(['auto']);
+        });
+
         it('falls back to the protobuf defaults for an empty payload', () => {
             const parsed = stateParser(readData(MessageTypes.SensorStateResponse, new Uint8Array()));
             expect(parsed as SensorStateResponse).toEqual({ key: 0, state: 0, missingState: false });
@@ -112,6 +171,7 @@ describe('helpers', () => {
 
             expect(stateParser(readData(MessageTypes.SwitchStateResponse, malformed))).toBeUndefined();
             expect(stateParser(readData(MessageTypes.LightStateResponse, malformed))).toBeUndefined();
+            expect(stateParser(readData(MessageTypes.FanStateResponse, malformed))).toBeUndefined();
         });
 
         it('returns undefined for non state message types', () => {
@@ -270,6 +330,79 @@ describe('helpers', () => {
             expect(coverComponent.isClosed).toBe(false);
         });
 
+        it('creates a fan component with its capabilities and state', () => {
+            const payload = ListEntitiesFanResponse.encode({
+                objectId: 'created_fan',
+                key: 10,
+                name: 'Bedroom fan',
+                uniqueId: 'uid_fan',
+                supportsOscillation: true,
+                supportsSpeed: true,
+                supportsDirection: true,
+                supportedSpeedCount: 4,
+                supportedPresetModes: ['auto', 'sleep'],
+            }).finish();
+            const { id, component } = createComponents(
+                readData(MessageTypes.ListEntitiesFanResponse, payload),
+                stateEvents$,
+                debugConnection,
+                new Set(),
+            );
+
+            expect(id).toBe('created_fan');
+            expect(component).toBeInstanceOf(FanComponent);
+            const fanComponent = component as FanComponent;
+            expect(fanComponent.type).toBe('fan');
+            expect(fanComponent.speedCount).toBe(4);
+            expect(fanComponent.supportsSpeed).toBe(true);
+            expect(fanComponent.supportsOscillation).toBe(true);
+            expect(fanComponent.supportsDirection).toBe(true);
+            expect(fanComponent.supportedPresetModes).toEqual(['auto', 'sleep']);
+            expect(fanComponent.ready).toBe(false);
+
+            stateEvents$.next({
+                key: 10,
+                state: true,
+                speedLevel: 2,
+                oscillating: true,
+                direction: FanDirection.FAN_DIRECTION_REVERSE,
+                presetMode: 'sleep',
+            });
+            expect(fanComponent.ready).toBe(true);
+            expect(fanComponent.status).toBe(true);
+            expect(fanComponent.speedLevel).toBe(2);
+            expect(fanComponent.speedPercentage).toBe(50);
+            expect(fanComponent.oscillating).toBe(true);
+            expect(fanComponent.direction).toBe(FanDirection.FAN_DIRECTION_REVERSE);
+            expect(fanComponent.presetMode).toBe('sleep');
+        });
+
+        it('creates a fan component that uses the legacy speed enum for old API versions', () => {
+            const payload = ListEntitiesFanResponse.encode({
+                ...ListEntitiesFanResponse.decode(new Uint8Array()),
+                objectId: 'legacy_fan',
+                key: 13,
+                name: 'Old fan',
+                uniqueId: 'uid_old_fan',
+                supportsSpeed: true,
+            }).finish();
+            const { component } = createComponents(
+                readData(MessageTypes.ListEntitiesFanResponse, payload),
+                stateEvents$,
+                debugConnection,
+                new Set(),
+                { major: 1, minor: 3 },
+            );
+
+            expect(component).toBeInstanceOf(FanComponent);
+            const fanComponent = component as FanComponent;
+            expect(fanComponent.speedCount).toBe(3);
+
+            stateEvents$.next({ key: 13, state: true, speed: FanSpeed.FAN_SPEED_HIGH });
+            expect(fanComponent.speedLevel).toBe(3);
+            expect(fanComponent.speedPercentage).toBe(100);
+        });
+
         it('creates a sensor component with its entity details and state', () => {
             const payload = ListEntitiesSensorResponse.encode({
                 objectId: 'created_sensor',
@@ -383,6 +516,14 @@ describe('helpers', () => {
                         key: 103,
                     }).finish(),
                     SwitchComponent,
+                ],
+                [
+                    MessageTypes.ListEntitiesFanResponse,
+                    ListEntitiesFanResponse.encode({
+                        ...ListEntitiesFanResponse.decode(new Uint8Array()),
+                        key: 106,
+                    }).finish(),
+                    FanComponent,
                 ],
                 [
                     MessageTypes.ListEntitiesLightResponse,

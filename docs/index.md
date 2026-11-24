@@ -74,8 +74,8 @@ reported identification hints, not verified identity.
 
 ## Supported components
 
-At this point in time lights, binary sensors, regular sensors and switches are
-supported. Every component inherits from `BaseComponent` and exposes a state
+At this point in time lights, binary sensors, regular sensors, switches, covers
+and fans are supported. Every component inherits from `BaseComponent` and exposes a state
 observable `state$`. Depending on the component, different pieces of information
 will be shared. This provides rather raw access to the underlying state and should
 probably only be used to call the methods on the component itself.
@@ -103,6 +103,25 @@ Supports the following commands:
 ### Sensor
 
 - get value
+
+### Fan
+
+- turn on, turn off, get status
+- set a speed level (`setSpeedLevel`, 1..`speedCount`, or 0 to turn off) or a percentage
+  (`setSpeedPercentage`, 0..100 where 0 turns the fan off), get `speedLevel` and
+  `speedPercentage`. Setting a non-zero speed also turns the fan on. ESPHome
+  keeps the last speed while a fan is off, so use `status` for on/off and treat
+  the speed getters as the last reported level.
+- set and get oscillation, direction and preset mode when the fan supports them;
+  `setPresetMode('')` clears the active preset
+- `supportsSpeed`, `supportsOscillation`, `supportsDirection` and
+  `supportedPresetModes` describe the negotiated capabilities
+
+Fans on API versions before 1.4 use the legacy three-valued `FanSpeed` enum.
+Firmware 1.4/1.5 may report both that enum and `speed_level`; the component
+prefers `speed_level` from 1.4 onward. The component translates between the
+legacy enum and speed levels internally, so `speedLevel` and `setSpeedLevel`
+behave the same on old and new firmware.
 
 Typescript should point out most values that you can expect and their names have been
 somewhat reasonable, so I won't go into detail what they do.
