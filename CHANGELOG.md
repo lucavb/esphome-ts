@@ -1,3 +1,11 @@
+# [5.2.0](https://github.com/lucavb/esphome-ts/compare/v5.1.3...v5.2.0) (2026-11-24)
+
+
+### Features
+
+* **api:** support ESPHome Noise API encryption ([f7cfad5](https://github.com/lucavb/esphome-ts/commit/f7cfad5ca70247f74bb86dd238a25fcbe892487f)), closes [lucavb/homebridge-esphome-ts#506](https://github.com/lucavb/homebridge-esphome-ts/issues/506)
+* **fan:** add fan component with speed, direction and presets ([75bc9be](https://github.com/lucavb/esphome-ts/commit/75bc9be7f6158e3865556104f7a244f82b45f6c8))
+
 ## [5.1.3](https://github.com/lucavb/esphome-ts/compare/v5.1.2...v5.1.3) (2026-11-23)
 
 
