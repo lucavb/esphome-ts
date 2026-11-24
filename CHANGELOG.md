@@ -1,3 +1,10 @@
+## [5.2.1](https://github.com/lucavb/esphome-ts/compare/v5.2.0...v5.2.1) (2026-11-24)
+
+
+### Bug Fixes
+
+* **api:** reject the all-zero encryption key sentinel ([cb7b413](https://github.com/lucavb/esphome-ts/commit/cb7b4136bc9acd7f4b303e3fe197652286be84af))
+
 # [5.2.0](https://github.com/lucavb/esphome-ts/compare/v5.1.3...v5.2.0) (2026-11-24)
 
 
