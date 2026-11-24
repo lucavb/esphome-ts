@@ -85,6 +85,11 @@ export const parseNoisePsk = (key: string): Buffer => {
     if (psk.length !== NOISE_PSK_LENGTH) {
         throw new InvalidEncryptionKeyFormatError();
     }
+    if (psk.every((byte) => byte === 0)) {
+        // ESPHome reserves the all-zero PSK as its unprovisioned sentinel; it
+        // provides no protection and must never be treated as a real key.
+        throw new InvalidEncryptionKeyFormatError('encryptionKey must not be the all-zero provisioning sentinel');
+    }
     return psk;
 };
 

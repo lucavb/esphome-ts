@@ -84,15 +84,26 @@ describe('Noise_NNpsk0_25519_ChaChaPoly_SHA256 known-answer vector', () => {
 });
 
 describe('parseNoisePsk', () => {
-    const zeroKey = Buffer.alloc(32).toString('base64');
+    const keyBytes = Buffer.from(Array.from({ length: 32 }, (_, index) => index));
+    const base64Key = keyBytes.toString('base64');
 
     it('accepts padded and unpadded base64', () => {
-        expect(parseNoisePsk(zeroKey)).toEqual(Buffer.alloc(32));
-        expect(parseNoisePsk(zeroKey.replace(/=+$/, ''))).toEqual(Buffer.alloc(32));
+        expect(parseNoisePsk(base64Key)).toEqual(keyBytes);
+        expect(parseNoisePsk(base64Key.replace(/=+$/, ''))).toEqual(keyBytes);
     });
 
     it('ignores surrounding whitespace', () => {
-        expect(parseNoisePsk(`  ${zeroKey}\n`)).toEqual(Buffer.alloc(32));
+        expect(parseNoisePsk(`  ${base64Key}\n`)).toEqual(keyBytes);
+    });
+
+    it('rejects the all-zero provisioning sentinel', () => {
+        expect(() => parseNoisePsk(Buffer.alloc(32).toString('base64'))).toThrow(/all-zero/);
+    });
+
+    it('rejects the all-zero sentinel in unpadded and whitespace forms', () => {
+        const zeroKey = Buffer.alloc(32).toString('base64');
+        expect(() => parseNoisePsk(zeroKey.replace(/=+$/, ''))).toThrow(/all-zero/);
+        expect(() => parseNoisePsk(`  ${zeroKey}\n`)).toThrow(/all-zero/);
     });
 
     it('rejects a key that is not 32 bytes', () => {

@@ -13,10 +13,10 @@ export class EncryptionError extends Error {
     }
 }
 
-/** The configured encryption key is not a base64-encoded 32-byte value. */
+/** The configured encryption key is not a base64-encoded 32-byte value, or is the reserved all-zero sentinel. */
 export class InvalidEncryptionKeyFormatError extends EncryptionError {
-    constructor() {
-        super('encryptionKey must be a base64-encoded 32-byte value');
+    constructor(message = 'encryptionKey must be a base64-encoded 32-byte value') {
+        super(message);
         this.name = 'InvalidEncryptionKeyFormatError';
     }
 }

@@ -68,6 +68,11 @@ alternatives: ESPHome does not allow both in one device configuration. A key tha
 is not a base64-encoded 32-byte value throws `InvalidEncryptionKeyFormatError`
 from the `EspDevice` constructor.
 
+The all-zero 32-byte key is also rejected as `InvalidEncryptionKeyFormatError`:
+ESPHome reserves it as the unprovisioned provisioning sentinel, not a usable
+protection key. A future `noise_encryption_set_key` provisioning path must use
+that zero PSK internally rather than routing it through user connection config.
+
 The device name and MAC carried by `InvalidEncryptionKeyError` come from the
 ServerHello, which ESPHome sends outside the Noise transcript. Treat them as
 reported identification hints, not verified identity.

@@ -79,6 +79,10 @@ cacophony vector and exercised with fragmentation and tamper tests.
   (the peer closed before sending any data, usually a wrong host/port) and
   `EncryptionHandshakeError` (a Noise handshake problem). Both feed the same
   one-second reconnect cadence.
+- `parseNoisePsk` rejects the all-zero PSK. ESPHome reserves it as the
+  unprovisioned provisioning sentinel, so it is valid only on an internal
+  `noise_encryption_set_key` path, never as a user connection key. A future
+  provisioning feature must bypass that parser rather than loosen it.
 - A reconnect creates a fresh codec, so the Noise ephemeral key, chaining key,
   and nonce counters never carry over between sessions.
 - Encrypted payloads carry a four-byte plaintext header and a 16-byte
