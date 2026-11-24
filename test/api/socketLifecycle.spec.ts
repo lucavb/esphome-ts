@@ -1,4 +1,4 @@
-import { EspSocket } from '../../src/api/espSocket';
+import { EspSocket, ConnectionHandshakeError } from '../../src/api/espSocket';
 import { EspDevice, InvalidPasswordError } from '../../src/api/espDevice';
 import { type Connection } from '../../src/api/connection';
 import { MessageTypes } from '../../src/api/requestResponseMatching';
@@ -196,6 +196,26 @@ describe('EspDevice protocol handling', () => {
         server.emitError(new Error('ECONNREFUSED'));
         await vi.advanceTimersByTimeAsync(1000);
         expect(opens()).toBe(3);
+    });
+
+    it('throttles a peer that closes before sending any data', async () => {
+        fakeTimers();
+        device = new EspDevice('localhost', '', 6053, { connection });
+        const errors: unknown[] = [];
+        device.error$.subscribe((error: unknown) => errors.push(error));
+        server.connect();
+        await flush();
+
+        server.disconnect();
+        await flush();
+
+        expect(errors[0]).toBeInstanceOf(ConnectionHandshakeError);
+        expect((errors[0] as Error).message).toContain('check the host/port');
+        expect((errors[0] as Error).message).toContain('requires API encryption');
+        expect((errors[0] as Error).message).not.toContain('uses API encryption');
+        expect(opens()).toBe(1);
+        await vi.advanceTimersByTimeAsync(1000);
+        expect(opens()).toBe(2);
     });
 
     it('does not reconnect a healthy connection because of an unrelated send error', async () => {

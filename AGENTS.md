@@ -5,7 +5,7 @@ TypeScript client for the ESPHome native API.
 ## Read first
 
 - `CONTEXT.md` — the domain vocabulary (Connection, socket stack, liveness, handshake).
-- `docs/adr/` — standing decisions; `0001-connection-seam.md` is the load-bearing one.
+- `docs/adr/` — standing decisions; `0001-connection-seam.md` and `0002-noise-encryption.md` are the load-bearing ones.
 - `docs/index.md` — the user-facing guide; README carries the version upgrade notes.
 
 ## Sandboxed sessions

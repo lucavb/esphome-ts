@@ -5,12 +5,33 @@ describe('package export surface', () => {
     it('exposes the documented runtime exports', () => {
         expect(api.EspDevice).toBeDefined();
         expect(api.InvalidPasswordError).toBeDefined();
+        expect(api.EncryptionError).toBeDefined();
+        expect(api.ConnectionHandshakeError).toBeDefined();
+        expect(api.InvalidEncryptionKeyError).toBeDefined();
+        expect(api.InvalidEncryptionKeyFormatError).toBeDefined();
+        expect(api.EncryptionRequiredError).toBeDefined();
+        expect(api.EncryptionPlaintextError).toBeDefined();
+        expect(api.EncryptionHandshakeError).toBeDefined();
         expect(api.Client).toBeDefined();
         expect(api.EspSocket).toBeDefined();
         expect(api.MessageTypes).toBeDefined();
         expect(api.isSwitchComponent).toBeDefined();
         expect(api.isTrue).toBeDefined();
         expect(api.isFalse).toBeDefined();
+    });
+
+    it('keeps every encryption error under the EncryptionError base', () => {
+        const errors = [
+            new api.InvalidEncryptionKeyError(),
+            new api.InvalidEncryptionKeyFormatError(),
+            new api.EncryptionRequiredError(),
+            new api.EncryptionPlaintextError(),
+            new api.EncryptionHandshakeError('test'),
+        ];
+        for (const error of errors) {
+            expect(error).toBeInstanceOf(api.EncryptionError);
+        }
+        expect(new api.ConnectionHandshakeError('test')).not.toBeInstanceOf(api.EncryptionError);
     });
 
     it('exposes every component class from the root barrel', () => {

@@ -65,6 +65,26 @@ describe('EspSocket framing', () => {
         expect(second[0]).toBe(received[0]);
     });
 
+    it('does not restart a live codec on a repeated connected true', async () => {
+        const inMemory = createInMemoryConnection();
+        const encrypted = new EspSocket('localhost', 6053, {
+            connection: inMemory.connection,
+            encryptionKey: Buffer.alloc(32, 1).toString('base64'),
+        });
+        encrypted.open();
+        inMemory.server.connect();
+        await flush();
+
+        const writes = inMemory.server.written.length;
+        expect(writes).toBe(2); // empty client hello + Noise msg1
+
+        inMemory.server.connect();
+        await flush();
+        expect(inMemory.server.written.length).toBe(writes);
+
+        encrypted.terminate();
+    });
+
     it('never leaks a partial frame from a dead connection into the next one', async () => {
         server.push(Buffer.from([0x00, 0x03, MessageTypes.PingResponse, 0xaa]));
         server.disconnect();
@@ -187,6 +207,104 @@ describe('EspSocket sendEspMessage', () => {
         } finally {
             vi.useRealTimers();
         }
+    });
+
+    it('gives an encrypted send the Noise handshake budget instead of five seconds', async () => {
+        vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] });
+        const inMemory = createInMemoryConnection();
+        const encrypted = new EspSocket('localhost', 6053, {
+            connection: inMemory.connection,
+            encryptionKey: Buffer.alloc(32, 1).toString('base64'),
+        });
+        try {
+            encrypted.open();
+            inMemory.server.connect();
+            await flush();
+
+            let settled = false;
+            const error = firstValueFrom(encrypted.error$.pipe(take(1))).then((value) => {
+                settled = true;
+                return value;
+            });
+            encrypted.sendEspMessage(MessageTypes.HelloRequest, new Uint8Array([0x11]));
+
+            // The client has written the Noise hello + msg1, but the handshake
+            // has not completed, so no application frame exists yet.
+            await vi.advanceTimersByTimeAsync(5000);
+            await Promise.resolve();
+            expect(inMemory.server.written.length).toBe(2);
+
+            // The plaintext five-second budget must not apply here. At 59s the
+            // send is still pending; only the 60s Noise budget may time it out.
+            await vi.advanceTimersByTimeAsync(54000);
+            await Promise.resolve();
+            expect(settled).toBe(false);
+
+            await vi.advanceTimersByTimeAsync(1000);
+            await expect(error).resolves.toBeInstanceOf(TimeoutError);
+        } finally {
+            encrypted.terminate();
+            vi.useRealTimers();
+        }
+    });
+
+    it('does not reopen or restart a codec after terminate(), even with a late espData subscriber', async () => {
+        const inMemory = createInMemoryConnection();
+        const encrypted = new EspSocket('localhost', 6053, {
+            connection: inMemory.connection,
+            encryptionKey: Buffer.alloc(32, 1).toString('base64'),
+        });
+        encrypted.open();
+        inMemory.server.connect();
+        await flush();
+        inMemory.server.written.splice(0, inMemory.server.written.length);
+
+        encrypted.terminate();
+        encrypted.open();
+        encrypted.espData$.subscribe();
+        inMemory.server.connect();
+        await flush();
+
+        expect(inMemory.server.written).toEqual([]);
+    });
+
+    it('drops a send issued after terminate without scheduling a readiness timeout', async () => {
+        vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] });
+        const inMemory = createInMemoryConnection();
+        const encrypted = new EspSocket('localhost', 6053, {
+            connection: inMemory.connection,
+            encryptionKey: Buffer.alloc(32, 1).toString('base64'),
+        });
+        try {
+            const errors: unknown[] = [];
+            encrypted.error$.subscribe((error: unknown) => errors.push(error));
+            encrypted.terminate();
+            encrypted.sendEspMessage(MessageTypes.HelloRequest, new Uint8Array([0x11]));
+
+            await vi.advanceTimersByTimeAsync(60000);
+            expect(errors).toEqual([]);
+            expect(inMemory.server.written).toEqual([]);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('disconnect() tears down the current connection but keeps the socket reusable', async () => {
+        server.connect();
+        await flush();
+        server.written.splice(0, server.written.length);
+
+        espSocket.disconnect();
+        await flush();
+        espSocket.open();
+        server.connect();
+        await flush();
+
+        espSocket.sendEspMessage(MessageTypes.PingResponse, new Uint8Array());
+        await flush();
+
+        expect(server.written.length).toBe(1);
+        expect([...server.written[0]]).toEqual([...encodeFrame(MessageTypes.PingResponse, new Uint8Array())]);
     });
 
     it('routes the timeout of an abandoned send to error$', async () => {

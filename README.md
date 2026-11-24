@@ -27,6 +27,20 @@ const subscription = device.discovery$
 
 `rxjs` (>= 7.8) is a peer dependency: install it next to the library (`npm install esphome-ts rxjs`).
 
+### API encryption
+
+If your device's YAML contains `api: encryption: key:`, pass that base64 key as the
+`encryptionKey` option:
+
+```typescript
+const device = new EspDevice('my_esp.local', '', 6053, {
+    encryptionKey: 'qWHsO5CS0tz2Y4ZGYMicOAyFGIrWlu3wVHm8HTEIBms=',
+});
+```
+
+The key must decode to 32 bytes. See [docs/index.md](docs/index.md) for the error
+classes and connection behaviour.
+
 Please see more [here](docs/index.md)
 
 ## Examples

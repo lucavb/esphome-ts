@@ -46,7 +46,31 @@ Numeric entity keys are not guaranteed to remain the same across device changes.
 
 ESPHome 2026.1 removed native API password authentication. For older devices a supplied password
 is still sent and a rejection is reported on `error$`; newer devices may not send an authentication
-response. This library does not support ESPHome's Noise-encrypted API connections.
+response. Devices that use ESPHome's Noise transport encryption require `encryptionKey` instead of
+`password`.
+
+## API encryption
+
+If the device's YAML has an `api: encryption: key:`, pass that value as the
+`encryptionKey` option. The key is the base64 string exactly as ESPHome prints it;
+it must decode to 32 bytes.
+
+```typescript
+const device = new EspDevice('my_esp.local', '', 6053, {
+    encryptionKey: 'qWHsO5CS0tz2Y4ZGYMicOAyFGIrWlu3wVHm8HTEIBms=',
+});
+```
+
+Encryption is negotiated before the first protobuf message, so the normal
+`HelloRequest`/`ConnectRequest`/discovery flow and every later command and state
+update travel through the encrypted session. `password` and `encryptionKey` are
+alternatives: ESPHome does not allow both in one device configuration. A key that
+is not a base64-encoded 32-byte value throws `InvalidEncryptionKeyFormatError`
+from the `EspDevice` constructor.
+
+The device name and MAC carried by `InvalidEncryptionKeyError` come from the
+ServerHello, which ESPHome sends outside the Noise transcript. Treat them as
+reported identification hints, not verified identity.
 
 ## Supported components
 
@@ -90,14 +114,32 @@ constructed, reconnects when the connection drops (and retries once per second w
 cannot be reached), and `terminate()` tears everything down.
 
 Failures that cannot be fixed by reconnecting are reported on `EspDevice.error$`: an
-`InvalidPasswordError` when the device rejects the password (the handshake then stops, so
-`discovery$` never emits), and the decode error of any discovery frame the device sent that
-could not be parsed — undecodable state frames are dropped silently. `EspSocket` owns the
-wire format end to end: it reports its own connection errors, and
-commands that could not be sent, on its `error$`.
+`InvalidPasswordError` when the device rejects the password, an
+`InvalidEncryptionKeyError` when it rejects the encryption key, an
+`EncryptionRequiredError` when the device requires encryption but no key was configured,
+and an `EncryptionPlaintextError` when a plaintext frame arrives while a key was
+configured. In all four cases the handshake stops, so `discovery$` never emits, and
+the device does not reconnect until `provideRetryObservable()` is called again. A
+plaintext device more often just closes during the Noise hello; that surfaces as a
+retryable `ConnectionHandshakeError` with a hint to check the host/port and
+whether the device uses or requires API encryption, and the normal one-second
+reconnect cadence continues. A retryable
+`EncryptionHandshakeError` covers Noise handshake problems (malformed ServerHello,
+unsupported protocol, or a connection dropped after the handshake started), and a
+`ConnectionHandshakeError` covers a peer that closes before sending any data
+(usually a wrong host/port). Only the terminal classes latch: a persistent
+protocol incompatibility keeps retrying once per second and re-emits the
+retryable error on each attempt. The decode
+error of any discovery frame the device sent that could not be parsed is reported
+too — undecodable state frames are dropped silently. `EspSocket` owns the wire
+format end to end: it reports its own connection errors, and commands that could
+not be sent, on its `error$`.
 
 You shouldn't really have to interact with such low level stuff. Should you decide to do this
 anyways, then the classes `Client` and `EspSocket` are of interest to you. `EspSocket` handles the
 connection (a real TCP path, or any `Connection` you inject) and the message framing, while
 `Client` is on a higher level and already allows you to send specific messages to your ESP. There
 is no separate raw-socket class: `EspSocket` is the lowest level the library exports.
+`EspSocket.terminate()` is final: it tears down the codec pipeline and the connection watchers.
+Use `EspSocket.disconnect()` to drop only the current connection while keeping the socket
+reusable with a later `open()`.

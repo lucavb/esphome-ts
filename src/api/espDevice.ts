@@ -1,4 +1,4 @@
-import { EspSocket, type ReadData } from './espSocket';
+import { EspSocket, type ReadData, ConnectionHandshakeError } from './espSocket';
 import { Client } from './client';
 import { type Connection } from './connection';
 import { createComponents, stateParser } from './helpers';
@@ -29,6 +29,12 @@ import {
     timer,
 } from 'rxjs';
 import { ConnectResponse, DeviceInfoResponse } from './protobuf/api';
+import {
+    EncryptionHandshakeError,
+    EncryptionPlaintextError,
+    EncryptionRequiredError,
+    InvalidEncryptionKeyError,
+} from './noise/errors';
 
 const PING_TIMEOUT = 90 * 1000;
 const RETRY_DELAY = 1000;
@@ -38,6 +44,16 @@ export class InvalidPasswordError extends Error {
         super(`The ESPHome device at ${host} rejected the connection password`);
         this.name = 'InvalidPasswordError';
     }
+}
+
+export interface EspDeviceOptions {
+    /**
+     * An injected Connection owns its own liveness/idle teardown — the
+     * socket-level `PING_TIMEOUT` does not apply to it.
+     */
+    connection?: Connection;
+    /** Base64-encoded 32-byte Noise PSK from ESPHome's `api: encryption: key:`. */
+    encryptionKey?: string;
 }
 
 export class EspDevice {
@@ -60,17 +76,22 @@ export class EspDevice {
 
     private readonly errors = new Subject<unknown>();
     /**
-     * Device level failures: frames that could not be decoded and handshake
-     * problems such as an `InvalidPasswordError`. Socket level errors are
-     * available on the socket itself.
+     * Device level failures: undecodable frames, password/encryption handshake
+     * problems such as InvalidPasswordError and InvalidEncryptionKeyError, and
+     * retryable EncryptionHandshakeError/ConnectionHandshakeError. Plain socket
+     * errors are available on the socket itself.
      */
     public readonly error$: Observable<unknown>;
 
     private readonly subscription: Subscription;
     private retrySubscription?: Subscription;
-    // Latched when the device rejects the constructed password: terminal for
-    // auto-reconnect until provideRetryObservable() explicitly re-arms it.
-    private passwordRejected = false;
+    // Latched when the device reports a terminal connection failure (rejected
+    // password or encryption key, missing key, plaintext/encrypted mismatch):
+    // auto-reconnect stays off until provideRetryObservable() explicitly re-arms it.
+    private terminalFailure = false;
+    // A retryable handshake/transport failure must not turn the immediate
+    // reconnect path into a hot loop; the one-second retry cadence handles it.
+    private handshakeRetryPending = false;
 
     public readonly alive$: Observable<boolean>;
 
@@ -78,11 +99,7 @@ export class EspDevice {
         private readonly host: string,
         private readonly password: string = '',
         private readonly port: number = 6053,
-        /**
-         * An injected Connection owns its own liveness/idle teardown — the
-         * socket-level `PING_TIMEOUT` does not apply to it.
-         */
-        options?: { connection?: Connection },
+        options?: EspDeviceOptions,
     ) {
         this.subscription = new Subscription();
         this.discovery = new BehaviorSubject<boolean>(false);
@@ -91,6 +108,7 @@ export class EspDevice {
         this.socket = new EspSocket(host, port, {
             timeout: PING_TIMEOUT,
             connection: options?.connection,
+            encryptionKey: options?.encryptionKey,
         });
         this.client = new Client(this.socket);
         this.stateEvents$ = this.socket.espData$.pipe(
@@ -101,12 +119,47 @@ export class EspDevice {
             // component re-runs the filter+decode chain for the same state frame.
             share(),
         );
-        // Subscribe in this order: frame handling must be ready before opening
-        // the connection and sending the first handshake request.
+        // Subscribe in this order: terminal failures first, then frame handling
+        // (which must be ready before opening the connection), then the
+        // connection and its retries.
+        this.watchHandshakeErrors();
         this.watchDeviceMessages();
         this.watchConnection();
         this.retryFailedConnections();
         this.alive$ = this.createLivenessObservable();
+    }
+
+    private watchHandshakeErrors(): void {
+        this.subscription.add(
+            this.socket.error$.subscribe((error: unknown) => {
+                if (error instanceof EncryptionHandshakeError || error instanceof ConnectionHandshakeError) {
+                    // Retryable: surface it on the device stream, but let the
+                    // one-second retry cadence try again instead of reopening
+                    // immediately and hot-looping on a persistently broken device.
+                    this.handshakeRetryPending = true;
+                    this.errors.next(error);
+                    return;
+                }
+                if (
+                    error instanceof InvalidEncryptionKeyError ||
+                    error instanceof EncryptionRequiredError ||
+                    error instanceof EncryptionPlaintextError
+                ) {
+                    this.failTerminally(error);
+                }
+            }),
+        );
+    }
+
+    private failTerminally(error: Error): void {
+        if (this.terminalFailure) {
+            return;
+        }
+        this.terminalFailure = true;
+        this.errors.next(error);
+        // Drop the current connection but keep the socket reusable: a later
+        // provideRetryObservable() re-arm can open a fresh generation.
+        this.socket.disconnect();
     }
 
     private watchDeviceMessages(): void {
@@ -120,10 +173,8 @@ export class EspDevice {
             } else if (data.type === MessageTypes.DeviceInfoResponse) {
                 this.deviceInfo = DeviceInfoResponse.decode(data.payload);
             } else if (data.type === MessageTypes.ConnectResponse) {
-                if (ConnectResponse.decode(data.payload).invalidPassword && !this.passwordRejected) {
-                    this.passwordRejected = true;
-                    this.errors.next(new InvalidPasswordError(this.host));
-                    this.socket.terminate();
+                if (ConnectResponse.decode(data.payload).invalidPassword) {
+                    this.failTerminally(new InvalidPasswordError(this.host));
                 }
             }
         } catch (error: unknown) {
@@ -138,11 +189,15 @@ export class EspDevice {
                 .pipe(
                     distinctUntilChanged(),
                     tap((connected: boolean) => {
-                        if (!connected && !this.passwordRejected) {
+                        if (connected) {
+                            this.handshakeRetryPending = false;
+                            return;
+                        }
+                        if (!this.terminalFailure && !this.handshakeRetryPending) {
                             this.socket.open();
                         }
                     }),
-                    filter((connected: boolean) => connected && !this.passwordRejected),
+                    filter((connected: boolean) => connected && !this.terminalFailure),
                     // A new connection cancels the previous handshake and its retry timer.
                     switchMap(() => this.handshake()),
                 )
@@ -161,7 +216,7 @@ export class EspDevice {
                 // Newer devices ignore authentication; send it without waiting for
                 // a response. A rejection is handled by watchDeviceMessages().
                 this.client.connect({ password: this.password });
-                return this.passwordRejected ? EMPTY : this.client.deviceInfo();
+                return this.terminalFailure ? EMPTY : this.client.deviceInfo();
             }),
             switchMap(() => this.client.listEntities()),
             switchMap(() => this.client.subscribeStateChange()),
@@ -183,7 +238,7 @@ export class EspDevice {
             this.socket.error$
                 .pipe(
                     switchMap(() => timer(RETRY_DELAY)),
-                    filter(() => !this.passwordRejected && !this.socket.isConnected()),
+                    filter(() => !this.terminalFailure && !this.socket.isConnected()),
                 )
                 .subscribe(() => this.socket.open()),
         );
@@ -208,12 +263,13 @@ export class EspDevice {
      * Provides the reconnect cadence used while the device is unreachable.
      * Calling this again replaces the previously provided retry signal, so
      * repeated calls cannot stack parallel reconnect loops. Providing a cadence
-     * is also the explicit opt-in re-arm after a password rejection.
+     * is also the explicit opt-in re-arm after a terminal connection failure.
      */
     public provideRetryObservable(retryWhen$: Observable<unknown>): void {
         // Explicit opt-in re-arm: re-providing a retry cadence re-enables
-        // auto-reconnect after a password rejection.
-        this.passwordRejected = false;
+        // auto-reconnect after a rejected password or encryption key.
+        this.terminalFailure = false;
+        this.handshakeRetryPending = false;
         this.retrySubscription?.unsubscribe();
         this.retrySubscription = this.alive$
             .pipe(

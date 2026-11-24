@@ -15,7 +15,7 @@ The live path between the library and a Device, along which frames travel as byt
 _Avoid_: session, channel, transport
 
 **Frame**:
-The single wire unit: marker byte `0x00`, unsigned-varint payload length, unsigned-varint message type, then up to 65535 payload bytes. One frame carries one message.
+The single plaintext wire unit: marker byte `0x00`, unsigned-varint payload length, unsigned-varint message type, then up to 65535 payload bytes. One frame carries one message. The encrypted transport uses Noise frames instead.
 _Avoid_: packet, chunk
 
 **Message**:
@@ -29,6 +29,26 @@ _Avoid_: parser (the decode half only), codec (hides the stream state)
 **Carry-over buffer**:
 The bytes of a frame that has not fully arrived yet, held by the framer between chunks.
 _Avoid_: backlog
+
+**Encryption key**:
+The base64 32-byte pre-shared key from a Device's `api: encryption: key:`. One per Device. It authenticates the Noise handshake and keys the Session.
+_Avoid_: password (the older authentication secret), key (ambiguous)
+
+**Noise handshake**:
+The pre-protobuf exchange that proves the Encryption key and establishes a Session. Its frames are not Message frames; no protobuf traffic is sent until it completes.
+_Avoid_: login, authentication
+
+**Noise frame**:
+The encrypted wire unit: indicator byte `0x01`, 16-bit big-endian payload length, then the payload. During the handshake the payload is a Noise handshake message; afterwards it is one encrypted Message.
+_Avoid_: packet
+
+**Session**:
+The pair of directional ChaCha20-Poly1305 cipher states produced by one Noise handshake. A Session lasts exactly one Connection; every reconnect performs a fresh handshake and resets the nonces.
+_Avoid_: connection (the transport), encryption layer
+
+**Codec**:
+The transport-internal module that owns one wire format in both directions: plaintext or Noise. `EspSocket` creates one Codec per Connection generation.
+_Avoid_: framer (plaintext only), parser
 
 **Client**:
 The protocol module that sends messages and correlates responses with requests.
