@@ -1,3 +1,10 @@
+# [5.3.0](https://github.com/lucavb/esphome-ts/compare/v5.2.1...v5.3.0) (2026-11-25)
+
+
+### Features
+
+* **light:** support color modes, white and color temperature ([9846129](https://github.com/lucavb/esphome-ts/commit/9846129a08889b555c38e55daf5bc84e8ecfdf9a)), closes [#908](https://github.com/lucavb/esphome-ts/issues/908)
+
 ## [5.2.1](https://github.com/lucavb/esphome-ts/compare/v5.2.0...v5.2.1) (2026-11-24)
 
 
