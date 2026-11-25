@@ -95,6 +95,102 @@ Supports the following commands:
 - set brightness
 - set color (rgb, hsv)
 - and respective get methods
+- set and get the color mode (`setColorMode`, `colorMode`)
+- set and get the white channel (`white`) and the color temperature in mireds
+  (`colorTemperature`); set the cold and warm white channel levels with
+  `setColdWarmWhite` and read them with `coldWhite`/`warmWhite`
+- set and get the color brightness (`colorBrightness`)
+
+#### Color modes
+
+ESPHome firmware that advertises `supportedColorModes` (ESPHome 2021.8 and
+later, which reports API 1.6) can be switched between color and white without
+encoding white as rgb values. `supportsColorMode` tells you whether the device
+does; on older firmware the component keeps sending the legacy rgb / brightness
+commands and the new setters are no-ops.
+
+`supportedColorModes` is the list of advertised `ColorMode` values (on firmware
+that predates color modes it is derived from the legacy boolean capabilities).
+Its members are capability bitmasks, so a mode can be tested with its enum
+value: `COLOR_MODE_RGB = 35` means `ON_OFF | BRIGHTNESS | RGB`. `ColorMode` is
+exported from the package root. Mode values newer than this client knows are
+ignored; if no known mode remains, the capability getters report no color
+support and only on/off commands are sent.
+
+The capability getters (`supportsRgb`, `supportsBrightness`,
+`supportsWhiteValue`, `supportsColorTemperature`) are derived from the
+advertised modes. When firmware predates color modes they are derived from the
+deprecated capability booleans instead, matching Home Assistant's
+`supported_color_modes_compat`.
+
+`supportsWhiteValue` is specifically the single white-channel capability
+(`COLOR_MODE_WHITE` / `COLOR_MODE_RGB_WHITE`). An rgbww or cwww light reports
+`false` here even though it can display white: its white output is driven
+through `colorTemperature` or `setColdWarmWhite`, and `supportsColorTemperature`
+is the getter that stays true. The `white` setter is likewise a no-op on such a
+light, because there is no WHITE-capable mode to select.
+
+Commands choose the simplest supported mode for the values they carry. A
+brightness change sends only `brightness` and keeps the active mode, `turnOn`
+sends only the on/off state (the firmware keeps its active mode across
+on/off), and `setColorMode` changes the mode without touching the stored channel
+values or the on/off state:
+
+```typescript
+// rgbww light with color_interlock: switches white -> color.
+lights.setColorMode(ColorMode.COLOR_MODE_RGB);
+// and back; the firmware reuses the stored white channels.
+lights.setColorMode(ColorMode.COLOR_MODE_COLD_WARM_WHITE);
+```
+
+If the white channels have never been driven, set `colorTemperature` or
+`setColdWarmWhite` instead of a bare mode switch: the switch reuses whatever
+levels the firmware stored, which may be zero. Switching back to color likewise
+reuses the stored color brightness, which may be 0 after a white session; set a
+color with `rgb`/`hsv` to give it intensity.
+
+The white, cold/warm white and color temperature setters turn the light on, like
+`setBrightness` and the `rgb`/`hsv` setters. White output is the master
+brightness multiplied by the channel level: with `setBrightness(30)`,
+`white = 100` yields 30% white, and the same applies to `setColdWarmWhite`. For
+an absolute level, set the master brightness as well (`setBrightness(level)`
+with `white = 100`), which is what Home Assistant's white control sends.
+
+Levels are exposed as `0..100`, like `getBrightness`/`setBrightness`; `rgb` and
+`hsv` keep their existing `0..255` / `0..360` ranges. `rgb` includes both the
+master brightness and the color brightness, while `getBrightness()` and
+`hsv.value` report the master brightness on their own. The `rgb`/`hsv` setters
+send the full color at the requested master brightness and set color brightness
+to 100%; on a device whose color brightness another controller lowered, an `rgb`
+round-trip keeps the visual color, while an `hsv` round-trip moves the color
+brightness into the master and looks brighter. `setBrightness(0)` and a black
+`rgb`/`hsv` value turn a color-mode light off; negative or non-finite brightness
+is treated as zero. Lights without the brightness capability ignore
+`setBrightness`, including 0; use `turnOff`. A zero white level (`white = 0`, or
+`setColdWarmWhite({coldWhite: 0, warmWhite: 0})`) turns the light off when the
+selected white mode has no color channel to fall back on. `colorBrightness` is a
+modifier for the active RGB mode: setting it does not change the light's state
+or mode, and the component only sends it while an RGB-capable mode is active:
+firmware treats a positive value as an RGB request, which would switch an
+interlocked light back to color. Value getters report the
+channels the firmware stored for each mode; firmware keeps the inactive mode's
+channels, so consult `colorMode` to know which value is currently driving the
+light.
+
+Color temperature is reported and set in mireds. Firmware accepts
+`color_temperature` when the active mode has the color-temperature or
+cold/warm-white capability, and clamps it to the advertised mired range. ESPHome
+leaves cold/warm white channel temperatures unset by default, so a bare
+`rgbww`/`cwww` light reports `minMireds = maxMireds = 0`; configuring
+`cold_white_color_temperature` / `warm_white_color_temperature` in the YAML
+provides the range. On a cold/warm-white light without a range the component
+follows Home Assistant: `colorTemperature` drives both white channels at full,
+which is neutral white. `supportsColorTemperature` is still true there (the
+device can display white), but read `minMireds`/`maxMireds` before showing a
+temperature slider. The getter returns `undefined` until the device reports a
+usable value, and when a mired range exists the setter also sends the mired
+value so it can be read back. Use `setColdWarmWhite` for explicit channel
+levels.
 
 ### Binary sensor
 

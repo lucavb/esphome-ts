@@ -192,6 +192,101 @@ export function fanDirectionToJSON(object: FanDirection): string {
   }
 }
 
+/**
+ * ==================== LIGHT ====================
+ * Color modes are combinations of capabilities, so their numeric values are
+ * bitmasks (ON_OFF=1, BRIGHTNESS=2, WHITE=4, COLOR_TEMPERATURE=8,
+ * COLD_WARM_WHITE=16, RGB=32). They entered the protocol with API 1.6 (ESPHome
+ * 2021.8); firmware that predates them omits supported_color_modes and only
+ * sends the legacy capability booleans below.
+ */
+export enum ColorMode {
+  COLOR_MODE_UNKNOWN = 0,
+  COLOR_MODE_ON_OFF = 1,
+  COLOR_MODE_LEGACY_BRIGHTNESS = 2,
+  COLOR_MODE_BRIGHTNESS = 3,
+  COLOR_MODE_WHITE = 7,
+  COLOR_MODE_COLOR_TEMPERATURE = 11,
+  COLOR_MODE_COLD_WARM_WHITE = 19,
+  COLOR_MODE_RGB = 35,
+  COLOR_MODE_RGB_WHITE = 39,
+  COLOR_MODE_RGB_COLOR_TEMPERATURE = 47,
+  COLOR_MODE_RGB_COLD_WARM_WHITE = 51,
+  UNRECOGNIZED = -1,
+}
+
+export function colorModeFromJSON(object: any): ColorMode {
+  switch (object) {
+    case 0:
+    case "COLOR_MODE_UNKNOWN":
+      return ColorMode.COLOR_MODE_UNKNOWN;
+    case 1:
+    case "COLOR_MODE_ON_OFF":
+      return ColorMode.COLOR_MODE_ON_OFF;
+    case 2:
+    case "COLOR_MODE_LEGACY_BRIGHTNESS":
+      return ColorMode.COLOR_MODE_LEGACY_BRIGHTNESS;
+    case 3:
+    case "COLOR_MODE_BRIGHTNESS":
+      return ColorMode.COLOR_MODE_BRIGHTNESS;
+    case 7:
+    case "COLOR_MODE_WHITE":
+      return ColorMode.COLOR_MODE_WHITE;
+    case 11:
+    case "COLOR_MODE_COLOR_TEMPERATURE":
+      return ColorMode.COLOR_MODE_COLOR_TEMPERATURE;
+    case 19:
+    case "COLOR_MODE_COLD_WARM_WHITE":
+      return ColorMode.COLOR_MODE_COLD_WARM_WHITE;
+    case 35:
+    case "COLOR_MODE_RGB":
+      return ColorMode.COLOR_MODE_RGB;
+    case 39:
+    case "COLOR_MODE_RGB_WHITE":
+      return ColorMode.COLOR_MODE_RGB_WHITE;
+    case 47:
+    case "COLOR_MODE_RGB_COLOR_TEMPERATURE":
+      return ColorMode.COLOR_MODE_RGB_COLOR_TEMPERATURE;
+    case 51:
+    case "COLOR_MODE_RGB_COLD_WARM_WHITE":
+      return ColorMode.COLOR_MODE_RGB_COLD_WARM_WHITE;
+    case -1:
+    case "UNRECOGNIZED":
+    default:
+      return ColorMode.UNRECOGNIZED;
+  }
+}
+
+export function colorModeToJSON(object: ColorMode): string {
+  switch (object) {
+    case ColorMode.COLOR_MODE_UNKNOWN:
+      return "COLOR_MODE_UNKNOWN";
+    case ColorMode.COLOR_MODE_ON_OFF:
+      return "COLOR_MODE_ON_OFF";
+    case ColorMode.COLOR_MODE_LEGACY_BRIGHTNESS:
+      return "COLOR_MODE_LEGACY_BRIGHTNESS";
+    case ColorMode.COLOR_MODE_BRIGHTNESS:
+      return "COLOR_MODE_BRIGHTNESS";
+    case ColorMode.COLOR_MODE_WHITE:
+      return "COLOR_MODE_WHITE";
+    case ColorMode.COLOR_MODE_COLOR_TEMPERATURE:
+      return "COLOR_MODE_COLOR_TEMPERATURE";
+    case ColorMode.COLOR_MODE_COLD_WARM_WHITE:
+      return "COLOR_MODE_COLD_WARM_WHITE";
+    case ColorMode.COLOR_MODE_RGB:
+      return "COLOR_MODE_RGB";
+    case ColorMode.COLOR_MODE_RGB_WHITE:
+      return "COLOR_MODE_RGB_WHITE";
+    case ColorMode.COLOR_MODE_RGB_COLOR_TEMPERATURE:
+      return "COLOR_MODE_RGB_COLOR_TEMPERATURE";
+    case ColorMode.COLOR_MODE_RGB_COLD_WARM_WHITE:
+      return "COLOR_MODE_RGB_COLD_WARM_WHITE";
+    case ColorMode.UNRECOGNIZED:
+    default:
+      return "UNRECOGNIZED";
+  }
+}
+
 /** ==================== SUBSCRIBE LOGS ==================== */
 export enum LogLevel {
   LOG_LEVEL_NONE = 0,
@@ -770,12 +865,21 @@ export interface FanCommandRequest {
   presetMode: string;
 }
 
-/** ==================== LIGHT ==================== */
 export interface ListEntitiesLightResponse {
   objectId: string;
   key: number;
   name: string;
+  /**
+   * Upstream reserved this field and firmware from 2025.8 on no longer sends
+   * it. Keep parsing it for older firmware; this client identifies entities by
+   * key/object_id, so an empty value is harmless.
+   */
   uniqueId: string;
+  /**
+   * Fields 5-8 keep their upstream field numbers but the older names. Upstream
+   * renamed them to legacy_supports_* and deprecates them: firmware >= 2025.8
+   * sends only supported_color_modes, older firmware sends both.
+   */
   supportsBrightness: boolean;
   supportsRgb: boolean;
   supportsWhiteValue: boolean;
@@ -783,6 +887,7 @@ export interface ListEntitiesLightResponse {
   minMireds: number;
   maxMireds: number;
   effects: string[];
+  supportedColorModes: ColorMode[];
 }
 
 export interface LightStateResponse {
@@ -795,6 +900,10 @@ export interface LightStateResponse {
   white: number;
   colorTemperature: number;
   effect: string;
+  colorBrightness: number;
+  colorMode: ColorMode;
+  coldWhite: number;
+  warmWhite: number;
 }
 
 export interface LightCommandRequest {
@@ -817,6 +926,14 @@ export interface LightCommandRequest {
   flashLength: number;
   hasEffect: boolean;
   effect: string;
+  hasColorBrightness: boolean;
+  colorBrightness: number;
+  hasColorMode: boolean;
+  colorMode: ColorMode;
+  hasColdWhite: boolean;
+  coldWhite: number;
+  hasWarmWhite: boolean;
+  warmWhite: number;
 }
 
 /** ==================== SENSOR ==================== */
@@ -3551,6 +3668,7 @@ function createBaseListEntitiesLightResponse(): ListEntitiesLightResponse {
     minMireds: 0,
     maxMireds: 0,
     effects: [],
+    supportedColorModes: [],
   };
 }
 
@@ -3589,6 +3707,11 @@ export const ListEntitiesLightResponse: MessageFns<ListEntitiesLightResponse> = 
     for (const v of message.effects) {
       writer.uint32(90).string(v!);
     }
+    writer.uint32(98).fork();
+    for (const v of message.supportedColorModes) {
+      writer.int32(v);
+    }
+    writer.join();
     return writer;
   },
 
@@ -3693,6 +3816,24 @@ export const ListEntitiesLightResponse: MessageFns<ListEntitiesLightResponse> = 
             message.effects.push(reader.string());
             continue;
           }
+          case 12: {
+            if (tag === 96) {
+              message.supportedColorModes.push(reader.int32() as any);
+
+              continue;
+            }
+
+            if (tag === 98) {
+              const end2 = reader.uint32() + reader.pos;
+              while (reader.pos < end2) {
+                message.supportedColorModes.push(reader.int32() as any);
+              }
+
+              continue;
+            }
+
+            break;
+          }
         }
         if ((tag & 7) === 4 || tag === 0) {
           break;
@@ -3752,6 +3893,11 @@ export const ListEntitiesLightResponse: MessageFns<ListEntitiesLightResponse> = 
       effects: globalThis.Array.isArray(object?.effects)
         ? object.effects.map((e: any) => globalThis.String(e))
         : [],
+      supportedColorModes: globalThis.Array.isArray(object?.supportedColorModes)
+        ? object.supportedColorModes.map((e: any) => colorModeFromJSON(e))
+        : globalThis.Array.isArray(object?.supported_color_modes)
+        ? object.supported_color_modes.map((e: any) => colorModeFromJSON(e))
+        : [],
     };
   },
 
@@ -3790,6 +3936,9 @@ export const ListEntitiesLightResponse: MessageFns<ListEntitiesLightResponse> = 
     if (message.effects?.length) {
       obj.effects = message.effects;
     }
+    if (message.supportedColorModes?.length) {
+      obj.supportedColorModes = message.supportedColorModes.map((e) => colorModeToJSON(e));
+    }
     return obj;
   },
 
@@ -3809,12 +3958,27 @@ export const ListEntitiesLightResponse: MessageFns<ListEntitiesLightResponse> = 
     message.minMireds = object.minMireds ?? 0;
     message.maxMireds = object.maxMireds ?? 0;
     message.effects = object.effects?.map((e) => e) || [];
+    message.supportedColorModes = object.supportedColorModes?.map((e) => e) || [];
     return message;
   },
 };
 
 function createBaseLightStateResponse(): LightStateResponse {
-  return { key: 0, state: false, brightness: 0, red: 0, green: 0, blue: 0, white: 0, colorTemperature: 0, effect: "" };
+  return {
+    key: 0,
+    state: false,
+    brightness: 0,
+    red: 0,
+    green: 0,
+    blue: 0,
+    white: 0,
+    colorTemperature: 0,
+    effect: "",
+    colorBrightness: 0,
+    colorMode: 0,
+    coldWhite: 0,
+    warmWhite: 0,
+  };
 }
 
 export const LightStateResponse: MessageFns<LightStateResponse> = {
@@ -3845,6 +4009,18 @@ export const LightStateResponse: MessageFns<LightStateResponse> = {
     }
     if (message.effect !== "") {
       writer.uint32(74).string(message.effect);
+    }
+    if (message.colorBrightness !== 0) {
+      writer.uint32(85).float(message.colorBrightness);
+    }
+    if (message.colorMode !== 0) {
+      writer.uint32(88).int32(message.colorMode);
+    }
+    if (message.coldWhite !== 0) {
+      writer.uint32(101).float(message.coldWhite);
+    }
+    if (message.warmWhite !== 0) {
+      writer.uint32(109).float(message.warmWhite);
     }
     return writer;
   },
@@ -3934,6 +4110,38 @@ export const LightStateResponse: MessageFns<LightStateResponse> = {
             message.effect = reader.string();
             continue;
           }
+          case 10: {
+            if (tag !== 85) {
+              break;
+            }
+
+            message.colorBrightness = reader.float();
+            continue;
+          }
+          case 11: {
+            if (tag !== 88) {
+              break;
+            }
+
+            message.colorMode = reader.int32() as any;
+            continue;
+          }
+          case 12: {
+            if (tag !== 101) {
+              break;
+            }
+
+            message.coldWhite = reader.float();
+            continue;
+          }
+          case 13: {
+            if (tag !== 109) {
+              break;
+            }
+
+            message.warmWhite = reader.float();
+            continue;
+          }
         }
         if ((tag & 7) === 4 || tag === 0) {
           break;
@@ -3961,6 +4169,26 @@ export const LightStateResponse: MessageFns<LightStateResponse> = {
         ? globalThis.Number(object.color_temperature)
         : 0,
       effect: isSet(object.effect) ? globalThis.String(object.effect) : "",
+      colorBrightness: isSet(object.colorBrightness)
+        ? globalThis.Number(object.colorBrightness)
+        : isSet(object.color_brightness)
+        ? globalThis.Number(object.color_brightness)
+        : 0,
+      colorMode: isSet(object.colorMode)
+        ? colorModeFromJSON(object.colorMode)
+        : isSet(object.color_mode)
+        ? colorModeFromJSON(object.color_mode)
+        : 0,
+      coldWhite: isSet(object.coldWhite)
+        ? globalThis.Number(object.coldWhite)
+        : isSet(object.cold_white)
+        ? globalThis.Number(object.cold_white)
+        : 0,
+      warmWhite: isSet(object.warmWhite)
+        ? globalThis.Number(object.warmWhite)
+        : isSet(object.warm_white)
+        ? globalThis.Number(object.warm_white)
+        : 0,
     };
   },
 
@@ -3993,6 +4221,18 @@ export const LightStateResponse: MessageFns<LightStateResponse> = {
     if (message.effect !== "") {
       obj.effect = message.effect;
     }
+    if (message.colorBrightness !== 0) {
+      obj.colorBrightness = message.colorBrightness;
+    }
+    if (message.colorMode !== 0) {
+      obj.colorMode = colorModeToJSON(message.colorMode);
+    }
+    if (message.coldWhite !== 0) {
+      obj.coldWhite = message.coldWhite;
+    }
+    if (message.warmWhite !== 0) {
+      obj.warmWhite = message.warmWhite;
+    }
     return obj;
   },
 
@@ -4010,6 +4250,10 @@ export const LightStateResponse: MessageFns<LightStateResponse> = {
     message.white = object.white ?? 0;
     message.colorTemperature = object.colorTemperature ?? 0;
     message.effect = object.effect ?? "";
+    message.colorBrightness = object.colorBrightness ?? 0;
+    message.colorMode = object.colorMode ?? 0;
+    message.coldWhite = object.coldWhite ?? 0;
+    message.warmWhite = object.warmWhite ?? 0;
     return message;
   },
 };
@@ -4035,6 +4279,14 @@ function createBaseLightCommandRequest(): LightCommandRequest {
     flashLength: 0,
     hasEffect: false,
     effect: "",
+    hasColorBrightness: false,
+    colorBrightness: 0,
+    hasColorMode: false,
+    colorMode: 0,
+    hasColdWhite: false,
+    coldWhite: 0,
+    hasWarmWhite: false,
+    warmWhite: 0,
   };
 }
 
@@ -4096,6 +4348,30 @@ export const LightCommandRequest: MessageFns<LightCommandRequest> = {
     }
     if (message.effect !== "") {
       writer.uint32(154).string(message.effect);
+    }
+    if (message.hasColorBrightness !== false) {
+      writer.uint32(160).bool(message.hasColorBrightness);
+    }
+    if (message.colorBrightness !== 0) {
+      writer.uint32(173).float(message.colorBrightness);
+    }
+    if (message.hasColorMode !== false) {
+      writer.uint32(176).bool(message.hasColorMode);
+    }
+    if (message.colorMode !== 0) {
+      writer.uint32(184).int32(message.colorMode);
+    }
+    if (message.hasColdWhite !== false) {
+      writer.uint32(192).bool(message.hasColdWhite);
+    }
+    if (message.coldWhite !== 0) {
+      writer.uint32(205).float(message.coldWhite);
+    }
+    if (message.hasWarmWhite !== false) {
+      writer.uint32(208).bool(message.hasWarmWhite);
+    }
+    if (message.warmWhite !== 0) {
+      writer.uint32(221).float(message.warmWhite);
     }
     return writer;
   },
@@ -4265,6 +4541,70 @@ export const LightCommandRequest: MessageFns<LightCommandRequest> = {
             message.effect = reader.string();
             continue;
           }
+          case 20: {
+            if (tag !== 160) {
+              break;
+            }
+
+            message.hasColorBrightness = reader.bool();
+            continue;
+          }
+          case 21: {
+            if (tag !== 173) {
+              break;
+            }
+
+            message.colorBrightness = reader.float();
+            continue;
+          }
+          case 22: {
+            if (tag !== 176) {
+              break;
+            }
+
+            message.hasColorMode = reader.bool();
+            continue;
+          }
+          case 23: {
+            if (tag !== 184) {
+              break;
+            }
+
+            message.colorMode = reader.int32() as any;
+            continue;
+          }
+          case 24: {
+            if (tag !== 192) {
+              break;
+            }
+
+            message.hasColdWhite = reader.bool();
+            continue;
+          }
+          case 25: {
+            if (tag !== 205) {
+              break;
+            }
+
+            message.coldWhite = reader.float();
+            continue;
+          }
+          case 26: {
+            if (tag !== 208) {
+              break;
+            }
+
+            message.hasWarmWhite = reader.bool();
+            continue;
+          }
+          case 27: {
+            if (tag !== 221) {
+              break;
+            }
+
+            message.warmWhite = reader.float();
+            continue;
+          }
         }
         if ((tag & 7) === 4 || tag === 0) {
           break;
@@ -4342,6 +4682,46 @@ export const LightCommandRequest: MessageFns<LightCommandRequest> = {
         ? globalThis.Boolean(object.has_effect)
         : false,
       effect: isSet(object.effect) ? globalThis.String(object.effect) : "",
+      hasColorBrightness: isSet(object.hasColorBrightness)
+        ? globalThis.Boolean(object.hasColorBrightness)
+        : isSet(object.has_color_brightness)
+        ? globalThis.Boolean(object.has_color_brightness)
+        : false,
+      colorBrightness: isSet(object.colorBrightness)
+        ? globalThis.Number(object.colorBrightness)
+        : isSet(object.color_brightness)
+        ? globalThis.Number(object.color_brightness)
+        : 0,
+      hasColorMode: isSet(object.hasColorMode)
+        ? globalThis.Boolean(object.hasColorMode)
+        : isSet(object.has_color_mode)
+        ? globalThis.Boolean(object.has_color_mode)
+        : false,
+      colorMode: isSet(object.colorMode)
+        ? colorModeFromJSON(object.colorMode)
+        : isSet(object.color_mode)
+        ? colorModeFromJSON(object.color_mode)
+        : 0,
+      hasColdWhite: isSet(object.hasColdWhite)
+        ? globalThis.Boolean(object.hasColdWhite)
+        : isSet(object.has_cold_white)
+        ? globalThis.Boolean(object.has_cold_white)
+        : false,
+      coldWhite: isSet(object.coldWhite)
+        ? globalThis.Number(object.coldWhite)
+        : isSet(object.cold_white)
+        ? globalThis.Number(object.cold_white)
+        : 0,
+      hasWarmWhite: isSet(object.hasWarmWhite)
+        ? globalThis.Boolean(object.hasWarmWhite)
+        : isSet(object.has_warm_white)
+        ? globalThis.Boolean(object.has_warm_white)
+        : false,
+      warmWhite: isSet(object.warmWhite)
+        ? globalThis.Number(object.warmWhite)
+        : isSet(object.warm_white)
+        ? globalThis.Number(object.warm_white)
+        : 0,
     };
   },
 
@@ -4404,6 +4784,30 @@ export const LightCommandRequest: MessageFns<LightCommandRequest> = {
     if (message.effect !== "") {
       obj.effect = message.effect;
     }
+    if (message.hasColorBrightness !== false) {
+      obj.hasColorBrightness = message.hasColorBrightness;
+    }
+    if (message.colorBrightness !== 0) {
+      obj.colorBrightness = message.colorBrightness;
+    }
+    if (message.hasColorMode !== false) {
+      obj.hasColorMode = message.hasColorMode;
+    }
+    if (message.colorMode !== 0) {
+      obj.colorMode = colorModeToJSON(message.colorMode);
+    }
+    if (message.hasColdWhite !== false) {
+      obj.hasColdWhite = message.hasColdWhite;
+    }
+    if (message.coldWhite !== 0) {
+      obj.coldWhite = message.coldWhite;
+    }
+    if (message.hasWarmWhite !== false) {
+      obj.hasWarmWhite = message.hasWarmWhite;
+    }
+    if (message.warmWhite !== 0) {
+      obj.warmWhite = message.warmWhite;
+    }
     return obj;
   },
 
@@ -4431,6 +4835,14 @@ export const LightCommandRequest: MessageFns<LightCommandRequest> = {
     message.flashLength = object.flashLength ?? 0;
     message.hasEffect = object.hasEffect ?? false;
     message.effect = object.effect ?? "";
+    message.hasColorBrightness = object.hasColorBrightness ?? false;
+    message.colorBrightness = object.colorBrightness ?? 0;
+    message.hasColorMode = object.hasColorMode ?? false;
+    message.colorMode = object.colorMode ?? 0;
+    message.hasColdWhite = object.hasColdWhite ?? false;
+    message.coldWhite = object.coldWhite ?? 0;
+    message.hasWarmWhite = object.hasWarmWhite ?? false;
+    message.warmWhite = object.warmWhite ?? 0;
     return message;
   },
 };

@@ -37,6 +37,7 @@ const listEntityLight = {
     minMireds: 0,
     maxMireds: 0,
     effects: [],
+    supportedColorModes: [],
 };
 
 describe('espDevice', () => {

@@ -1,4 +1,5 @@
 import {
+    ColorMode,
     CoverOperation,
     CoverStateResponse,
     FanDirection,
@@ -72,6 +73,10 @@ describe('helpers', () => {
                 white: 0,
                 colorTemperature: 153,
                 effect: 'float',
+                colorBrightness: 1,
+                colorMode: ColorMode.COLOR_MODE_RGB,
+                coldWhite: 1,
+                warmWhite: 1,
             }).finish();
             const parsed = stateParser(readData(MessageTypes.LightStateResponse, payload)) as LightStateResponse;
             expect(parsed.key).toBe(5);
@@ -79,6 +84,10 @@ describe('helpers', () => {
             expect(parsed.brightness).toBeCloseTo(0.5);
             expect(parsed.effect).toBe('float');
             expect(parsed.colorTemperature).toBe(153);
+            expect(parsed.colorMode).toBe(ColorMode.COLOR_MODE_RGB);
+            expect(parsed.colorBrightness).toBeCloseTo(1);
+            expect(parsed.coldWhite).toBeCloseTo(1);
+            expect(parsed.warmWhite).toBeCloseTo(1);
         });
 
         it('decodes a cover state response', () => {
@@ -211,6 +220,7 @@ describe('helpers', () => {
                 minMireds: 0,
                 maxMireds: 0,
                 effects: [],
+                supportedColorModes: [],
             };
             const transformed$ = transformStates<LightStateResponse>(stateEvents$, listEntity);
 
@@ -272,6 +282,7 @@ describe('helpers', () => {
                 minMireds: 153,
                 maxMireds: 500,
                 effects: ['None', 'Rainbow'],
+                supportedColorModes: [ColorMode.COLOR_MODE_RGB, ColorMode.COLOR_MODE_COLD_WARM_WHITE],
             }).finish();
             const { id, component } = createComponents(
                 readData(MessageTypes.ListEntitiesLightResponse, payload),
@@ -286,6 +297,14 @@ describe('helpers', () => {
             expect(lightComponent.type).toBe('light');
             expect(lightComponent.supportsRgb).toBe(true);
             expect(lightComponent.supportsBrightness).toBe(true);
+            expect(lightComponent.supportsColorMode).toBe(true);
+            expect(lightComponent.supportedColorModes).toEqual([
+                ColorMode.COLOR_MODE_RGB,
+                ColorMode.COLOR_MODE_COLD_WARM_WHITE,
+            ]);
+            expect(lightComponent.supportsColorTemperature).toBe(true);
+            expect(lightComponent.minMireds).toBe(153);
+            expect(lightComponent.maxMireds).toBe(500);
             expect(lightComponent.availableEffects()).toEqual(['None', 'Rainbow']);
         });
 

@@ -1,4 +1,10 @@
-import { type CoverOperation, type FanDirection, type FanSpeed, type LegacyCoverState } from '../api/protobuf/api';
+import {
+    type ColorMode,
+    type CoverOperation,
+    type FanDirection,
+    type FanSpeed,
+    type LegacyCoverState,
+} from '../api/protobuf/api';
 
 export interface StateEvent {
     key: number;
@@ -46,5 +52,19 @@ export interface LightStateEvent extends StateEvent {
     red?: number;
     green?: number;
     blue?: number;
+    /**
+     * Active color mode. Firmware that predates color modes leaves it at
+     * COLOR_MODE_UNKNOWN.
+     */
+    colorMode?: ColorMode;
+    /**
+     * Level of the RGB channels relative to the master brightness, 0..1. When
+     * firmware does not report it, the channels are already at full scale.
+     */
+    colorBrightness?: number;
+    white?: number;
+    colorTemperature?: number;
+    coldWhite?: number;
+    warmWhite?: number;
     effect?: string;
 }

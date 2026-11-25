@@ -1,3 +1,5 @@
+import { type ColorMode } from '../api/protobuf/api';
+
 export interface ListEntity {
     key: number;
     name: string;
@@ -28,6 +30,15 @@ export interface LightEntity extends ListEntity {
     effects: string[];
     supportsBrightness: boolean;
     supportsRgb: boolean;
+    /**
+     * Color modes advertised by firmware that supports them. Empty on older
+     * firmware, which only sends the capability booleans above.
+     */
+    supportedColorModes?: ColorMode[];
+    supportsWhiteValue?: boolean;
+    supportsColorTemperature?: boolean;
+    minMireds?: number;
+    maxMireds?: number;
 }
 
 export interface FanEntity extends ListEntity {

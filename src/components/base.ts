@@ -90,13 +90,24 @@ export abstract class BaseComponent<L extends ListEntity = ListEntity, S extends
         this.teardown.next();
     }
 
-    protected queueCommand(type: MessageTypes, dataFn: () => Uint8Array, disableSerialise: boolean = false): void {
+    protected queueCommand(
+        type: MessageTypes,
+        dataFn: () => Uint8Array | undefined,
+        disableSerialise: boolean = false,
+    ): void {
         this.commandInPipeline
             .pipe(
                 filter((x: boolean) => !x || disableSerialise),
                 take(1),
                 tap(() => {
-                    this.commandInterface.sendEspMessage(type, dataFn());
+                    // A deferred command may no longer be valid by the time it
+                    // is built (e.g. the light changed mode); returning
+                    // undefined drops it instead of sending a stale payload.
+                    const data = dataFn();
+                    if (data === undefined) {
+                        return;
+                    }
+                    this.commandInterface.sendEspMessage(type, data);
                     this.commandInPipeline.next(true);
                 }),
                 takeUntil(this.teardown),

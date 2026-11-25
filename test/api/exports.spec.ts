@@ -1,5 +1,5 @@
 import * as api from '../../src';
-import { CoverOperation, FanDirection, FanSpeed, LegacyCoverState } from '../../src/api/protobuf/api';
+import { ColorMode, CoverOperation, FanDirection, FanSpeed, LegacyCoverState } from '../../src/api/protobuf/api';
 
 describe('package export surface', () => {
     it('exposes the documented runtime exports', () => {
@@ -57,6 +57,28 @@ describe('package export surface', () => {
         expect(api.LegacyCoverState).toBe(LegacyCoverState);
         expect(api.FanDirection).toBe(FanDirection);
         expect(api.FanSpeed).toBe(FanSpeed);
+    });
+
+    it('exposes the light color mode enum downstream code needs at runtime', () => {
+        expect(api.ColorMode).toBe(ColorMode);
+        // Pin every wire value: ColorMode members are capability bitmasks, so a
+        // regenerated enum with a wrong number would silently change commands.
+        const expected: Record<string, number> = {
+            COLOR_MODE_UNKNOWN: 0,
+            COLOR_MODE_ON_OFF: 1,
+            COLOR_MODE_LEGACY_BRIGHTNESS: 2,
+            COLOR_MODE_BRIGHTNESS: 3,
+            COLOR_MODE_WHITE: 7,
+            COLOR_MODE_COLOR_TEMPERATURE: 11,
+            COLOR_MODE_COLD_WARM_WHITE: 19,
+            COLOR_MODE_RGB: 35,
+            COLOR_MODE_RGB_WHITE: 39,
+            COLOR_MODE_RGB_COLOR_TEMPERATURE: 47,
+            COLOR_MODE_RGB_COLD_WARM_WHITE: 51,
+        };
+        for (const [name, value] of Object.entries(expected)) {
+            expect(api.ColorMode[name as keyof typeof api.ColorMode]).toBe(value);
+        }
     });
 
     it('does not leak internal helpers on the root namespace', () => {
