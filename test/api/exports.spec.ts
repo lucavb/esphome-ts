@@ -83,13 +83,15 @@ describe('package export surface', () => {
 
     it('does not leak internal helpers on the root namespace', () => {
         const surface = api as unknown as Record<string, unknown>;
-        // isLightComponent is an internal helper; if a future export adds it to
-        // the barrel, this tripwire fails loudly instead of silently widening
-        // the public surface.
-        expect(surface.isLightComponent).toBeUndefined();
-        expect(surface.stateParser).toBeUndefined();
-        expect(surface.createComponents).toBeUndefined();
-        expect(surface.transformStates).toBeUndefined();
+        // These component-kind registry internals must stay behind the barrels;
+        // if a future export adds one, this tripwire fails loudly instead of
+        // silently widening the public surface.
+        expect(surface.decodeState).toBeUndefined();
+        expect(surface.discover).toBeUndefined();
+        expect(surface.isStateResponse).toBeUndefined();
+        expect(surface.isComponentListResponse).toBeUndefined();
+        expect(surface.fallbackEntityId).toBeUndefined();
+        expect(surface.emptyCommandInterface).toBeUndefined();
     });
 
     it('no longer exports the removed RxjsSocket', () => {

@@ -188,6 +188,7 @@ describe('componentKinds', () => {
                 tilt: 0,
                 currentOperation: CoverOperation.COVER_OPERATION_IDLE,
             });
+            expect(ListEntitiesCoverResponse.decode(new Uint8Array()).supportsStop).toBe(false);
         });
 
         it('drops a malformed state frame instead of throwing', () => {
@@ -383,6 +384,29 @@ describe('componentKinds', () => {
             expect(component.oscillating).toBe(true);
             expect(component.direction).toBe(FanDirection.FAN_DIRECTION_REVERSE);
             expect(component.presetMode).toBe('sleep');
+        });
+
+        it('decodes a fan list response from golden wire bytes', () => {
+            // Pin the hand-added list fields independently of the generated
+            // encoder: key=7 fixed32 (2), supports_speed (6),
+            // supported_speed_count=3 (8), supported_preset_modes=["auto"] (12).
+            const payload = new Uint8Array([
+                0x15, 0x07, 0x00, 0x00, 0x00, 0x30, 0x01, 0x40, 0x03, 0x62, 0x04, 0x61, 0x75, 0x74, 0x6f,
+            ]);
+            const result = expectNew(
+                discover(
+                    readData(MessageTypes.ListEntitiesFanResponse, payload),
+                    discoveryDeps(new Subject<StateResponses>()),
+                ),
+            );
+
+            expect(result.id).toBe(fallbackEntityId(7));
+            expect(result.component).toBeInstanceOf(FanComponent);
+            const component = result.component as FanComponent;
+            expect(component.key).toBe(7);
+            expect(component.supportsSpeed).toBe(true);
+            expect(component.speedCount).toBe(3);
+            expect(component.supportedPresetModes).toEqual(['auto']);
         });
 
         it('uses the negotiated API version for the legacy fan speed enum', () => {

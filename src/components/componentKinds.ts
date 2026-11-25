@@ -49,7 +49,7 @@ export interface DiscoveryDeps {
     readonly stateEvents$: Observable<StateResponses>;
     readonly connection: CommandInterface;
     readonly knownComponents: ReadonlyMap<string, number>;
-    readonly apiVersion?: ApiVersion;
+    readonly apiVersion: ApiVersion;
 }
 
 export type DiscoveredEntity =
@@ -80,8 +80,9 @@ interface AnyComponentKind {
 const defineKind = <E extends ListEntity, S extends StateResponses>(kind: ComponentKind<E, S>): AnyComponentKind =>
     kind as unknown as AnyComponentKind;
 
-const DEFAULT_API_VERSION: ApiVersion = { major: 1, minor: 8 };
-
+// Text sensor list and state frames arrive on the wire but have no component
+// yet, so they are deliberately absent from this registry. Adding one is a
+// follow-up, not an oversight.
 const kinds: AnyComponentKind[] = [
     defineKind<BinarySensorEntity, BinarySensorStateResponse>({
         listType: MessageTypes.ListEntitiesBinarySensorResponse,
@@ -208,7 +209,7 @@ export const discover = (data: ReadData, deps: DiscoveryDeps): DiscoveredEntity 
         id,
         component: kind.create(entity, state$, {
             connection: deps.connection,
-            apiVersion: deps.apiVersion ?? DEFAULT_API_VERSION,
+            apiVersion: deps.apiVersion,
         }),
     };
 };
