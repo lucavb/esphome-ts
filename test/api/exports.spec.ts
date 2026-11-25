@@ -81,23 +81,41 @@ describe('package export surface', () => {
         }
     });
 
-    it('does not leak internal helpers on the root namespace', () => {
-        const surface = api as unknown as Record<string, unknown>;
-        // These component-kind registry internals must stay behind the barrels;
-        // if a future export adds one, this tripwire fails loudly instead of
-        // silently widening the public surface.
-        expect(surface.decodeState).toBeUndefined();
-        expect(surface.discover).toBeUndefined();
-        expect(surface.isStateResponse).toBeUndefined();
-        expect(surface.isComponentListResponse).toBeUndefined();
-        expect(surface.fallbackEntityId).toBeUndefined();
-        expect(surface.emptyCommandInterface).toBeUndefined();
-    });
-
-    it('no longer exports the removed RxjsSocket', () => {
-        // RxjsSocket became the internal TCP adapter in the Connection-seam
-        // refactor; the surface must not leak it.
-        const surface = api as unknown as Record<string, unknown>;
-        expect(surface.RxjsSocket).toBeUndefined();
+    it('exports exactly the supported runtime surface', () => {
+        // This snapshot is the public runtime contract: additions, removals and
+        // renames must update it consciously. It replaces the old name-by-name
+        // absence list, which went vacuous when the discovery helpers were
+        // renamed, and it keeps internal adapters such as RxjsSocket out of the
+        // surface.
+        expect(Object.keys(api).sort()).toEqual([
+            'BaseComponent',
+            'BinarySensorComponent',
+            'BinarySensorTypes',
+            'Client',
+            'ColorMode',
+            'ConnectionHandshakeError',
+            'CoverComponent',
+            'CoverOperation',
+            'EncryptionError',
+            'EncryptionHandshakeError',
+            'EncryptionPlaintextError',
+            'EncryptionRequiredError',
+            'EspDevice',
+            'EspSocket',
+            'FanComponent',
+            'FanDirection',
+            'FanSpeed',
+            'InvalidEncryptionKeyError',
+            'InvalidEncryptionKeyFormatError',
+            'InvalidPasswordError',
+            'LegacyCoverState',
+            'LightComponent',
+            'MessageTypes',
+            'SensorComponent',
+            'SwitchComponent',
+            'isFalse',
+            'isSwitchComponent',
+            'isTrue',
+        ]);
     });
 });
