@@ -77,3 +77,7 @@ _Avoid_: entity, accessory
 **Component kind**:
 Which of the supported shapes a Component has.
 _Avoid_: flavor, device type
+
+**Component-kind registry**:
+The module that maps a Component kind's list and state messages to its decoders and Component factory. Discovery resolves every entity through it, so adding a kind is one registry entry.
+_Avoid_: component factory (it also decodes state), entity map

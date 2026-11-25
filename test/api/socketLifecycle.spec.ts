@@ -35,7 +35,7 @@ import {
     SensorComponent,
     SwitchComponent,
 } from '../../src/components';
-import { fallbackEntityId } from '../../src/api/helpers';
+import { fallbackEntityId } from '../../src/components/componentKinds';
 
 const flush = (): Promise<void> => new Promise((resolve) => setImmediate(resolve));
 

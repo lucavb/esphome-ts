@@ -10,7 +10,7 @@ import {
 import { Subject } from 'rxjs';
 import { DebugConnection } from '../testHelpers/debugConnection';
 import { MessageTypes } from '../../src/api/requestResponseMatching';
-import { stateParser } from '../../src/api/helpers';
+import { decodeState } from '../../src/components/componentKinds';
 
 describe('CoverComponent', () => {
     let component: CoverComponent;
@@ -216,7 +216,7 @@ describe('CoverComponent', () => {
 
     it('uses legacy state and legacy commands for API versions before 1.1', () => {
         const legacyCover = new CoverComponent(listEntity, state, debugConnection, { major: 1, minor: 0 });
-        const legacyState = stateParser({
+        const legacyState = decodeState({
             type: MessageTypes.CoverStateResponse,
             payload: CoverStateResponse.encode({
                 key: listEntity.key,

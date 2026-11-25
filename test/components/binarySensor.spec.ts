@@ -2,7 +2,7 @@ import { BinarySensorComponent, type BinarySensorStateEvent } from '../../src';
 import { type CommandInterface } from '../../src/components/commandInterface';
 import { Subject } from 'rxjs';
 import { ListEntitiesBinarySensorResponse } from '../../src/api/protobuf/api';
-import { emptyCommandInterface } from '../../src/api/helpers';
+import { emptyCommandInterface } from '../../src/components/commandInterface';
 import { BinarySensorTypes } from '../../src/components/binarySensorTypes';
 import { type BinarySensorEntity } from '../../src/components/entities';
 

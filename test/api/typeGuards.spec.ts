@@ -1,6 +1,6 @@
 import { of } from 'rxjs';
 import { isSwitchComponent } from '../../src/api/typeGuards';
-import { emptyCommandInterface } from '../../src/api/helpers';
+import { emptyCommandInterface } from '../../src/components/commandInterface';
 import { LightComponent, SwitchComponent } from '../../src/components';
 
 const entity = { key: 1, name: 'name', uniqueId: 'uniqueId', objectId: 'objectId' };

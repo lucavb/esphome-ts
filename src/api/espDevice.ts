@@ -1,12 +1,16 @@
 import { EspSocket, type ReadData, ConnectionHandshakeError } from './espSocket';
 import { Client } from './client';
 import { type Connection } from './connection';
-import { createComponents, stateParser } from './helpers';
 import { isFalse, isTrue } from './booleans';
-import { listResponses, stateResponses } from './responses';
 import { MessageTypes } from './requestResponseMatching';
-import { type StateResponses } from './interfaces';
 import { BaseComponent } from '../components/base';
+import {
+    decodeState,
+    discover,
+    isComponentListResponse,
+    isStateResponse,
+    type StateResponses,
+} from '../components/componentKinds';
 import {
     BehaviorSubject,
     concat,
@@ -112,8 +116,8 @@ export class EspDevice {
         });
         this.client = new Client(this.socket);
         this.stateEvents$ = this.socket.espData$.pipe(
-            filter((data: ReadData) => stateResponses.has(data.type)),
-            map((data: ReadData) => stateParser(data)),
+            filter((data: ReadData) => isStateResponse(data.type)),
+            map((data: ReadData) => decodeState(data)),
             filter((parsed): parsed is StateResponses => !!parsed),
             // One decode shared by all components: without this, every discovered
             // component re-runs the filter+decode chain for the same state frame.
@@ -168,7 +172,9 @@ export class EspDevice {
 
     private handleDeviceMessage(data: ReadData): void {
         try {
-            if (listResponses.has(data.type)) {
+            if (data.type === MessageTypes.ListEntitiesDoneResponse) {
+                this.discovery.next(true);
+            } else if (isComponentListResponse(data.type)) {
                 this.parseListResponse(data);
             } else if (data.type === MessageTypes.DeviceInfoResponse) {
                 this.deviceInfo = DeviceInfoResponse.decode(data.payload);
@@ -296,26 +302,24 @@ export class EspDevice {
     }
 
     private parseListResponse(data: ReadData) {
-        if (data.type === MessageTypes.ListEntitiesDoneResponse) {
-            this.discovery.next(true);
+        const knownComponents = new Map<string, number>(
+            Object.entries(this.components).map(([id, component]) => [id, component.key]),
+        );
+        const result = discover(data, {
+            stateEvents$: this.stateEvents$,
+            connection: this.socket,
+            knownComponents,
+            apiVersion: this.apiVersion,
+        });
+        if (result === undefined) {
+            return;
+        }
+        if (result.status === 'new') {
+            this.components[result.id] = this.components[result.id] ?? result.component;
         } else {
-            const knownComponents = new Map<string, number>(
-                Object.entries(this.components).map(([id, component]) => [id, component.key]),
-            );
-            const { id, component, state$ } = createComponents(
-                data,
-                this.stateEvents$,
-                this.socket,
-                knownComponents,
-                this.apiVersion,
-            );
-            if (component) {
-                this.components[id] = this.components[id] ?? component;
-            } else if (state$) {
-                // createComponents resolves a known entity by its numeric key,
-                // retaining the original public id when object_id changes.
-                this.components[id]?.provideStateObservable(state$);
-            }
+            // Discovery resolves a known entity by its numeric key, retaining
+            // the original public id when object_id changes.
+            this.components[result.id]?.provideStateObservable(result.state$);
         }
     }
 }

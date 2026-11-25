@@ -6,7 +6,7 @@ import {
     LightStateResponse,
     ListEntitiesLightResponse,
 } from '../../src/api/protobuf/api';
-import { stateParser } from '../../src/api/helpers';
+import { decodeState } from '../../src/components/componentKinds';
 import { MessageTypes } from '../../src/api/requestResponseMatching';
 import { DebugConnection } from '../testHelpers/debugConnection';
 import { BinaryReader } from '@bufbuild/protobuf/wire';
@@ -1118,7 +1118,7 @@ describe('LightComponent', () => {
                 green: 0,
                 blue: 0,
             }).finish();
-            const decoded = stateParser({ type: MessageTypes.LightStateResponse, payload });
+            const decoded = decodeState({ type: MessageTypes.LightStateResponse, payload });
             expect(decoded).toBeDefined();
             stateObservable.next(decoded as LightStateEvent);
 
@@ -1147,7 +1147,7 @@ describe('LightComponent', () => {
                 green: 0,
                 blue: 0,
             }).finish();
-            modernState$.next(stateParser({ type: MessageTypes.LightStateResponse, payload }) as LightStateEvent);
+            modernState$.next(decodeState({ type: MessageTypes.LightStateResponse, payload }) as LightStateEvent);
 
             expect(modern.supportsColorMode).toBe(true);
             expect(modern.rgb.red).toBeCloseTo(128);
@@ -1175,7 +1175,7 @@ describe('LightComponent', () => {
                 coldWhite: 1,
                 warmWhite: 1,
             }).finish();
-            modernState$.next(stateParser({ type: MessageTypes.LightStateResponse, payload }) as LightStateEvent);
+            modernState$.next(decodeState({ type: MessageTypes.LightStateResponse, payload }) as LightStateEvent);
 
             expect(modern.colorMode).toBe(ColorMode.COLOR_MODE_COLD_WARM_WHITE);
             expect(modern.colorBrightness).toBe(0);
