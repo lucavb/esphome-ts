@@ -101,7 +101,7 @@ describe('componentKinds', () => {
                     }).finish(),
                 ),
             );
-            expect(sensor).toMatchObject({ key: 2 });
+            expect(sensor).toMatchObject({ key: 2, state: 21.5 });
 
             const cover = decodeState(
                 readData(
@@ -115,7 +115,12 @@ describe('componentKinds', () => {
                     }).finish(),
                 ),
             );
-            expect(cover).toMatchObject({ key: 3, position: 0.75, tilt: 0.5 });
+            expect(cover).toMatchObject({
+                key: 3,
+                position: 0.75,
+                tilt: 0.5,
+                currentOperation: CoverOperation.COVER_OPERATION_IS_OPENING,
+            });
 
             const light = decodeState(
                 readData(
@@ -127,10 +132,19 @@ describe('componentKinds', () => {
                         brightness: 0.5,
                         colorMode: ColorMode.COLOR_MODE_RGB,
                         effect: 'Rainbow',
+                        colorTemperature: 300,
+                        warmWhite: 0.5,
                     }).finish(),
                 ),
             );
-            expect(light).toMatchObject({ key: 4, state: true, colorMode: ColorMode.COLOR_MODE_RGB });
+            expect(light).toMatchObject({
+                key: 4,
+                state: true,
+                colorMode: ColorMode.COLOR_MODE_RGB,
+                effect: 'Rainbow',
+                colorTemperature: 300,
+                warmWhite: 0.5,
+            });
 
             const fan = decodeState(
                 readData(
@@ -239,6 +253,18 @@ describe('componentKinds', () => {
             expect(isComponentListResponse(MessageTypes.ListEntitiesRequest)).toBe(false);
             expect(isStateResponse(MessageTypes.ListEntitiesDoneResponse)).toBe(false);
             expect(isStateResponse(MessageTypes.ListEntitiesSwitchResponse)).toBe(false);
+        });
+
+        it('claims exactly the supported wire types', () => {
+            // Enumerate the numeric enum members; the string entries are reverse
+            // mappings. This fails when a kind claims a new list or state type
+            // without a conscious update here.
+            const allTypes = Object.values(MessageTypes).filter(
+                (value): value is MessageTypes => typeof value === 'number',
+            );
+            const sorted = (types: readonly MessageTypes[]): MessageTypes[] => [...types].sort((a, b) => a - b);
+            expect(sorted(allTypes.filter(isStateResponse))).toEqual(sorted(stateTypes));
+            expect(sorted(allTypes.filter(isComponentListResponse))).toEqual(sorted(listTypes));
         });
     });
 

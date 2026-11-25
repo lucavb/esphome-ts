@@ -21,6 +21,7 @@ import { emptyCommandInterface, type CommandInterface } from './commandInterface
 import { CoverComponent, type ApiVersion } from './cover';
 import {
     type BinarySensorEntity,
+    type ComponentType,
     type CoverEntity,
     type FanEntity,
     type LightEntity,
@@ -83,57 +84,74 @@ const defineKind = <E extends ListEntity, S extends StateResponses>(kind: Compon
 // Text sensor list and state frames arrive on the wire but have no component
 // yet, so they are deliberately absent from this registry. Adding one is a
 // follow-up, not an oversight.
-const kinds: AnyComponentKind[] = [
-    defineKind<BinarySensorEntity, BinarySensorStateResponse>({
+//
+// Keyed by ComponentType so the registry and the public kind union cannot
+// drift: `satisfies Record<ComponentType, AnyComponentKind>` makes a missing or
+// excess kind a compile error.
+const kinds = {
+    binarySensor: defineKind<BinarySensorEntity, BinarySensorStateResponse>({
         listType: MessageTypes.ListEntitiesBinarySensorResponse,
         stateType: MessageTypes.BinarySensorStateResponse,
         decodeEntity: (payload) => ListEntitiesBinarySensorResponse.decode(payload),
         decodeState: (payload) => BinarySensorStateResponse.decode(payload),
         create: (entity, state$) => new BinarySensorComponent(entity, state$, emptyCommandInterface),
     }),
-    defineKind<CoverEntity, CoverStateResponse>({
+    cover: defineKind<CoverEntity, CoverStateResponse>({
         listType: MessageTypes.ListEntitiesCoverResponse,
         stateType: MessageTypes.CoverStateResponse,
         decodeEntity: (payload) => ListEntitiesCoverResponse.decode(payload),
         decodeState: (payload) => CoverStateResponse.decode(payload),
         create: (entity, state$, deps) => new CoverComponent(entity, state$, deps.connection, deps.apiVersion),
     }),
-    defineKind<FanEntity, FanStateResponse>({
+    fan: defineKind<FanEntity, FanStateResponse>({
         listType: MessageTypes.ListEntitiesFanResponse,
         stateType: MessageTypes.FanStateResponse,
         decodeEntity: (payload) => ListEntitiesFanResponse.decode(payload),
         decodeState: (payload) => FanStateResponse.decode(payload),
         create: (entity, state$, deps) => new FanComponent(entity, state$, deps.connection, deps.apiVersion),
     }),
-    defineKind<LightEntity, LightStateResponse>({
+    light: defineKind<LightEntity, LightStateResponse>({
         listType: MessageTypes.ListEntitiesLightResponse,
         stateType: MessageTypes.LightStateResponse,
         decodeEntity: (payload) => ListEntitiesLightResponse.decode(payload),
         decodeState: (payload) => LightStateResponse.decode(payload),
         create: (entity, state$, deps) => new LightComponent(entity, state$, deps.connection),
     }),
-    defineKind<SensorEntity, SensorStateResponse>({
+    sensor: defineKind<SensorEntity, SensorStateResponse>({
         listType: MessageTypes.ListEntitiesSensorResponse,
         stateType: MessageTypes.SensorStateResponse,
         decodeEntity: (payload) => ListEntitiesSensorResponse.decode(payload),
         decodeState: (payload) => SensorStateResponse.decode(payload),
         create: (entity, state$) => new SensorComponent(entity, state$, emptyCommandInterface),
     }),
-    defineKind<ListEntity, SwitchStateResponse>({
+    switch: defineKind<ListEntity, SwitchStateResponse>({
         listType: MessageTypes.ListEntitiesSwitchResponse,
         stateType: MessageTypes.SwitchStateResponse,
         decodeEntity: (payload) => ListEntitiesSwitchResponse.decode(payload),
         decodeState: (payload) => SwitchStateResponse.decode(payload),
         create: (entity, state$, deps) => new SwitchComponent(entity, state$, deps.connection),
     }),
-];
+} satisfies Record<ComponentType, AnyComponentKind>;
 
-const componentKinds = new Map<MessageTypes, AnyComponentKind>(
-    kinds.map((kind): [MessageTypes, AnyComponentKind] => [kind.listType, kind]),
-);
-const stateKinds = new Map<MessageTypes, AnyComponentKind>(
-    kinds.map((kind): [MessageTypes, AnyComponentKind] => [kind.stateType, kind]),
-);
+const kindList = Object.values(kinds);
+
+// The Maps are keyed by wire type, not ComponentType. Reject a duplicate at
+// load time: Map construction is otherwise last-wins and would silently drop a
+// kind. The base switch caught exact duplicate case labels via eslint.
+const indexKinds = (typeOf: (kind: AnyComponentKind) => MessageTypes): Map<MessageTypes, AnyComponentKind> => {
+    const index = new Map<MessageTypes, AnyComponentKind>();
+    for (const kind of kindList) {
+        const type = typeOf(kind);
+        if (index.has(type)) {
+            throw new Error(`Duplicate component-kind message type: ${MessageTypes[type]}`);
+        }
+        index.set(type, kind);
+    }
+    return index;
+};
+
+const componentKinds = indexKinds((kind) => kind.listType);
+const stateKinds = indexKinds((kind) => kind.stateType);
 
 export const isStateResponse = (type: MessageTypes): boolean => stateKinds.has(type);
 
