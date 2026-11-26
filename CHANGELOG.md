@@ -1,3 +1,10 @@
+# [5.4.0](https://github.com/lucavb/esphome-ts/compare/v5.3.0...v5.4.0) (2026-11-26)
+
+
+### Features
+
+* **climate:** add climate component with setpoints, modes and presets ([0b22cc4](https://github.com/lucavb/esphome-ts/commit/0b22cc461443d0d4c374b78dddf28a3955f5c0e0))
+
 # [5.3.0](https://github.com/lucavb/esphome-ts/compare/v5.2.1...v5.3.0) (2026-11-25)
 
 
