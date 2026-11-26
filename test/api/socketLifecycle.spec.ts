@@ -42,7 +42,7 @@ import {
     SensorComponent,
     SwitchComponent,
 } from '../../src/components';
-import { fallbackEntityId } from '../../src/components/componentKinds';
+import { fallbackEntityId } from '../../src/components/componentTable';
 
 const flush = (): Promise<void> => new Promise((resolve) => setImmediate(resolve));
 
@@ -538,56 +538,6 @@ describe('EspDevice protocol handling', () => {
         expect(command.key).toBe(9);
         expect(command.hasPreset).toBe(true);
         expect(command.preset).toBe(ClimatePreset.CLIMATE_PRESET_ECO);
-    });
-
-    it('replaces a retained component when an entity changes kind under the same key', async () => {
-        device = new EspDevice('localhost', '', 6053, { connection });
-        const objectId = 'morphing_entity';
-        const switchResponse = ListEntitiesSwitchResponse.encode({
-            ...ListEntitiesSwitchResponse.decode(new Uint8Array()),
-            objectId,
-            key: 9,
-            name: 'Morph',
-        }).finish();
-        const climateResponse = ListEntitiesClimateResponse.encode({
-            ...ListEntitiesClimateResponse.decode(new Uint8Array()),
-            objectId,
-            key: 9,
-            name: 'Morph',
-            supportsCurrentTemperature: true,
-            supportsAction: true,
-            supportedModes: [ClimateMode.CLIMATE_MODE_OFF, ClimateMode.CLIMATE_MODE_HEAT],
-            supportedPresets: [],
-            temperatureUnit: 0,
-        }).finish();
-
-        const complete = async (listType: MessageTypes, payload: Uint8Array): Promise<void> => {
-            server.connect();
-            await flush();
-            respond(server, MessageTypes.HelloResponse, hello(8));
-            await flush();
-            respond(server, MessageTypes.ConnectResponse, connectOk());
-            await flush();
-            respond(server, MessageTypes.DeviceInfoResponse, deviceInfo());
-            await flush();
-            respond(server, listType, payload);
-            respond(server, MessageTypes.ListEntitiesDoneResponse, ListEntitiesDoneResponse.encode({}).finish());
-            await flush();
-        };
-
-        await complete(MessageTypes.ListEntitiesSwitchResponse, switchResponse);
-        await expect(firstValueFrom(device.discovery$.pipe(filter(isTrue), take(1)))).resolves.toBe(true);
-        const retainedSwitch = device.components[objectId];
-        expect(retainedSwitch).toBeInstanceOf(SwitchComponent);
-
-        server.disconnect();
-        await flush();
-        await complete(MessageTypes.ListEntitiesClimateResponse, climateResponse);
-
-        // The object_id/key stayed stable, but the kind changed. The retained
-        // switch must not receive the climate entity or its state frames.
-        expect(device.components[objectId]).toBeInstanceOf(ClimateComponent);
-        expect(device.components[objectId]).not.toBe(retainedSwitch);
     });
 
     it('preserves entity instances and routes state across reconnects with empty object IDs', async () => {

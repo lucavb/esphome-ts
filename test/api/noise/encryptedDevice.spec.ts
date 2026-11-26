@@ -22,7 +22,7 @@ import {
     ListEntitiesSwitchResponse,
     SwitchCommandRequest,
 } from '../../../src/api/protobuf/api';
-import { fallbackEntityId } from '../../../src/components/componentKinds';
+import { fallbackEntityId } from '../../../src/components/componentTable';
 import { SwitchComponent } from '../../../src/components';
 import { createInMemoryConnection, type InMemoryServerDriver } from '../../testHelpers/inMemoryConnection';
 import { NoiseServer } from './noiseServer';

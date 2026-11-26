@@ -6,13 +6,12 @@ import { isFalse, isTrue } from './booleans';
 import { MessageTypes } from './requestResponseMatching';
 import { BaseComponent } from '../components/base';
 import {
-    componentTypeForListType,
     decodeState,
-    discover,
     isComponentListResponse,
     isStateResponse,
     type StateResponses,
 } from '../components/componentKinds';
+import { ComponentTable } from '../components/componentTable';
 import {
     BehaviorSubject,
     concat,
@@ -77,7 +76,15 @@ export class EspDevice {
     // place.
     private readonly apiVersion = new ProtocolVersion(0, 0);
 
-    public readonly components: { [key: string]: BaseComponent } = {};
+    /**
+     * The Device's Components by public id: `device.components['kitchen']`.
+     * A live view of the Component table's record; the table is the only
+     * writer. Ids are the document ids the Device reports, with a key-based
+     * fallback when object_id is empty.
+     */
+    public readonly components: Readonly<Record<string, BaseComponent>>;
+
+    private readonly componentTable: ComponentTable;
 
     private readonly discovery: BehaviorSubject<boolean>;
     public readonly discovery$: Observable<boolean>;
@@ -127,6 +134,12 @@ export class EspDevice {
             // component re-runs the filter+decode chain for the same state frame.
             share(),
         );
+        this.componentTable = new ComponentTable({
+            stateEvents$: this.stateEvents$,
+            connection: this.socket,
+            apiVersion: this.apiVersion,
+        });
+        this.components = this.componentTable.byId;
         // Subscribe in this order: terminal failures first, then frame handling
         // (which must be ready before opening the connection), then the
         // connection and its retries.
@@ -179,7 +192,7 @@ export class EspDevice {
             if (data.type === MessageTypes.ListEntitiesDoneResponse) {
                 this.discovery.next(true);
             } else if (isComponentListResponse(data.type)) {
-                this.parseListResponse(data);
+                this.componentTable.applyListFrame(data);
             } else if (data.type === MessageTypes.DeviceInfoResponse) {
                 this.deviceInfo = DeviceInfoResponse.decode(data.payload);
             } else if (data.type === MessageTypes.ConnectResponse) {
@@ -295,46 +308,10 @@ export class EspDevice {
     }
 
     public terminate(): void {
-        Object.values(this.components).forEach((component: BaseComponent) => {
-            component.terminate();
-        });
+        this.componentTable.terminate();
         this.client.terminate();
         this.subscription.unsubscribe();
         this.errors.complete();
         this.socket.terminate();
-    }
-
-    private parseListResponse(data: ReadData) {
-        const knownComponents = new Map<string, number>(
-            Object.entries(this.components).map(([id, component]) => [id, component.key]),
-        );
-        const result = discover(data, {
-            stateEvents$: this.stateEvents$,
-            connection: this.socket,
-            knownComponents,
-            apiVersion: this.apiVersion,
-        });
-        if (result === undefined) {
-            return;
-        }
-        if (result.status === 'new') {
-            this.components[result.id] = this.components[result.id] ?? result.component;
-        } else {
-            // Discovery resolves a known entity by its numeric key, retaining
-            // the original public id when object_id changes. If the entity
-            // changed kind under the same key (e.g. a switch replaced by a
-            // climate with the same object_id after an OTA), the retained
-            // component is the wrong shape: replace it. The state router stays
-            // key-only because firmware keys are kind-independent.
-            const componentType = componentTypeForListType(data.type);
-            const component = this.components[result.id];
-            if (component === undefined || (componentType !== undefined && component.type !== componentType)) {
-                component?.terminate();
-                this.components[result.id] = result.create();
-                return;
-            }
-            component.provideStateObservable(result.state$);
-            component.provideListEntity(result.entity);
-        }
     }
 }

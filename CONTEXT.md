@@ -83,5 +83,9 @@ Which of the supported shapes a Component has.
 _Avoid_: flavor, device type
 
 **Component-kind registry**:
-The module that maps a Component kind's list and state messages to its decoders and Component factory. Discovery resolves every entity through it, so adding a kind is one registry entry.
+The module that maps a Component kind's list and state messages to its decoders and Component factory. The Component table resolves every list frame through it, so adding a kind is one registry entry.
 _Avoid_: component factory (it also decodes state), entity map
+
+**Component table**:
+The set of Components one Device currently exposes, keyed by the public ids `EspDevice.components` returns. It owns Discovery's reconciliation: each list frame is decoded through the Component-kind registry, then the entity's Component is created, rebound onto the retained instance, or replaced when the kind changed. The numeric entity key is the identity; a rebuild keeps the instance unless the kind moved.
+_Avoid_: entity map, component dictionary, kind registry

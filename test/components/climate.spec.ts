@@ -444,10 +444,13 @@ describe('ClimateComponent', () => {
         // instance and refreshes the list entity when a re-discovery follows.
         // The same existing component must pick up both changes.
         negotiatedVersion.updateFrom({ apiVersionMajor: 1, apiVersionMinor: 5 });
-        versioned.provideListEntity({
-            ...listEntity,
-            legacySupportsAway: false,
-            supportedPresets: [ClimatePreset.CLIMATE_PRESET_BOOST],
+        versioned.rebind({
+            state$: state,
+            entity: {
+                ...listEntity,
+                legacySupportsAway: false,
+                supportedPresets: [ClimatePreset.CLIMATE_PRESET_BOOST],
+            },
         });
         expect(versioned.supportedPresets).toEqual([ClimatePreset.CLIMATE_PRESET_BOOST]);
         versioned.setPreset(ClimatePreset.CLIMATE_PRESET_BOOST);
@@ -457,7 +460,10 @@ describe('ClimateComponent', () => {
 
         debugConnection.calls = [];
         negotiatedVersion.updateFrom({ apiVersionMajor: 1, apiVersionMinor: 4 });
-        versioned.provideListEntity({ ...listEntity, legacySupportsAway: true, supportedPresets: [] });
+        versioned.rebind({
+            state$: state,
+            entity: { ...listEntity, legacySupportsAway: true, supportedPresets: [] },
+        });
         expect(versioned.supportedPresets).toEqual([
             ClimatePreset.CLIMATE_PRESET_HOME,
             ClimatePreset.CLIMATE_PRESET_AWAY,

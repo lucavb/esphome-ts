@@ -57,6 +57,39 @@ describe('BaseComponent', () => {
         expect(component.ready).toBe(false);
     });
 
+    it('rebinds onto a new state stream and tears the previous subscription down', () => {
+        const original = new Subject<LightStateEvent>();
+        const replacement = new Subject<LightStateEvent>();
+        const rebound = new DemoComponent(listEntity, original, debugConnection);
+        expect(original.observed).toBe(true);
+
+        rebound.rebind({ state$: replacement, entity: { ...listEntity, name: 'renamed' } });
+
+        expect(rebound.name).toBe('renamed');
+        expect(original.observed).toBe(false);
+        expect(replacement.observed).toBe(true);
+        // A rebind that only swapped the list entity would never see this.
+        replacement.next({ key: listEntity.key, brightness: 7 });
+        expect(rebound.ready).toBe(true);
+
+        // The rebind path must keep the teardown guard, not just the
+        // constructor-attached stream.
+        rebound.terminate();
+        expect(replacement.observed).toBe(false);
+    });
+
+    it('keeps provideStateObservable as a deprecated delegate', () => {
+        const original = new Subject<LightStateEvent>();
+        const replacement = new Subject<LightStateEvent>();
+        const legacy = new DemoComponent(listEntity, original, debugConnection);
+
+        legacy.provideStateObservable(replacement);
+
+        expect(original.observed).toBe(false);
+        replacement.next({ key: listEntity.key, brightness: 12 });
+        expect(legacy.ready).toBe(true);
+    });
+
     it('unblocks the command pipeline after the 30s timeout', async () => {
         vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] });
         try {

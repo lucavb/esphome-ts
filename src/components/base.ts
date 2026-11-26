@@ -47,7 +47,7 @@ export abstract class BaseComponent<L extends ListEntity = ListEntity, S extends
             // NaN-valued state also compares equal instead of re-emitting.
             distinctUntilChanged(shallowEqualStates),
         );
-        this.provideStateObservable(state);
+        this.attachState(state);
         this.commandInPipeline
             .pipe(
                 debounceTime(30 * 1000),
@@ -58,7 +58,28 @@ export abstract class BaseComponent<L extends ListEntity = ListEntity, S extends
             .subscribe();
     }
 
+    /**
+     * @internal Rebind a retained Component after re-discovery: the Component
+     * keeps its identity and command pipeline, and adopts the refreshed
+     * list-entity data and state stream. The Component table is the only
+     * production caller.
+     */
+    public rebind(update: Readonly<{ state$: Observable<S>; entity: L }>): void {
+        this.listEntity = update.entity;
+        this.attachState(update.state$);
+    }
+
+    /**
+     * @deprecated Compatibility delegate for callers compiled against v5.3.0:
+     * attaches a state stream without refreshing the list entity. The
+     * constructor and {@link rebind} no longer call it, so a subclass override
+     * is not invoked internally. Removed in the next major.
+     */
     public provideStateObservable(state$: Observable<S>): void {
+        this.attachState(state$);
+    }
+
+    private attachState(state$: Observable<S>): void {
         this.terminatePreviousStateSubscription.next();
         state$
             .pipe(
@@ -68,11 +89,6 @@ export abstract class BaseComponent<L extends ListEntity = ListEntity, S extends
                 takeUntil(this.teardown),
             )
             .subscribe();
-    }
-
-    /** Refresh the capability data after a re-discovery (e.g. post-OTA). */
-    public provideListEntity(entity: L): void {
-        this.listEntity = entity;
     }
 
     public get ready(): boolean {
