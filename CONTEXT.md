@@ -54,6 +54,10 @@ _Avoid_: framer (plaintext only), parser
 The protocol module that sends messages and correlates responses with requests.
 _Avoid_: gateway
 
+**Protocol version**:
+The `major.minor` version a Device reports in its Hello response. Wire-format differences are gated on it: cover position and tilt before 1.1, the three-valued fan speed enum before 1.4, the legacy away flag before 1.5, advertised cover stop support before 1.8. `EspDevice` owns the single live value and adopts each handshake; Components read it through `atLeast` and their own feature thresholds.
+_Avoid_: API level, firmware version
+
 ### Life of a device
 
 **Discovery**:

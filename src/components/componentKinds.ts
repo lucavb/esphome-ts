@@ -17,11 +17,12 @@ import {
     SwitchStateResponse,
 } from '../api/protobuf/api';
 import { MessageTypes } from '../api/requestResponseMatching';
+import { type ApiVersion } from '../api/protocolVersion';
 import { type BaseComponent } from './base';
 import { BinarySensorComponent } from './binarySensor';
 import { ClimateComponent } from './climate';
 import { emptyCommandInterface, type CommandInterface } from './commandInterface';
-import { CoverComponent, type ApiVersion } from './cover';
+import { CoverComponent } from './cover';
 import {
     type BinarySensorEntity,
     type ClimateEntity,

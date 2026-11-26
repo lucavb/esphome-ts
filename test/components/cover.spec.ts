@@ -10,6 +10,7 @@ import {
 import { Subject } from 'rxjs';
 import { DebugConnection } from '../testHelpers/debugConnection';
 import { MessageTypes } from '../../src/api/requestResponseMatching';
+import { ProtocolVersion } from '../../src/api/protocolVersion';
 import { decodeState } from '../../src/components/componentKinds';
 
 describe('CoverComponent', () => {
@@ -270,7 +271,7 @@ describe('CoverComponent', () => {
     });
 
     it('exposes effective position and tilt support as the negotiated version changes', () => {
-        const negotiatedVersion = { major: 1, minor: 0 };
+        const negotiatedVersion = new ProtocolVersion(1, 0);
         const versionedCover = new CoverComponent(listEntity, state, debugConnection, negotiatedVersion);
 
         state.next({
@@ -287,10 +288,10 @@ describe('CoverComponent', () => {
         versionedCover.setTilt(0.5);
         expect(debugConnection.calls).toHaveLength(0);
 
-        // EspDevice updates this shared version object when a reconnect
-        // negotiates a new API version. The same existing component should
-        // immediately expose and allow protocol-supported controls.
-        negotiatedVersion.minor = 1;
+        // EspDevice adopts the version of a reconnected handshake on the shared
+        // instance. The same existing component should immediately expose and
+        // allow protocol-supported controls.
+        negotiatedVersion.updateFrom({ apiVersionMajor: 1, apiVersionMinor: 1 });
         state.next({
             key: listEntity.key,
             legacyState: LegacyCoverState.LEGACY_COVER_STATE_CLOSED,
@@ -309,7 +310,7 @@ describe('CoverComponent', () => {
         versionedCover.setTilt(0.7);
         expect(sentCommand().hasTilt).toBe(true);
 
-        negotiatedVersion.minor = 0;
+        negotiatedVersion.updateFrom({ apiVersionMajor: 1, apiVersionMinor: 0 });
         expect(versionedCover.supportsPosition).toBe(false);
         expect(versionedCover.supportsTilt).toBe(false);
         expect(versionedCover.position).toBeUndefined();

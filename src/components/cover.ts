@@ -4,21 +4,22 @@ import { type CoverStateEvent } from './states';
 import { type CommandInterface } from './commandInterface';
 import { MessageTypes } from '../api/requestResponseMatching';
 import { CoverCommandRequest, type CoverOperation, LegacyCoverCommand, LegacyCoverState } from '../api/protobuf/api';
+import { atLeast, LATEST_KNOWN_PROTOCOL_VERSION, type ApiVersion } from '../api/protocolVersion';
 import { type Observable } from 'rxjs';
 
-export interface ApiVersion {
-    major: number;
-    minor: number;
-}
-
-const DEFAULT_API_VERSION: ApiVersion = { major: 1, minor: 8 };
+// API 1.1 introduced position and tilt: before it, commands are the legacy
+// open/close/stop enum and the state carries no position.
+const SINCE_POSITION_AND_TILT: ApiVersion = { major: 1, minor: 1 };
+// API 1.8 made stop support an advertised capability; before it every cover is
+// assumed to accept stop.
+const SINCE_STOP_CAPABILITY: ApiVersion = { major: 1, minor: 8 };
 
 export class CoverComponent extends BaseComponent<CoverEntity, CoverStateEvent> {
     constructor(
         listEntity: CoverEntity,
         state: Observable<CoverStateEvent>,
         commandInterface: CommandInterface,
-        private readonly apiVersion: ApiVersion = DEFAULT_API_VERSION,
+        private readonly apiVersion: ApiVersion = LATEST_KNOWN_PROTOCOL_VERSION,
     ) {
         super(listEntity, state, commandInterface);
     }
@@ -73,15 +74,15 @@ export class CoverComponent extends BaseComponent<CoverEntity, CoverStateEvent> 
     }
 
     public get supportsPosition(): boolean {
-        return this.isApiVersionAtLeast(1, 1) && this.listEntity.supportsPosition;
+        return atLeast(this.apiVersion, SINCE_POSITION_AND_TILT) && this.listEntity.supportsPosition;
     }
 
     public get supportsStop(): boolean {
-        return !this.isApiVersionAtLeast(1, 8) || (this.listEntity.supportsStop ?? false);
+        return !atLeast(this.apiVersion, SINCE_STOP_CAPABILITY) || (this.listEntity.supportsStop ?? false);
     }
 
     public get supportsTilt(): boolean {
-        return this.isApiVersionAtLeast(1, 1) && this.listEntity.supportsTilt;
+        return atLeast(this.apiVersion, SINCE_POSITION_AND_TILT) && this.listEntity.supportsTilt;
     }
 
     /**
@@ -148,11 +149,7 @@ export class CoverComponent extends BaseComponent<CoverEntity, CoverStateEvent> 
     }
 
     private get usesLegacyProtocol(): boolean {
-        return !this.isApiVersionAtLeast(1, 1);
-    }
-
-    private isApiVersionAtLeast(major: number, minor: number): boolean {
-        return this.apiVersion.major > major || (this.apiVersion.major === major && this.apiVersion.minor >= minor);
+        return !atLeast(this.apiVersion, SINCE_POSITION_AND_TILT);
     }
 
     private sendCommand(command: {

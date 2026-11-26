@@ -13,6 +13,7 @@ import {
 import { Subject } from 'rxjs';
 import { DebugConnection } from '../testHelpers/debugConnection';
 import { MessageTypes } from '../../src/api/requestResponseMatching';
+import { ProtocolVersion } from '../../src/api/protocolVersion';
 
 describe('ClimateComponent', () => {
     let component: ClimateComponent;
@@ -424,7 +425,7 @@ describe('ClimateComponent', () => {
     });
 
     it('exposes effective presets as the negotiated version changes', () => {
-        const negotiatedVersion = { major: 1, minor: 4 };
+        const negotiatedVersion = new ProtocolVersion(1, 4);
         const versioned = new ClimateComponent(
             { ...listEntity, legacySupportsAway: true, supportedPresets: [] },
             state,
@@ -439,10 +440,10 @@ describe('ClimateComponent', () => {
         versioned.setPreset(ClimatePreset.CLIMATE_PRESET_BOOST);
         expect(debugConnection.calls.length).toBe(0);
 
-        // EspDevice updates the shared version object and refreshes the list
-        // entity when a re-discovery follows a reconnect. The same existing
-        // component must pick up both changes.
-        negotiatedVersion.minor = 5;
+        // EspDevice adopts the version of a reconnected handshake on the shared
+        // instance and refreshes the list entity when a re-discovery follows.
+        // The same existing component must pick up both changes.
+        negotiatedVersion.updateFrom({ apiVersionMajor: 1, apiVersionMinor: 5 });
         versioned.provideListEntity({
             ...listEntity,
             legacySupportsAway: false,
@@ -455,7 +456,7 @@ describe('ClimateComponent', () => {
         expect(sentCommand().preset).toBe(ClimatePreset.CLIMATE_PRESET_BOOST);
 
         debugConnection.calls = [];
-        negotiatedVersion.minor = 4;
+        negotiatedVersion.updateFrom({ apiVersionMajor: 1, apiVersionMinor: 4 });
         versioned.provideListEntity({ ...listEntity, legacySupportsAway: true, supportedPresets: [] });
         expect(versioned.supportedPresets).toEqual([
             ClimatePreset.CLIMATE_PRESET_HOME,

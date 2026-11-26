@@ -2,23 +2,23 @@ import { BaseComponent } from './base';
 import { type ComponentType, type FanEntity } from './entities';
 import { type FanStateEvent } from './states';
 import { type CommandInterface } from './commandInterface';
-import { type ApiVersion } from './cover';
+import { atLeast, LATEST_KNOWN_PROTOCOL_VERSION, type ApiVersion } from '../api/protocolVersion';
 import { type Observable } from 'rxjs';
 import { MessageTypes } from '../api/requestResponseMatching';
 import { FanCommandRequest, FanDirection, FanSpeed } from '../api/protobuf/api';
 
-const DEFAULT_API_VERSION: ApiVersion = { major: 1, minor: 8 };
 // Firmware before API 1.4 only understands the three-valued FanSpeed enum and
 // has no supported_speed_count field, so the legacy path always has three
 // levels. Firmware 1.4/1.5 reports both speed forms; 1.6+ reports speed_level.
 const LEGACY_SPEED_COUNT = 3;
+const SINCE_SPEED_LEVEL: ApiVersion = { major: 1, minor: 4 };
 
 export class FanComponent extends BaseComponent<FanEntity, FanStateEvent> {
     constructor(
         listEntity: FanEntity,
         state: Observable<FanStateEvent>,
         commandInterface: CommandInterface,
-        private readonly apiVersion: ApiVersion = DEFAULT_API_VERSION,
+        private readonly apiVersion: ApiVersion = LATEST_KNOWN_PROTOCOL_VERSION,
     ) {
         super(listEntity, state, commandInterface);
     }
@@ -201,7 +201,7 @@ export class FanComponent extends BaseComponent<FanEntity, FanStateEvent> {
     }
 
     private get usesLegacySpeed(): boolean {
-        return !(this.apiVersion.major > 1 || (this.apiVersion.major === 1 && this.apiVersion.minor >= 4));
+        return !atLeast(this.apiVersion, SINCE_SPEED_LEVEL);
     }
 
     private legacySpeedForLevel(level: number): FanSpeed {

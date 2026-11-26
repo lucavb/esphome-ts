@@ -1,4 +1,5 @@
 import { EspSocket, type ReadData, ConnectionHandshakeError } from './espSocket';
+import { ProtocolVersion } from './protocolVersion';
 import { Client } from './client';
 import { type Connection } from './connection';
 import { isFalse, isTrue } from './booleans';
@@ -70,9 +71,11 @@ export class EspDevice {
     public deviceInfo?: DeviceInfoResponse;
 
     // The HelloResponse selects the protocol version for each connection. Keep
-    // one mutable per-device value so covers created on discovery and reused
-    // after reconnects see the version negotiated on the latest handshake.
-    private readonly apiVersion = { major: 0, minor: 0 };
+    // one live per-device value so covers created on discovery and reused
+    // after reconnects see the version negotiated on the latest handshake:
+    // components hold this same instance, and the handshake updates it in
+    // place.
+    private readonly apiVersion = new ProtocolVersion(0, 0);
 
     public readonly components: { [key: string]: BaseComponent } = {};
 
@@ -216,8 +219,7 @@ export class EspDevice {
         // Client requests send eagerly. defer sends a fresh HelloRequest on every retry.
         return defer(() => this.client.hello({ clientInfo: 'esphome-ts' })).pipe(
             tap((helloResponse) => {
-                this.apiVersion.major = helloResponse.apiVersionMajor;
-                this.apiVersion.minor = helloResponse.apiVersionMinor;
+                this.apiVersion.updateFrom(helloResponse);
             }),
             switchMap(() => {
                 // Newer devices ignore authentication; send it without waiting for

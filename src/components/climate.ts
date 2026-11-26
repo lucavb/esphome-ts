@@ -2,7 +2,7 @@ import { BaseComponent } from './base';
 import { type ClimateEntity, type ComponentType } from './entities';
 import { type ClimateStateEvent } from './states';
 import { type CommandInterface } from './commandInterface';
-import { type ApiVersion } from './cover';
+import { atLeast, LATEST_KNOWN_PROTOCOL_VERSION, type ApiVersion } from '../api/protocolVersion';
 import { type Observable } from 'rxjs';
 import { MessageTypes } from '../api/requestResponseMatching';
 import {
@@ -15,7 +15,9 @@ import {
     type TemperatureUnit,
 } from '../api/protobuf/api';
 
-const DEFAULT_API_VERSION: ApiVersion = { major: 1, minor: 8 };
+// API 1.5 replaced the legacy away toggle with presets; older firmware only
+// understands the away flag.
+const SINCE_PRESETS: ApiVersion = { major: 1, minor: 5 };
 
 // ts-proto keeps unknown wire enum values as their raw number instead of
 // mapping them to a sentinel, so every state enum is range-checked before it
@@ -63,7 +65,7 @@ export class ClimateComponent extends BaseComponent<ClimateEntity, ClimateStateE
         listEntity: ClimateEntity,
         state: Observable<ClimateStateEvent>,
         commandInterface: CommandInterface,
-        private readonly apiVersion: ApiVersion = DEFAULT_API_VERSION,
+        private readonly apiVersion: ApiVersion = LATEST_KNOWN_PROTOCOL_VERSION,
     ) {
         super(listEntity, state, commandInterface);
     }
@@ -473,9 +475,7 @@ export class ClimateComponent extends BaseComponent<ClimateEntity, ClimateStateE
     }
 
     private get usesLegacyPresets(): boolean {
-        // API 1.5 replaced the legacy away toggle with presets. Firmware that
-        // negotiates an older version only understands the away flag.
-        return !(this.apiVersion.major > 1 || (this.apiVersion.major === 1 && this.apiVersion.minor >= 5));
+        return !atLeast(this.apiVersion, SINCE_PRESETS);
     }
 
     private sendCommand(command: Omit<Partial<ClimateCommandRequest>, 'key'>): void {
