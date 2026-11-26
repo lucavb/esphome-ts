@@ -424,11 +424,18 @@ export function serviceArgTypeToJSON(object: ServiceArgType): string {
 /** ==================== CLIMATE ==================== */
 export enum ClimateMode {
   CLIMATE_MODE_OFF = 0,
-  CLIMATE_MODE_AUTO = 1,
+  /**
+   * CLIMATE_MODE_HEAT_COOL - Firmware that predates the heat/cool and auto split reported its
+   * automatic heat/cool mode with this wire value, so value 1 decodes as
+   * HEAT_COOL on old and new firmware alike.
+   */
+  CLIMATE_MODE_HEAT_COOL = 1,
   CLIMATE_MODE_COOL = 2,
   CLIMATE_MODE_HEAT = 3,
   CLIMATE_MODE_FAN_ONLY = 4,
   CLIMATE_MODE_DRY = 5,
+  /** CLIMATE_MODE_AUTO - Older firmware does not know this value and ignores it in commands. */
+  CLIMATE_MODE_AUTO = 6,
   UNRECOGNIZED = -1,
 }
 
@@ -438,8 +445,8 @@ export function climateModeFromJSON(object: any): ClimateMode {
     case "CLIMATE_MODE_OFF":
       return ClimateMode.CLIMATE_MODE_OFF;
     case 1:
-    case "CLIMATE_MODE_AUTO":
-      return ClimateMode.CLIMATE_MODE_AUTO;
+    case "CLIMATE_MODE_HEAT_COOL":
+      return ClimateMode.CLIMATE_MODE_HEAT_COOL;
     case 2:
     case "CLIMATE_MODE_COOL":
       return ClimateMode.CLIMATE_MODE_COOL;
@@ -452,6 +459,9 @@ export function climateModeFromJSON(object: any): ClimateMode {
     case 5:
     case "CLIMATE_MODE_DRY":
       return ClimateMode.CLIMATE_MODE_DRY;
+    case 6:
+    case "CLIMATE_MODE_AUTO":
+      return ClimateMode.CLIMATE_MODE_AUTO;
     case -1:
     case "UNRECOGNIZED":
     default:
@@ -463,8 +473,8 @@ export function climateModeToJSON(object: ClimateMode): string {
   switch (object) {
     case ClimateMode.CLIMATE_MODE_OFF:
       return "CLIMATE_MODE_OFF";
-    case ClimateMode.CLIMATE_MODE_AUTO:
-      return "CLIMATE_MODE_AUTO";
+    case ClimateMode.CLIMATE_MODE_HEAT_COOL:
+      return "CLIMATE_MODE_HEAT_COOL";
     case ClimateMode.CLIMATE_MODE_COOL:
       return "CLIMATE_MODE_COOL";
     case ClimateMode.CLIMATE_MODE_HEAT:
@@ -473,6 +483,8 @@ export function climateModeToJSON(object: ClimateMode): string {
       return "CLIMATE_MODE_FAN_ONLY";
     case ClimateMode.CLIMATE_MODE_DRY:
       return "CLIMATE_MODE_DRY";
+    case ClimateMode.CLIMATE_MODE_AUTO:
+      return "CLIMATE_MODE_AUTO";
     case ClimateMode.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";
@@ -489,6 +501,7 @@ export enum ClimateFanMode {
   CLIMATE_FAN_MIDDLE = 6,
   CLIMATE_FAN_FOCUS = 7,
   CLIMATE_FAN_DIFFUSE = 8,
+  CLIMATE_FAN_QUIET = 9,
   UNRECOGNIZED = -1,
 }
 
@@ -521,6 +534,9 @@ export function climateFanModeFromJSON(object: any): ClimateFanMode {
     case 8:
     case "CLIMATE_FAN_DIFFUSE":
       return ClimateFanMode.CLIMATE_FAN_DIFFUSE;
+    case 9:
+    case "CLIMATE_FAN_QUIET":
+      return ClimateFanMode.CLIMATE_FAN_QUIET;
     case -1:
     case "UNRECOGNIZED":
     default:
@@ -548,6 +564,8 @@ export function climateFanModeToJSON(object: ClimateFanMode): string {
       return "CLIMATE_FAN_FOCUS";
     case ClimateFanMode.CLIMATE_FAN_DIFFUSE:
       return "CLIMATE_FAN_DIFFUSE";
+    case ClimateFanMode.CLIMATE_FAN_QUIET:
+      return "CLIMATE_FAN_QUIET";
     case ClimateFanMode.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";
@@ -607,6 +625,7 @@ export enum ClimateAction {
   CLIMATE_ACTION_IDLE = 4,
   CLIMATE_ACTION_DRYING = 5,
   CLIMATE_ACTION_FAN = 6,
+  CLIMATE_ACTION_DEFROSTING = 7,
   UNRECOGNIZED = -1,
 }
 
@@ -630,6 +649,9 @@ export function climateActionFromJSON(object: any): ClimateAction {
     case 6:
     case "CLIMATE_ACTION_FAN":
       return ClimateAction.CLIMATE_ACTION_FAN;
+    case 7:
+    case "CLIMATE_ACTION_DEFROSTING":
+      return ClimateAction.CLIMATE_ACTION_DEFROSTING;
     case -1:
     case "UNRECOGNIZED":
     default:
@@ -651,7 +673,117 @@ export function climateActionToJSON(object: ClimateAction): string {
       return "CLIMATE_ACTION_DRYING";
     case ClimateAction.CLIMATE_ACTION_FAN:
       return "CLIMATE_ACTION_FAN";
+    case ClimateAction.CLIMATE_ACTION_DEFROSTING:
+      return "CLIMATE_ACTION_DEFROSTING";
     case ClimateAction.UNRECOGNIZED:
+    default:
+      return "UNRECOGNIZED";
+  }
+}
+
+export enum ClimatePreset {
+  CLIMATE_PRESET_NONE = 0,
+  CLIMATE_PRESET_HOME = 1,
+  CLIMATE_PRESET_AWAY = 2,
+  CLIMATE_PRESET_BOOST = 3,
+  CLIMATE_PRESET_COMFORT = 4,
+  CLIMATE_PRESET_ECO = 5,
+  CLIMATE_PRESET_SLEEP = 6,
+  CLIMATE_PRESET_ACTIVITY = 7,
+  UNRECOGNIZED = -1,
+}
+
+export function climatePresetFromJSON(object: any): ClimatePreset {
+  switch (object) {
+    case 0:
+    case "CLIMATE_PRESET_NONE":
+      return ClimatePreset.CLIMATE_PRESET_NONE;
+    case 1:
+    case "CLIMATE_PRESET_HOME":
+      return ClimatePreset.CLIMATE_PRESET_HOME;
+    case 2:
+    case "CLIMATE_PRESET_AWAY":
+      return ClimatePreset.CLIMATE_PRESET_AWAY;
+    case 3:
+    case "CLIMATE_PRESET_BOOST":
+      return ClimatePreset.CLIMATE_PRESET_BOOST;
+    case 4:
+    case "CLIMATE_PRESET_COMFORT":
+      return ClimatePreset.CLIMATE_PRESET_COMFORT;
+    case 5:
+    case "CLIMATE_PRESET_ECO":
+      return ClimatePreset.CLIMATE_PRESET_ECO;
+    case 6:
+    case "CLIMATE_PRESET_SLEEP":
+      return ClimatePreset.CLIMATE_PRESET_SLEEP;
+    case 7:
+    case "CLIMATE_PRESET_ACTIVITY":
+      return ClimatePreset.CLIMATE_PRESET_ACTIVITY;
+    case -1:
+    case "UNRECOGNIZED":
+    default:
+      return ClimatePreset.UNRECOGNIZED;
+  }
+}
+
+export function climatePresetToJSON(object: ClimatePreset): string {
+  switch (object) {
+    case ClimatePreset.CLIMATE_PRESET_NONE:
+      return "CLIMATE_PRESET_NONE";
+    case ClimatePreset.CLIMATE_PRESET_HOME:
+      return "CLIMATE_PRESET_HOME";
+    case ClimatePreset.CLIMATE_PRESET_AWAY:
+      return "CLIMATE_PRESET_AWAY";
+    case ClimatePreset.CLIMATE_PRESET_BOOST:
+      return "CLIMATE_PRESET_BOOST";
+    case ClimatePreset.CLIMATE_PRESET_COMFORT:
+      return "CLIMATE_PRESET_COMFORT";
+    case ClimatePreset.CLIMATE_PRESET_ECO:
+      return "CLIMATE_PRESET_ECO";
+    case ClimatePreset.CLIMATE_PRESET_SLEEP:
+      return "CLIMATE_PRESET_SLEEP";
+    case ClimatePreset.CLIMATE_PRESET_ACTIVITY:
+      return "CLIMATE_PRESET_ACTIVITY";
+    case ClimatePreset.UNRECOGNIZED:
+    default:
+      return "UNRECOGNIZED";
+  }
+}
+
+export enum TemperatureUnit {
+  TEMPERATURE_UNIT_CELSIUS = 0,
+  TEMPERATURE_UNIT_FAHRENHEIT = 1,
+  TEMPERATURE_UNIT_KELVIN = 2,
+  UNRECOGNIZED = -1,
+}
+
+export function temperatureUnitFromJSON(object: any): TemperatureUnit {
+  switch (object) {
+    case 0:
+    case "TEMPERATURE_UNIT_CELSIUS":
+      return TemperatureUnit.TEMPERATURE_UNIT_CELSIUS;
+    case 1:
+    case "TEMPERATURE_UNIT_FAHRENHEIT":
+      return TemperatureUnit.TEMPERATURE_UNIT_FAHRENHEIT;
+    case 2:
+    case "TEMPERATURE_UNIT_KELVIN":
+      return TemperatureUnit.TEMPERATURE_UNIT_KELVIN;
+    case -1:
+    case "UNRECOGNIZED":
+    default:
+      return TemperatureUnit.UNRECOGNIZED;
+  }
+}
+
+export function temperatureUnitToJSON(object: TemperatureUnit): string {
+  switch (object) {
+    case TemperatureUnit.TEMPERATURE_UNIT_CELSIUS:
+      return "TEMPERATURE_UNIT_CELSIUS";
+    case TemperatureUnit.TEMPERATURE_UNIT_FAHRENHEIT:
+      return "TEMPERATURE_UNIT_FAHRENHEIT";
+    case TemperatureUnit.TEMPERATURE_UNIT_KELVIN:
+      return "TEMPERATURE_UNIT_KELVIN";
+    case TemperatureUnit.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";
   }
@@ -1111,11 +1243,35 @@ export interface ListEntitiesClimateResponse {
   supportedModes: ClimateMode[];
   visualMinTemperature: number;
   visualMaxTemperature: number;
-  visualTemperatureStep: number;
-  supportsAway: boolean;
+  visualTargetTemperatureStep: number;
+  /**
+   * Only reported by firmware before API version 1.5; newer firmware
+   * advertises CLIMATE_PRESET_AWAY in supported_presets instead.
+   */
+  legacySupportsAway: boolean;
   supportsAction: boolean;
   supportedFanModes: ClimateFanMode[];
   supportedSwingModes: ClimateSwingMode[];
+  supportedCustomFanModes: string[];
+  supportedPresets: ClimatePreset[];
+  supportedCustomPresets: string[];
+  visualCurrentTemperatureStep: number;
+  supportsCurrentHumidity: boolean;
+  supportsTargetHumidity: boolean;
+  visualMinHumidity: number;
+  visualMaxHumidity: number;
+  /**
+   * Fields 18 (disabled_by_default), 19 (icon), 20 (entity_category), 26
+   * (device_id) and 27 (feature_flags) are intentionally not modelled: the
+   * first four are entity metadata, and this client addresses main-device
+   * entities only (sub-device climate entities are not routed). The feature
+   * flags carry no wire-command-relevant information the capability booleans
+   * do not — firmware still sends the booleans alongside them, folding the
+   * requires-two-point trait into supports_two_point_target_temperature — but
+   * the booleans are deprecated upstream in favour of feature_flags; revisit
+   * when firmware stops sending them.
+   */
+  temperatureUnit: TemperatureUnit;
 }
 
 export interface ClimateStateResponse {
@@ -1125,10 +1281,24 @@ export interface ClimateStateResponse {
   targetTemperature: number;
   targetTemperatureLow: number;
   targetTemperatureHigh: number;
-  away: boolean;
+  /**
+   * Only sent by firmware before API version 1.5; newer firmware reports
+   * the preset instead.
+   */
+  unusedLegacyAway: boolean;
   action: ClimateAction;
   fanMode: ClimateFanMode;
   swingMode: ClimateSwingMode;
+  customFanMode: string;
+  preset: ClimatePreset;
+  customPreset: string;
+  currentHumidity: number;
+  targetHumidity: number;
+  /**
+   * Field 16 (device_id) is intentionally not modelled: this client addresses
+   * main-device entities only, so sub-device states are not routed.
+   */
+  missingState: boolean;
 }
 
 export interface ClimateCommandRequest {
@@ -1141,12 +1311,28 @@ export interface ClimateCommandRequest {
   targetTemperatureLow: number;
   hasTargetTemperatureHigh: boolean;
   targetTemperatureHigh: number;
-  hasAway: boolean;
-  away: boolean;
+  /**
+   * Legacy away toggle for firmware before API version 1.5; newer firmware
+   * takes has_preset with CLIMATE_PRESET_AWAY instead.
+   */
+  unusedHasLegacyAway: boolean;
+  unusedLegacyAway: boolean;
   hasFanMode: boolean;
   fanMode: ClimateFanMode;
   hasSwingMode: boolean;
   swingMode: ClimateSwingMode;
+  hasCustomFanMode: boolean;
+  customFanMode: string;
+  hasPreset: boolean;
+  preset: ClimatePreset;
+  hasCustomPreset: boolean;
+  customPreset: string;
+  hasTargetHumidity: boolean;
+  /**
+   * Field 24 (device_id) is intentionally not modelled: this client addresses
+   * main-device entities only, so sub-device commands are not routed.
+   */
+  targetHumidity: number;
 }
 
 function createBaseHelloRequest(): HelloRequest {
@@ -7471,11 +7657,20 @@ function createBaseListEntitiesClimateResponse(): ListEntitiesClimateResponse {
     supportedModes: [],
     visualMinTemperature: 0,
     visualMaxTemperature: 0,
-    visualTemperatureStep: 0,
-    supportsAway: false,
+    visualTargetTemperatureStep: 0,
+    legacySupportsAway: false,
     supportsAction: false,
     supportedFanModes: [],
     supportedSwingModes: [],
+    supportedCustomFanModes: [],
+    supportedPresets: [],
+    supportedCustomPresets: [],
+    visualCurrentTemperatureStep: 0,
+    supportsCurrentHumidity: false,
+    supportsTargetHumidity: false,
+    visualMinHumidity: 0,
+    visualMaxHumidity: 0,
+    temperatureUnit: 0,
   };
 }
 
@@ -7510,11 +7705,11 @@ export const ListEntitiesClimateResponse: MessageFns<ListEntitiesClimateResponse
     if (message.visualMaxTemperature !== 0) {
       writer.uint32(77).float(message.visualMaxTemperature);
     }
-    if (message.visualTemperatureStep !== 0) {
-      writer.uint32(85).float(message.visualTemperatureStep);
+    if (message.visualTargetTemperatureStep !== 0) {
+      writer.uint32(85).float(message.visualTargetTemperatureStep);
     }
-    if (message.supportsAway !== false) {
-      writer.uint32(88).bool(message.supportsAway);
+    if (message.legacySupportsAway !== false) {
+      writer.uint32(88).bool(message.legacySupportsAway);
     }
     if (message.supportsAction !== false) {
       writer.uint32(96).bool(message.supportsAction);
@@ -7529,6 +7724,35 @@ export const ListEntitiesClimateResponse: MessageFns<ListEntitiesClimateResponse
       writer.int32(v);
     }
     writer.join();
+    for (const v of message.supportedCustomFanModes) {
+      writer.uint32(122).string(v!);
+    }
+    writer.uint32(130).fork();
+    for (const v of message.supportedPresets) {
+      writer.int32(v);
+    }
+    writer.join();
+    for (const v of message.supportedCustomPresets) {
+      writer.uint32(138).string(v!);
+    }
+    if (message.visualCurrentTemperatureStep !== 0) {
+      writer.uint32(173).float(message.visualCurrentTemperatureStep);
+    }
+    if (message.supportsCurrentHumidity !== false) {
+      writer.uint32(176).bool(message.supportsCurrentHumidity);
+    }
+    if (message.supportsTargetHumidity !== false) {
+      writer.uint32(184).bool(message.supportsTargetHumidity);
+    }
+    if (message.visualMinHumidity !== 0) {
+      writer.uint32(197).float(message.visualMinHumidity);
+    }
+    if (message.visualMaxHumidity !== 0) {
+      writer.uint32(205).float(message.visualMaxHumidity);
+    }
+    if (message.temperatureUnit !== 0) {
+      writer.uint32(224).int32(message.temperatureUnit);
+    }
     return writer;
   },
 
@@ -7632,7 +7856,7 @@ export const ListEntitiesClimateResponse: MessageFns<ListEntitiesClimateResponse
               break;
             }
 
-            message.visualTemperatureStep = reader.float();
+            message.visualTargetTemperatureStep = reader.float();
             continue;
           }
           case 11: {
@@ -7640,7 +7864,7 @@ export const ListEntitiesClimateResponse: MessageFns<ListEntitiesClimateResponse
               break;
             }
 
-            message.supportsAway = reader.bool();
+            message.legacySupportsAway = reader.bool();
             continue;
           }
           case 12: {
@@ -7686,6 +7910,88 @@ export const ListEntitiesClimateResponse: MessageFns<ListEntitiesClimateResponse
             }
 
             break;
+          }
+          case 15: {
+            if (tag !== 122) {
+              break;
+            }
+
+            message.supportedCustomFanModes.push(reader.string());
+            continue;
+          }
+          case 16: {
+            if (tag === 128) {
+              message.supportedPresets.push(reader.int32() as any);
+
+              continue;
+            }
+
+            if (tag === 130) {
+              const end2 = reader.uint32() + reader.pos;
+              while (reader.pos < end2) {
+                message.supportedPresets.push(reader.int32() as any);
+              }
+
+              continue;
+            }
+
+            break;
+          }
+          case 17: {
+            if (tag !== 138) {
+              break;
+            }
+
+            message.supportedCustomPresets.push(reader.string());
+            continue;
+          }
+          case 21: {
+            if (tag !== 173) {
+              break;
+            }
+
+            message.visualCurrentTemperatureStep = reader.float();
+            continue;
+          }
+          case 22: {
+            if (tag !== 176) {
+              break;
+            }
+
+            message.supportsCurrentHumidity = reader.bool();
+            continue;
+          }
+          case 23: {
+            if (tag !== 184) {
+              break;
+            }
+
+            message.supportsTargetHumidity = reader.bool();
+            continue;
+          }
+          case 24: {
+            if (tag !== 197) {
+              break;
+            }
+
+            message.visualMinHumidity = reader.float();
+            continue;
+          }
+          case 25: {
+            if (tag !== 205) {
+              break;
+            }
+
+            message.visualMaxHumidity = reader.float();
+            continue;
+          }
+          case 28: {
+            if (tag !== 224) {
+              break;
+            }
+
+            message.temperatureUnit = reader.int32() as any;
+            continue;
           }
         }
         if ((tag & 7) === 4 || tag === 0) {
@@ -7738,15 +8044,15 @@ export const ListEntitiesClimateResponse: MessageFns<ListEntitiesClimateResponse
         : isSet(object.visual_max_temperature)
         ? globalThis.Number(object.visual_max_temperature)
         : 0,
-      visualTemperatureStep: isSet(object.visualTemperatureStep)
-        ? globalThis.Number(object.visualTemperatureStep)
-        : isSet(object.visual_temperature_step)
-        ? globalThis.Number(object.visual_temperature_step)
+      visualTargetTemperatureStep: isSet(object.visualTargetTemperatureStep)
+        ? globalThis.Number(object.visualTargetTemperatureStep)
+        : isSet(object.visual_target_temperature_step)
+        ? globalThis.Number(object.visual_target_temperature_step)
         : 0,
-      supportsAway: isSet(object.supportsAway)
-        ? globalThis.Boolean(object.supportsAway)
-        : isSet(object.supports_away)
-        ? globalThis.Boolean(object.supports_away)
+      legacySupportsAway: isSet(object.legacySupportsAway)
+        ? globalThis.Boolean(object.legacySupportsAway)
+        : isSet(object.legacy_supports_away)
+        ? globalThis.Boolean(object.legacy_supports_away)
         : false,
       supportsAction: isSet(object.supportsAction)
         ? globalThis.Boolean(object.supportsAction)
@@ -7763,6 +8069,51 @@ export const ListEntitiesClimateResponse: MessageFns<ListEntitiesClimateResponse
         : globalThis.Array.isArray(object?.supported_swing_modes)
         ? object.supported_swing_modes.map((e: any) => climateSwingModeFromJSON(e))
         : [],
+      supportedCustomFanModes: globalThis.Array.isArray(object?.supportedCustomFanModes)
+        ? object.supportedCustomFanModes.map((e: any) => globalThis.String(e))
+        : globalThis.Array.isArray(object?.supported_custom_fan_modes)
+        ? object.supported_custom_fan_modes.map((e: any) => globalThis.String(e))
+        : [],
+      supportedPresets: globalThis.Array.isArray(object?.supportedPresets)
+        ? object.supportedPresets.map((e: any) => climatePresetFromJSON(e))
+        : globalThis.Array.isArray(object?.supported_presets)
+        ? object.supported_presets.map((e: any) => climatePresetFromJSON(e))
+        : [],
+      supportedCustomPresets: globalThis.Array.isArray(object?.supportedCustomPresets)
+        ? object.supportedCustomPresets.map((e: any) => globalThis.String(e))
+        : globalThis.Array.isArray(object?.supported_custom_presets)
+        ? object.supported_custom_presets.map((e: any) => globalThis.String(e))
+        : [],
+      visualCurrentTemperatureStep: isSet(object.visualCurrentTemperatureStep)
+        ? globalThis.Number(object.visualCurrentTemperatureStep)
+        : isSet(object.visual_current_temperature_step)
+        ? globalThis.Number(object.visual_current_temperature_step)
+        : 0,
+      supportsCurrentHumidity: isSet(object.supportsCurrentHumidity)
+        ? globalThis.Boolean(object.supportsCurrentHumidity)
+        : isSet(object.supports_current_humidity)
+        ? globalThis.Boolean(object.supports_current_humidity)
+        : false,
+      supportsTargetHumidity: isSet(object.supportsTargetHumidity)
+        ? globalThis.Boolean(object.supportsTargetHumidity)
+        : isSet(object.supports_target_humidity)
+        ? globalThis.Boolean(object.supports_target_humidity)
+        : false,
+      visualMinHumidity: isSet(object.visualMinHumidity)
+        ? globalThis.Number(object.visualMinHumidity)
+        : isSet(object.visual_min_humidity)
+        ? globalThis.Number(object.visual_min_humidity)
+        : 0,
+      visualMaxHumidity: isSet(object.visualMaxHumidity)
+        ? globalThis.Number(object.visualMaxHumidity)
+        : isSet(object.visual_max_humidity)
+        ? globalThis.Number(object.visual_max_humidity)
+        : 0,
+      temperatureUnit: isSet(object.temperatureUnit)
+        ? temperatureUnitFromJSON(object.temperatureUnit)
+        : isSet(object.temperature_unit)
+        ? temperatureUnitFromJSON(object.temperature_unit)
+        : 0,
     };
   },
 
@@ -7795,11 +8146,11 @@ export const ListEntitiesClimateResponse: MessageFns<ListEntitiesClimateResponse
     if (message.visualMaxTemperature !== 0) {
       obj.visualMaxTemperature = message.visualMaxTemperature;
     }
-    if (message.visualTemperatureStep !== 0) {
-      obj.visualTemperatureStep = message.visualTemperatureStep;
+    if (message.visualTargetTemperatureStep !== 0) {
+      obj.visualTargetTemperatureStep = message.visualTargetTemperatureStep;
     }
-    if (message.supportsAway !== false) {
-      obj.supportsAway = message.supportsAway;
+    if (message.legacySupportsAway !== false) {
+      obj.legacySupportsAway = message.legacySupportsAway;
     }
     if (message.supportsAction !== false) {
       obj.supportsAction = message.supportsAction;
@@ -7809,6 +8160,33 @@ export const ListEntitiesClimateResponse: MessageFns<ListEntitiesClimateResponse
     }
     if (message.supportedSwingModes?.length) {
       obj.supportedSwingModes = message.supportedSwingModes.map((e) => climateSwingModeToJSON(e));
+    }
+    if (message.supportedCustomFanModes?.length) {
+      obj.supportedCustomFanModes = message.supportedCustomFanModes;
+    }
+    if (message.supportedPresets?.length) {
+      obj.supportedPresets = message.supportedPresets.map((e) => climatePresetToJSON(e));
+    }
+    if (message.supportedCustomPresets?.length) {
+      obj.supportedCustomPresets = message.supportedCustomPresets;
+    }
+    if (message.visualCurrentTemperatureStep !== 0) {
+      obj.visualCurrentTemperatureStep = message.visualCurrentTemperatureStep;
+    }
+    if (message.supportsCurrentHumidity !== false) {
+      obj.supportsCurrentHumidity = message.supportsCurrentHumidity;
+    }
+    if (message.supportsTargetHumidity !== false) {
+      obj.supportsTargetHumidity = message.supportsTargetHumidity;
+    }
+    if (message.visualMinHumidity !== 0) {
+      obj.visualMinHumidity = message.visualMinHumidity;
+    }
+    if (message.visualMaxHumidity !== 0) {
+      obj.visualMaxHumidity = message.visualMaxHumidity;
+    }
+    if (message.temperatureUnit !== 0) {
+      obj.temperatureUnit = temperatureUnitToJSON(message.temperatureUnit);
     }
     return obj;
   },
@@ -7827,11 +8205,20 @@ export const ListEntitiesClimateResponse: MessageFns<ListEntitiesClimateResponse
     message.supportedModes = object.supportedModes?.map((e) => e) || [];
     message.visualMinTemperature = object.visualMinTemperature ?? 0;
     message.visualMaxTemperature = object.visualMaxTemperature ?? 0;
-    message.visualTemperatureStep = object.visualTemperatureStep ?? 0;
-    message.supportsAway = object.supportsAway ?? false;
+    message.visualTargetTemperatureStep = object.visualTargetTemperatureStep ?? 0;
+    message.legacySupportsAway = object.legacySupportsAway ?? false;
     message.supportsAction = object.supportsAction ?? false;
     message.supportedFanModes = object.supportedFanModes?.map((e) => e) || [];
     message.supportedSwingModes = object.supportedSwingModes?.map((e) => e) || [];
+    message.supportedCustomFanModes = object.supportedCustomFanModes?.map((e) => e) || [];
+    message.supportedPresets = object.supportedPresets?.map((e) => e) || [];
+    message.supportedCustomPresets = object.supportedCustomPresets?.map((e) => e) || [];
+    message.visualCurrentTemperatureStep = object.visualCurrentTemperatureStep ?? 0;
+    message.supportsCurrentHumidity = object.supportsCurrentHumidity ?? false;
+    message.supportsTargetHumidity = object.supportsTargetHumidity ?? false;
+    message.visualMinHumidity = object.visualMinHumidity ?? 0;
+    message.visualMaxHumidity = object.visualMaxHumidity ?? 0;
+    message.temperatureUnit = object.temperatureUnit ?? 0;
     return message;
   },
 };
@@ -7844,10 +8231,16 @@ function createBaseClimateStateResponse(): ClimateStateResponse {
     targetTemperature: 0,
     targetTemperatureLow: 0,
     targetTemperatureHigh: 0,
-    away: false,
+    unusedLegacyAway: false,
     action: 0,
     fanMode: 0,
     swingMode: 0,
+    customFanMode: "",
+    preset: 0,
+    customPreset: "",
+    currentHumidity: 0,
+    targetHumidity: 0,
+    missingState: false,
   };
 }
 
@@ -7871,8 +8264,8 @@ export const ClimateStateResponse: MessageFns<ClimateStateResponse> = {
     if (message.targetTemperatureHigh !== 0) {
       writer.uint32(53).float(message.targetTemperatureHigh);
     }
-    if (message.away !== false) {
-      writer.uint32(56).bool(message.away);
+    if (message.unusedLegacyAway !== false) {
+      writer.uint32(56).bool(message.unusedLegacyAway);
     }
     if (message.action !== 0) {
       writer.uint32(64).int32(message.action);
@@ -7882,6 +8275,24 @@ export const ClimateStateResponse: MessageFns<ClimateStateResponse> = {
     }
     if (message.swingMode !== 0) {
       writer.uint32(80).int32(message.swingMode);
+    }
+    if (message.customFanMode !== "") {
+      writer.uint32(90).string(message.customFanMode);
+    }
+    if (message.preset !== 0) {
+      writer.uint32(96).int32(message.preset);
+    }
+    if (message.customPreset !== "") {
+      writer.uint32(106).string(message.customPreset);
+    }
+    if (message.currentHumidity !== 0) {
+      writer.uint32(117).float(message.currentHumidity);
+    }
+    if (message.targetHumidity !== 0) {
+      writer.uint32(125).float(message.targetHumidity);
+    }
+    if (message.missingState !== false) {
+      writer.uint32(136).bool(message.missingState);
     }
     return writer;
   },
@@ -7952,7 +8363,7 @@ export const ClimateStateResponse: MessageFns<ClimateStateResponse> = {
               break;
             }
 
-            message.away = reader.bool();
+            message.unusedLegacyAway = reader.bool();
             continue;
           }
           case 8: {
@@ -7977,6 +8388,54 @@ export const ClimateStateResponse: MessageFns<ClimateStateResponse> = {
             }
 
             message.swingMode = reader.int32() as any;
+            continue;
+          }
+          case 11: {
+            if (tag !== 90) {
+              break;
+            }
+
+            message.customFanMode = reader.string();
+            continue;
+          }
+          case 12: {
+            if (tag !== 96) {
+              break;
+            }
+
+            message.preset = reader.int32() as any;
+            continue;
+          }
+          case 13: {
+            if (tag !== 106) {
+              break;
+            }
+
+            message.customPreset = reader.string();
+            continue;
+          }
+          case 14: {
+            if (tag !== 117) {
+              break;
+            }
+
+            message.currentHumidity = reader.float();
+            continue;
+          }
+          case 15: {
+            if (tag !== 125) {
+              break;
+            }
+
+            message.targetHumidity = reader.float();
+            continue;
+          }
+          case 17: {
+            if (tag !== 136) {
+              break;
+            }
+
+            message.missingState = reader.bool();
             continue;
           }
         }
@@ -8015,7 +8474,11 @@ export const ClimateStateResponse: MessageFns<ClimateStateResponse> = {
         : isSet(object.target_temperature_high)
         ? globalThis.Number(object.target_temperature_high)
         : 0,
-      away: isSet(object.away) ? globalThis.Boolean(object.away) : false,
+      unusedLegacyAway: isSet(object.unusedLegacyAway)
+        ? globalThis.Boolean(object.unusedLegacyAway)
+        : isSet(object.unused_legacy_away)
+        ? globalThis.Boolean(object.unused_legacy_away)
+        : false,
       action: isSet(object.action) ? climateActionFromJSON(object.action) : 0,
       fanMode: isSet(object.fanMode)
         ? climateFanModeFromJSON(object.fanMode)
@@ -8027,6 +8490,32 @@ export const ClimateStateResponse: MessageFns<ClimateStateResponse> = {
         : isSet(object.swing_mode)
         ? climateSwingModeFromJSON(object.swing_mode)
         : 0,
+      customFanMode: isSet(object.customFanMode)
+        ? globalThis.String(object.customFanMode)
+        : isSet(object.custom_fan_mode)
+        ? globalThis.String(object.custom_fan_mode)
+        : "",
+      preset: isSet(object.preset) ? climatePresetFromJSON(object.preset) : 0,
+      customPreset: isSet(object.customPreset)
+        ? globalThis.String(object.customPreset)
+        : isSet(object.custom_preset)
+        ? globalThis.String(object.custom_preset)
+        : "",
+      currentHumidity: isSet(object.currentHumidity)
+        ? globalThis.Number(object.currentHumidity)
+        : isSet(object.current_humidity)
+        ? globalThis.Number(object.current_humidity)
+        : 0,
+      targetHumidity: isSet(object.targetHumidity)
+        ? globalThis.Number(object.targetHumidity)
+        : isSet(object.target_humidity)
+        ? globalThis.Number(object.target_humidity)
+        : 0,
+      missingState: isSet(object.missingState)
+        ? globalThis.Boolean(object.missingState)
+        : isSet(object.missing_state)
+        ? globalThis.Boolean(object.missing_state)
+        : false,
     };
   },
 
@@ -8050,8 +8539,8 @@ export const ClimateStateResponse: MessageFns<ClimateStateResponse> = {
     if (message.targetTemperatureHigh !== 0) {
       obj.targetTemperatureHigh = message.targetTemperatureHigh;
     }
-    if (message.away !== false) {
-      obj.away = message.away;
+    if (message.unusedLegacyAway !== false) {
+      obj.unusedLegacyAway = message.unusedLegacyAway;
     }
     if (message.action !== 0) {
       obj.action = climateActionToJSON(message.action);
@@ -8061,6 +8550,24 @@ export const ClimateStateResponse: MessageFns<ClimateStateResponse> = {
     }
     if (message.swingMode !== 0) {
       obj.swingMode = climateSwingModeToJSON(message.swingMode);
+    }
+    if (message.customFanMode !== "") {
+      obj.customFanMode = message.customFanMode;
+    }
+    if (message.preset !== 0) {
+      obj.preset = climatePresetToJSON(message.preset);
+    }
+    if (message.customPreset !== "") {
+      obj.customPreset = message.customPreset;
+    }
+    if (message.currentHumidity !== 0) {
+      obj.currentHumidity = message.currentHumidity;
+    }
+    if (message.targetHumidity !== 0) {
+      obj.targetHumidity = message.targetHumidity;
+    }
+    if (message.missingState !== false) {
+      obj.missingState = message.missingState;
     }
     return obj;
   },
@@ -8076,10 +8583,16 @@ export const ClimateStateResponse: MessageFns<ClimateStateResponse> = {
     message.targetTemperature = object.targetTemperature ?? 0;
     message.targetTemperatureLow = object.targetTemperatureLow ?? 0;
     message.targetTemperatureHigh = object.targetTemperatureHigh ?? 0;
-    message.away = object.away ?? false;
+    message.unusedLegacyAway = object.unusedLegacyAway ?? false;
     message.action = object.action ?? 0;
     message.fanMode = object.fanMode ?? 0;
     message.swingMode = object.swingMode ?? 0;
+    message.customFanMode = object.customFanMode ?? "";
+    message.preset = object.preset ?? 0;
+    message.customPreset = object.customPreset ?? "";
+    message.currentHumidity = object.currentHumidity ?? 0;
+    message.targetHumidity = object.targetHumidity ?? 0;
+    message.missingState = object.missingState ?? false;
     return message;
   },
 };
@@ -8095,12 +8608,20 @@ function createBaseClimateCommandRequest(): ClimateCommandRequest {
     targetTemperatureLow: 0,
     hasTargetTemperatureHigh: false,
     targetTemperatureHigh: 0,
-    hasAway: false,
-    away: false,
+    unusedHasLegacyAway: false,
+    unusedLegacyAway: false,
     hasFanMode: false,
     fanMode: 0,
     hasSwingMode: false,
     swingMode: 0,
+    hasCustomFanMode: false,
+    customFanMode: "",
+    hasPreset: false,
+    preset: 0,
+    hasCustomPreset: false,
+    customPreset: "",
+    hasTargetHumidity: false,
+    targetHumidity: 0,
   };
 }
 
@@ -8133,11 +8654,11 @@ export const ClimateCommandRequest: MessageFns<ClimateCommandRequest> = {
     if (message.targetTemperatureHigh !== 0) {
       writer.uint32(77).float(message.targetTemperatureHigh);
     }
-    if (message.hasAway !== false) {
-      writer.uint32(80).bool(message.hasAway);
+    if (message.unusedHasLegacyAway !== false) {
+      writer.uint32(80).bool(message.unusedHasLegacyAway);
     }
-    if (message.away !== false) {
-      writer.uint32(88).bool(message.away);
+    if (message.unusedLegacyAway !== false) {
+      writer.uint32(88).bool(message.unusedLegacyAway);
     }
     if (message.hasFanMode !== false) {
       writer.uint32(96).bool(message.hasFanMode);
@@ -8150,6 +8671,30 @@ export const ClimateCommandRequest: MessageFns<ClimateCommandRequest> = {
     }
     if (message.swingMode !== 0) {
       writer.uint32(120).int32(message.swingMode);
+    }
+    if (message.hasCustomFanMode !== false) {
+      writer.uint32(128).bool(message.hasCustomFanMode);
+    }
+    if (message.customFanMode !== "") {
+      writer.uint32(138).string(message.customFanMode);
+    }
+    if (message.hasPreset !== false) {
+      writer.uint32(144).bool(message.hasPreset);
+    }
+    if (message.preset !== 0) {
+      writer.uint32(152).int32(message.preset);
+    }
+    if (message.hasCustomPreset !== false) {
+      writer.uint32(160).bool(message.hasCustomPreset);
+    }
+    if (message.customPreset !== "") {
+      writer.uint32(170).string(message.customPreset);
+    }
+    if (message.hasTargetHumidity !== false) {
+      writer.uint32(176).bool(message.hasTargetHumidity);
+    }
+    if (message.targetHumidity !== 0) {
+      writer.uint32(189).float(message.targetHumidity);
     }
     return writer;
   },
@@ -8244,7 +8789,7 @@ export const ClimateCommandRequest: MessageFns<ClimateCommandRequest> = {
               break;
             }
 
-            message.hasAway = reader.bool();
+            message.unusedHasLegacyAway = reader.bool();
             continue;
           }
           case 11: {
@@ -8252,7 +8797,7 @@ export const ClimateCommandRequest: MessageFns<ClimateCommandRequest> = {
               break;
             }
 
-            message.away = reader.bool();
+            message.unusedLegacyAway = reader.bool();
             continue;
           }
           case 12: {
@@ -8285,6 +8830,70 @@ export const ClimateCommandRequest: MessageFns<ClimateCommandRequest> = {
             }
 
             message.swingMode = reader.int32() as any;
+            continue;
+          }
+          case 16: {
+            if (tag !== 128) {
+              break;
+            }
+
+            message.hasCustomFanMode = reader.bool();
+            continue;
+          }
+          case 17: {
+            if (tag !== 138) {
+              break;
+            }
+
+            message.customFanMode = reader.string();
+            continue;
+          }
+          case 18: {
+            if (tag !== 144) {
+              break;
+            }
+
+            message.hasPreset = reader.bool();
+            continue;
+          }
+          case 19: {
+            if (tag !== 152) {
+              break;
+            }
+
+            message.preset = reader.int32() as any;
+            continue;
+          }
+          case 20: {
+            if (tag !== 160) {
+              break;
+            }
+
+            message.hasCustomPreset = reader.bool();
+            continue;
+          }
+          case 21: {
+            if (tag !== 170) {
+              break;
+            }
+
+            message.customPreset = reader.string();
+            continue;
+          }
+          case 22: {
+            if (tag !== 176) {
+              break;
+            }
+
+            message.hasTargetHumidity = reader.bool();
+            continue;
+          }
+          case 23: {
+            if (tag !== 189) {
+              break;
+            }
+
+            message.targetHumidity = reader.float();
             continue;
           }
         }
@@ -8338,12 +8947,16 @@ export const ClimateCommandRequest: MessageFns<ClimateCommandRequest> = {
         : isSet(object.target_temperature_high)
         ? globalThis.Number(object.target_temperature_high)
         : 0,
-      hasAway: isSet(object.hasAway)
-        ? globalThis.Boolean(object.hasAway)
-        : isSet(object.has_away)
-        ? globalThis.Boolean(object.has_away)
+      unusedHasLegacyAway: isSet(object.unusedHasLegacyAway)
+        ? globalThis.Boolean(object.unusedHasLegacyAway)
+        : isSet(object.unused_has_legacy_away)
+        ? globalThis.Boolean(object.unused_has_legacy_away)
         : false,
-      away: isSet(object.away) ? globalThis.Boolean(object.away) : false,
+      unusedLegacyAway: isSet(object.unusedLegacyAway)
+        ? globalThis.Boolean(object.unusedLegacyAway)
+        : isSet(object.unused_legacy_away)
+        ? globalThis.Boolean(object.unused_legacy_away)
+        : false,
       hasFanMode: isSet(object.hasFanMode)
         ? globalThis.Boolean(object.hasFanMode)
         : isSet(object.has_fan_mode)
@@ -8363,6 +8976,42 @@ export const ClimateCommandRequest: MessageFns<ClimateCommandRequest> = {
         ? climateSwingModeFromJSON(object.swingMode)
         : isSet(object.swing_mode)
         ? climateSwingModeFromJSON(object.swing_mode)
+        : 0,
+      hasCustomFanMode: isSet(object.hasCustomFanMode)
+        ? globalThis.Boolean(object.hasCustomFanMode)
+        : isSet(object.has_custom_fan_mode)
+        ? globalThis.Boolean(object.has_custom_fan_mode)
+        : false,
+      customFanMode: isSet(object.customFanMode)
+        ? globalThis.String(object.customFanMode)
+        : isSet(object.custom_fan_mode)
+        ? globalThis.String(object.custom_fan_mode)
+        : "",
+      hasPreset: isSet(object.hasPreset)
+        ? globalThis.Boolean(object.hasPreset)
+        : isSet(object.has_preset)
+        ? globalThis.Boolean(object.has_preset)
+        : false,
+      preset: isSet(object.preset) ? climatePresetFromJSON(object.preset) : 0,
+      hasCustomPreset: isSet(object.hasCustomPreset)
+        ? globalThis.Boolean(object.hasCustomPreset)
+        : isSet(object.has_custom_preset)
+        ? globalThis.Boolean(object.has_custom_preset)
+        : false,
+      customPreset: isSet(object.customPreset)
+        ? globalThis.String(object.customPreset)
+        : isSet(object.custom_preset)
+        ? globalThis.String(object.custom_preset)
+        : "",
+      hasTargetHumidity: isSet(object.hasTargetHumidity)
+        ? globalThis.Boolean(object.hasTargetHumidity)
+        : isSet(object.has_target_humidity)
+        ? globalThis.Boolean(object.has_target_humidity)
+        : false,
+      targetHumidity: isSet(object.targetHumidity)
+        ? globalThis.Number(object.targetHumidity)
+        : isSet(object.target_humidity)
+        ? globalThis.Number(object.target_humidity)
         : 0,
     };
   },
@@ -8396,11 +9045,11 @@ export const ClimateCommandRequest: MessageFns<ClimateCommandRequest> = {
     if (message.targetTemperatureHigh !== 0) {
       obj.targetTemperatureHigh = message.targetTemperatureHigh;
     }
-    if (message.hasAway !== false) {
-      obj.hasAway = message.hasAway;
+    if (message.unusedHasLegacyAway !== false) {
+      obj.unusedHasLegacyAway = message.unusedHasLegacyAway;
     }
-    if (message.away !== false) {
-      obj.away = message.away;
+    if (message.unusedLegacyAway !== false) {
+      obj.unusedLegacyAway = message.unusedLegacyAway;
     }
     if (message.hasFanMode !== false) {
       obj.hasFanMode = message.hasFanMode;
@@ -8413,6 +9062,30 @@ export const ClimateCommandRequest: MessageFns<ClimateCommandRequest> = {
     }
     if (message.swingMode !== 0) {
       obj.swingMode = climateSwingModeToJSON(message.swingMode);
+    }
+    if (message.hasCustomFanMode !== false) {
+      obj.hasCustomFanMode = message.hasCustomFanMode;
+    }
+    if (message.customFanMode !== "") {
+      obj.customFanMode = message.customFanMode;
+    }
+    if (message.hasPreset !== false) {
+      obj.hasPreset = message.hasPreset;
+    }
+    if (message.preset !== 0) {
+      obj.preset = climatePresetToJSON(message.preset);
+    }
+    if (message.hasCustomPreset !== false) {
+      obj.hasCustomPreset = message.hasCustomPreset;
+    }
+    if (message.customPreset !== "") {
+      obj.customPreset = message.customPreset;
+    }
+    if (message.hasTargetHumidity !== false) {
+      obj.hasTargetHumidity = message.hasTargetHumidity;
+    }
+    if (message.targetHumidity !== 0) {
+      obj.targetHumidity = message.targetHumidity;
     }
     return obj;
   },
@@ -8431,12 +9104,20 @@ export const ClimateCommandRequest: MessageFns<ClimateCommandRequest> = {
     message.targetTemperatureLow = object.targetTemperatureLow ?? 0;
     message.hasTargetTemperatureHigh = object.hasTargetTemperatureHigh ?? false;
     message.targetTemperatureHigh = object.targetTemperatureHigh ?? 0;
-    message.hasAway = object.hasAway ?? false;
-    message.away = object.away ?? false;
+    message.unusedHasLegacyAway = object.unusedHasLegacyAway ?? false;
+    message.unusedLegacyAway = object.unusedLegacyAway ?? false;
     message.hasFanMode = object.hasFanMode ?? false;
     message.fanMode = object.fanMode ?? 0;
     message.hasSwingMode = object.hasSwingMode ?? false;
     message.swingMode = object.swingMode ?? 0;
+    message.hasCustomFanMode = object.hasCustomFanMode ?? false;
+    message.customFanMode = object.customFanMode ?? "";
+    message.hasPreset = object.hasPreset ?? false;
+    message.preset = object.preset ?? 0;
+    message.hasCustomPreset = object.hasCustomPreset ?? false;
+    message.customPreset = object.customPreset ?? "";
+    message.hasTargetHumidity = object.hasTargetHumidity ?? false;
+    message.targetHumidity = object.targetHumidity ?? 0;
     return message;
   },
 };

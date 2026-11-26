@@ -1,5 +1,17 @@
 import * as api from '../../src';
-import { ColorMode, CoverOperation, FanDirection, FanSpeed, LegacyCoverState } from '../../src/api/protobuf/api';
+import {
+    ClimateAction,
+    ClimateFanMode,
+    ClimateMode,
+    ClimatePreset,
+    ClimateSwingMode,
+    ColorMode,
+    CoverOperation,
+    FanDirection,
+    FanSpeed,
+    LegacyCoverState,
+    TemperatureUnit,
+} from '../../src/api/protobuf/api';
 
 describe('package export surface', () => {
     it('exposes the documented runtime exports', () => {
@@ -44,6 +56,7 @@ describe('package export surface', () => {
         expect(api.SwitchComponent).toBeDefined();
         expect(api.CoverComponent).toBeDefined();
         expect(api.FanComponent).toBeDefined();
+        expect(api.ClimateComponent).toBeDefined();
     });
 
     it('exposes BinarySensorTypes through the root barrel', () => {
@@ -57,6 +70,85 @@ describe('package export surface', () => {
         expect(api.LegacyCoverState).toBe(LegacyCoverState);
         expect(api.FanDirection).toBe(FanDirection);
         expect(api.FanSpeed).toBe(FanSpeed);
+    });
+
+    it('exposes the climate enums downstream code needs at runtime', () => {
+        expect(api.ClimateMode).toBe(ClimateMode);
+        expect(api.ClimateFanMode).toBe(ClimateFanMode);
+        expect(api.ClimateSwingMode).toBe(ClimateSwingMode);
+        expect(api.ClimateAction).toBe(ClimateAction);
+        expect(api.ClimatePreset).toBe(ClimatePreset);
+        expect(api.TemperatureUnit).toBe(TemperatureUnit);
+        // Pin every wire value: a regenerated proto that silently renumbers a
+        // member would change what commands mean on the wire. ClimateMode is
+        // checked against the upstream values after the heat/cool and auto
+        // split: firmware older than that split reports its automatic
+        // heat/cool mode as HEAT_COOL (1), and AUTO (6) is the newer value.
+        const expectedModes: Record<string, number> = {
+            CLIMATE_MODE_OFF: 0,
+            CLIMATE_MODE_HEAT_COOL: 1,
+            CLIMATE_MODE_COOL: 2,
+            CLIMATE_MODE_HEAT: 3,
+            CLIMATE_MODE_FAN_ONLY: 4,
+            CLIMATE_MODE_DRY: 5,
+            CLIMATE_MODE_AUTO: 6,
+        };
+        const expectedFanModes: Record<string, number> = {
+            CLIMATE_FAN_ON: 0,
+            CLIMATE_FAN_OFF: 1,
+            CLIMATE_FAN_AUTO: 2,
+            CLIMATE_FAN_LOW: 3,
+            CLIMATE_FAN_MEDIUM: 4,
+            CLIMATE_FAN_HIGH: 5,
+            CLIMATE_FAN_MIDDLE: 6,
+            CLIMATE_FAN_FOCUS: 7,
+            CLIMATE_FAN_DIFFUSE: 8,
+            CLIMATE_FAN_QUIET: 9,
+        };
+        const expectedSwingModes: Record<string, number> = {
+            CLIMATE_SWING_OFF: 0,
+            CLIMATE_SWING_BOTH: 1,
+            CLIMATE_SWING_VERTICAL: 2,
+            CLIMATE_SWING_HORIZONTAL: 3,
+        };
+        // ClimateAction deliberately has no value 1.
+        const expectedActions: Record<string, number> = {
+            CLIMATE_ACTION_OFF: 0,
+            CLIMATE_ACTION_COOLING: 2,
+            CLIMATE_ACTION_HEATING: 3,
+            CLIMATE_ACTION_IDLE: 4,
+            CLIMATE_ACTION_DRYING: 5,
+            CLIMATE_ACTION_FAN: 6,
+            CLIMATE_ACTION_DEFROSTING: 7,
+        };
+        const expectedPresets: Record<string, number> = {
+            CLIMATE_PRESET_NONE: 0,
+            CLIMATE_PRESET_HOME: 1,
+            CLIMATE_PRESET_AWAY: 2,
+            CLIMATE_PRESET_BOOST: 3,
+            CLIMATE_PRESET_COMFORT: 4,
+            CLIMATE_PRESET_ECO: 5,
+            CLIMATE_PRESET_SLEEP: 6,
+            CLIMATE_PRESET_ACTIVITY: 7,
+        };
+        const expectedTemperatureUnits: Record<string, number> = {
+            TEMPERATURE_UNIT_CELSIUS: 0,
+            TEMPERATURE_UNIT_FAHRENHEIT: 1,
+            TEMPERATURE_UNIT_KELVIN: 2,
+        };
+        const expectations: [Record<string, number>, Record<string, number | string>][] = [
+            [expectedModes, ClimateMode],
+            [expectedFanModes, ClimateFanMode],
+            [expectedSwingModes, ClimateSwingMode],
+            [expectedActions, ClimateAction],
+            [expectedPresets, ClimatePreset],
+            [expectedTemperatureUnits, TemperatureUnit],
+        ];
+        for (const [expected, enumObject] of expectations) {
+            for (const [name, value] of Object.entries(expected)) {
+                expect(enumObject[name]).toBe(value);
+            }
+        }
     });
 
     it('exposes the light color mode enum downstream code needs at runtime', () => {
@@ -92,6 +184,12 @@ describe('package export surface', () => {
             'BinarySensorComponent',
             'BinarySensorTypes',
             'Client',
+            'ClimateAction',
+            'ClimateComponent',
+            'ClimateFanMode',
+            'ClimateMode',
+            'ClimatePreset',
+            'ClimateSwingMode',
             'ColorMode',
             'ConnectionHandshakeError',
             'CoverComponent',
@@ -113,6 +211,7 @@ describe('package export surface', () => {
             'MessageTypes',
             'SensorComponent',
             'SwitchComponent',
+            'TemperatureUnit',
             'isFalse',
             'isSwitchComponent',
             'isTrue',

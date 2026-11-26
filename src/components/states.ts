@@ -1,4 +1,9 @@
 import {
+    type ClimateAction,
+    type ClimateFanMode,
+    type ClimateMode,
+    type ClimatePreset,
+    type ClimateSwingMode,
     type ColorMode,
     type CoverOperation,
     type FanDirection,
@@ -12,13 +17,34 @@ export interface StateEvent {
 
 export interface SensorStateEvent extends StateEvent {
     state?: number;
+    /**
+     * True while the device has not published a valid state yet. Unlike
+     * ClimateComponent, the sensor components do not suppress their getters
+     * for such frames — `state` is the protobuf default 0 — so read this
+     * flag to tell a real zero apart from a placeholder.
+     */
+    missingState?: boolean;
 }
 
 export interface BinarySensorStateEvent extends StateEvent {
     state?: boolean;
+    /**
+     * True while the device has not published a valid state yet. Unlike
+     * ClimateComponent, the binary sensor component does not suppress its
+     * getter for such frames — `state` is the protobuf default false — so
+     * read this flag to tell a real off apart from a placeholder.
+     */
+    missingState?: boolean;
 }
 
-export type SwitchStateEvent = BinarySensorStateEvent;
+/**
+ * The switch state frame. Unlike the binary sensor, the repo's
+ * SwitchStateResponse does not model the wire's missing_state field, so no
+ * flag is advertised here.
+ */
+export interface SwitchStateEvent extends StateEvent {
+    state?: boolean;
+}
 
 export interface CoverStateEvent extends StateEvent {
     legacyState?: LegacyCoverState;
@@ -67,4 +93,28 @@ export interface LightStateEvent extends StateEvent {
     coldWhite?: number;
     warmWhite?: number;
     effect?: string;
+}
+
+export interface ClimateStateEvent extends StateEvent {
+    mode?: ClimateMode;
+    currentTemperature?: number;
+    targetTemperature?: number;
+    targetTemperatureLow?: number;
+    targetTemperatureHigh?: number;
+    /**
+     * Legacy away flag, only sent by firmware before API 1.5. Newer firmware
+     * reports the preset instead; the component's preset getter normalises
+     * the two forms.
+     */
+    unusedLegacyAway?: boolean;
+    action?: ClimateAction;
+    fanMode?: ClimateFanMode;
+    swingMode?: ClimateSwingMode;
+    customFanMode?: string;
+    preset?: ClimatePreset;
+    customPreset?: string;
+    currentHumidity?: number;
+    targetHumidity?: number;
+    /** True while the device has not published a valid state yet. */
+    missingState?: boolean;
 }

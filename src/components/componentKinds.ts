@@ -2,10 +2,12 @@ import { filter, type Observable } from 'rxjs';
 import { type ReadData } from '../api/framer';
 import {
     BinarySensorStateResponse,
+    ClimateStateResponse,
     CoverStateResponse,
     FanStateResponse,
     LightStateResponse,
     ListEntitiesBinarySensorResponse,
+    ListEntitiesClimateResponse,
     ListEntitiesCoverResponse,
     ListEntitiesFanResponse,
     ListEntitiesLightResponse,
@@ -17,10 +19,12 @@ import {
 import { MessageTypes } from '../api/requestResponseMatching';
 import { type BaseComponent } from './base';
 import { BinarySensorComponent } from './binarySensor';
+import { ClimateComponent } from './climate';
 import { emptyCommandInterface, type CommandInterface } from './commandInterface';
 import { CoverComponent, type ApiVersion } from './cover';
 import {
     type BinarySensorEntity,
+    type ClimateEntity,
     type ComponentType,
     type CoverEntity,
     type FanEntity,
@@ -35,6 +39,7 @@ import { SwitchComponent } from './switch';
 
 export type StateResponses =
     | BinarySensorStateResponse
+    | ClimateStateResponse
     | CoverStateResponse
     | FanStateResponse
     | LightStateResponse
@@ -55,7 +60,13 @@ export interface DiscoveryDeps {
 
 export type DiscoveredEntity =
     | { status: 'new'; id: string; component: BaseComponent }
-    | { status: 'known'; id: string; state$: Observable<StateResponses> };
+    | {
+          status: 'known';
+          id: string;
+          state$: Observable<StateResponses>;
+          entity: ListEntity;
+          create: () => BaseComponent;
+      };
 
 interface ComponentKind<E extends ListEntity, S extends StateResponses> {
     readonly listType: MessageTypes;
@@ -96,6 +107,13 @@ const kinds = {
         decodeState: (payload) => BinarySensorStateResponse.decode(payload),
         create: (entity, state$) => new BinarySensorComponent(entity, state$, emptyCommandInterface),
     }),
+    climate: defineKind<ClimateEntity, ClimateStateResponse>({
+        listType: MessageTypes.ListEntitiesClimateResponse,
+        stateType: MessageTypes.ClimateStateResponse,
+        decodeEntity: (payload) => ListEntitiesClimateResponse.decode(payload),
+        decodeState: (payload) => ClimateStateResponse.decode(payload),
+        create: (entity, state$, deps) => new ClimateComponent(entity, state$, deps.connection, deps.apiVersion),
+    }),
     cover: defineKind<CoverEntity, CoverStateResponse>({
         listType: MessageTypes.ListEntitiesCoverResponse,
         stateType: MessageTypes.CoverStateResponse,
@@ -133,7 +151,11 @@ const kinds = {
     }),
 } satisfies Record<ComponentType, AnyComponentKind>;
 
-const kindList = Object.values(kinds);
+const kindEntries = Object.entries(kinds) as [ComponentType, AnyComponentKind][];
+const kindList = kindEntries.map(([, kind]) => kind);
+const componentTypeByListType = new Map<MessageTypes, ComponentType>(
+    kindEntries.map(([componentType, kind]) => [kind.listType, componentType]),
+);
 
 // The Maps are keyed by wire type, not ComponentType. Reject a duplicate at
 // load time: Map construction is otherwise last-wins and would silently drop a
@@ -156,6 +178,10 @@ const stateKinds = indexKinds((kind) => kind.stateType);
 export const isStateResponse = (type: MessageTypes): boolean => stateKinds.has(type);
 
 export const isComponentListResponse = (type: MessageTypes): boolean => componentKinds.has(type);
+
+/** The component kind a list frame belongs to, for kind-aware re-discovery. */
+export const componentTypeForListType = (type: MessageTypes): ComponentType | undefined =>
+    componentTypeByListType.get(type);
 
 /** A stable, namespaced dictionary key for entities without an object_id. */
 export const fallbackEntityId = (key: number): string => `__esphome_entity_key_${key}`;
@@ -220,7 +246,13 @@ export const discover = (data: ReadData, deps: DiscoveryDeps): DiscoveredEntity 
     const { id, known } = resolveEntityIdentity(entity.objectId, entity.key, deps.knownComponents);
     const state$ = stateFor(deps.stateEvents$, entity.key);
     if (known) {
-        return { status: 'known', id, state$ };
+        return {
+            status: 'known',
+            id,
+            state$,
+            entity,
+            create: () => kind.create(entity, state$, { connection: deps.connection, apiVersion: deps.apiVersion }),
+        };
     }
     return {
         status: 'new',

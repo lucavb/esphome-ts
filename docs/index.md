@@ -79,9 +79,12 @@ reported identification hints, not verified identity.
 
 ## Supported components
 
-At this point in time lights, binary sensors, regular sensors, switches, covers
-and fans are supported. Every component inherits from `BaseComponent` and exposes a state
-observable `state$`. Depending on the component, different pieces of information
+At this point in time lights, binary sensors, regular sensors, switches, covers,
+fans and climate components are supported. Entities are addressed by their key
+on the main device; ESPHome sub-devices (`devices:`, non-zero `device_id`) are
+not modelled, and keys are unique only within a device. Every component
+inherits from `BaseComponent` and exposes a state observable `state$`.
+Depending on the component, different pieces of information
 will be shared. This provides rather raw access to the underlying state and should
 probably only be used to call the methods on the component itself.
 Identical re-sent states are de-duplicated: `state$` emits only when the state
@@ -223,6 +226,80 @@ Firmware 1.4/1.5 may report both that enum and `speed_level`; the component
 prefers `speed_level` from 1.4 onward. The component translates between the
 legacy enum and speed levels internally, so `speedLevel` and `setSpeedLevel`
 behave the same on old and new firmware.
+
+### Climate
+
+- get the operating `mode`, the `action` the device is currently performing,
+  the measured `currentTemperature`, the `targetTemperature` setpoint (or the
+  `targetTemperatureLow`/`targetTemperatureHigh` range on two-point devices)
+  and, where reported, `currentHumidity`/`targetHumidity`
+- set the operating mode (`setMode`), the setpoints
+  (`setTargetTemperature`, or `setTargetTemperatureLow`/`setTargetTemperatureHigh`
+  and the atomic `setTargetTemperatureRange` on devices that advertise
+  two-point support) and the humidity setpoint (`setTargetHumidity`)
+- set and get the fan mode (`setFanMode`, `fanMode`), a custom fan mode
+  (`setCustomFanMode`, `customFanMode`), the swing mode (`setSwingMode`,
+  `swingMode`), a preset (`setPreset`, `preset`, `away`) and a custom preset
+  (`setCustomPreset`, `customPreset`)
+- capability getters describe what the device supports:
+  `supportedModes`, `supportedFanModes`, `supportedCustomFanModes`,
+  `supportedSwingModes`, `supportedPresets`, `supportedCustomPresets`,
+  `supportsCurrentTemperature`, `supportsTwoPointTargetTemperature`,
+  `supportsAction`, `supportsCurrentHumidity`, `supportsTargetHumidity`, and
+  the `visualMinTemperature`/`visualMaxTemperature`/`visualTemperatureStep`
+  (and humidity) ranges plus `temperatureUnit` for UI rendering and, on some
+  platforms, hard setpoint limits
+
+All setter methods ignore values the device does not advertise (and non-finite
+numbers) and return without an error; check the capability getters first.
+
+`setMode` accepts OFF without requiring it in the advertised list: firmware
+seeds its supported-mode set with OFF, so the list normally includes it, and a
+platform that removes it will warn-and-drop the OFF command like any other
+unsupported mode. Every other mode must be advertised. `setTargetTemperature`
+is a no-op on two-point devices, where firmware only accepts the low/high pair.
+The visual temperature range is a UI hint: neither the setters nor the API
+command layer clamp to it, though platform control loops (for example the
+thermostat platform) may still clamp to the visual range. The API command
+layer only rejects NaN, the single setpoint on two-point devices, and a paired
+range whose low exceeds its high; use `setTargetTemperatureRange` when
+changing both bounds so that check applies atomically. While a custom fan mode
+is active, `fanMode` is undefined and `customFanMode` carries the active mode.
+
+A state event with `missingState` set means the device has not produced a
+valid state yet; every climate state getter returns undefined until a real
+state arrives (the capability getters are static list-entity data and remain
+available). `state$` and `ready` still fire: an event arrived, the stream is
+live. Sensors and binary sensors do not suppress such frames — they expose
+the protobuf defaults (0 and false) — but their `state$` events carry the
+`missingState` flag if you need to filter. Firmware older than ESPHome 2026.10
+does not send the flag, so a never-published climate device can still surface
+placeholder values there.
+
+Mode and preset values changed as ESPHome grew. Firmware that predates the
+heat/cool and auto split reports its automatic heat/cool mode as
+`CLIMATE_MODE_HEAT_COOL` (the wire value it always used); `CLIMATE_MODE_AUTO`
+is the newer, separate mode and is only sent when the device advertises it.
+Firmware before API 1.5 has no presets, only an away toggle: the component
+maps it to the `CLIMATE_PRESET_HOME`/`CLIMATE_PRESET_AWAY` presets in both
+directions, so `preset`/`setPreset` behave the same for the HOME/AWAY presets.
+On those devices `preset` is undefined when the firmware does not advertise
+away support. Clearing with `CLIMATE_PRESET_NONE` is the exception: legacy
+firmware with away support applies it as away-off (which reads back as HOME),
+while legacy firmware without away support drops the command and `preset`
+stays undefined. Newer firmware may drop NONE if it is not advertised.
+On modern firmware a device that advertises no presets reports
+`CLIMATE_PRESET_NONE` (and `away === false`) after its first state; use
+`supportedPresets` as the capability signal. While a custom preset is active,
+`preset` reads `CLIMATE_PRESET_NONE` (and `away` is false) and `customPreset`
+carries the name. This differs from `fanMode`, which is suppressed to undefined
+under a custom fan mode. Components are retained across reconnects: re-discovery
+refreshes their capability data and API version, so a firmware update that
+changes capabilities is reflected without recreating the objects.
+Custom fan modes and custom presets have no clear command — switching to a
+regular mode or `setPreset(CLIMATE_PRESET_NONE)` clears them on the firmware
+side, though firmware that does not advertise the NONE preset drops the
+command instead of applying it.
 
 Typescript should point out most values that you can expect and their names have been
 somewhat reasonable, so I won't go into detail what they do.

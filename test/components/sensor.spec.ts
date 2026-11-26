@@ -43,4 +43,14 @@ describe('SensorComponent', () => {
     it('should says that it is a sensor', () => {
         expect(component.type).toBe('sensor');
     });
+
+    it('exposes missingState while keeping the protobuf default value', () => {
+        const events: SensorStateEvent[] = [];
+        component.state$.subscribe((event) => events.push(event));
+
+        stateObservable.next({ key: listEntity.key, state: 0, missingState: true });
+
+        expect(component.value).toBe(0);
+        expect(events[events.length - 1]?.missingState).toBe(true);
+    });
 });

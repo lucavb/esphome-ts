@@ -9,6 +9,7 @@ import {
     DeviceInfoResponse,
     HelloResponse,
     ListEntitiesBinarySensorResponse,
+    ListEntitiesClimateResponse,
     ListEntitiesCoverResponse,
     ListEntitiesDoneResponse,
     ListEntitiesFanResponse,
@@ -16,6 +17,11 @@ import {
     ListEntitiesSensorResponse,
     ListEntitiesSwitchResponse,
     BinarySensorStateResponse,
+    ClimateAction,
+    ClimateCommandRequest,
+    ClimateMode,
+    ClimatePreset,
+    ClimateStateResponse,
     CoverStateResponse,
     FanDirection,
     FanStateResponse,
@@ -30,6 +36,7 @@ import { isTrue } from '../../src/api/booleans';
 import { CoverComponent } from '../../src/components/cover';
 import {
     BinarySensorComponent,
+    ClimateComponent,
     FanComponent,
     LightComponent,
     SensorComponent,
@@ -466,6 +473,123 @@ describe('EspDevice protocol handling', () => {
         expect(cover.supportsStop).toBe(false);
     });
 
+    it('refreshes climate preset capabilities when a reconnect negotiates a new API version', async () => {
+        device = new EspDevice('localhost', '', 6053, { connection });
+        const objectId = 'climate_object_id';
+        const climateResponse = (legacy: boolean): Uint8Array =>
+            ListEntitiesClimateResponse.encode({
+                ...ListEntitiesClimateResponse.decode(new Uint8Array()),
+                objectId,
+                key: 9,
+                name: 'Climate',
+                supportsCurrentTemperature: true,
+                supportsAction: true,
+                supportedModes: [
+                    ClimateMode.CLIMATE_MODE_OFF,
+                    ClimateMode.CLIMATE_MODE_HEAT,
+                    ClimateMode.CLIMATE_MODE_COOL,
+                ],
+                legacySupportsAway: legacy,
+                supportedPresets: legacy ? [] : [ClimatePreset.CLIMATE_PRESET_HOME, ClimatePreset.CLIMATE_PRESET_ECO],
+                temperatureUnit: 0,
+            }).finish();
+
+        const completeClimateHandshake = async (minor: number, legacy: boolean): Promise<void> => {
+            server.connect();
+            await flush();
+            respond(server, MessageTypes.HelloResponse, hello(minor));
+            await flush();
+            respond(server, MessageTypes.ConnectResponse, connectOk());
+            await flush();
+            respond(server, MessageTypes.DeviceInfoResponse, deviceInfo());
+            await flush();
+            respond(server, MessageTypes.ListEntitiesClimateResponse, climateResponse(legacy));
+            respond(server, MessageTypes.ListEntitiesDoneResponse, ListEntitiesDoneResponse.encode({}).finish());
+            await flush();
+        };
+
+        await completeClimateHandshake(4, true);
+        await expect(firstValueFrom(device.discovery$.pipe(filter(isTrue), take(1)))).resolves.toBe(true);
+        const climate = device.components[objectId] as ClimateComponent;
+        expect(climate.supportedPresets).toEqual([
+            ClimatePreset.CLIMATE_PRESET_HOME,
+            ClimatePreset.CLIMATE_PRESET_AWAY,
+        ]);
+
+        server.disconnect();
+        await flush();
+        await completeClimateHandshake(8, false);
+
+        // The component instance is retained, but the entity data is refreshed
+        // from the new firmware's list response.
+        expect(device.components[objectId]).toBe(climate);
+        expect(climate.supportedPresets).toEqual([ClimatePreset.CLIMATE_PRESET_HOME, ClimatePreset.CLIMATE_PRESET_ECO]);
+
+        // A preset the old firmware could not accept is now sent. Without the
+        // entity refresh the stale empty list would drop this command.
+        const writesBefore = server.written.length;
+        climate.setPreset(ClimatePreset.CLIMATE_PRESET_ECO);
+        await flush();
+        const commandWrite = server.written
+            .slice(writesBefore)
+            .find((write) => write[2] === Number(MessageTypes.ClimateCommandRequest));
+        expect(commandWrite).toBeDefined();
+        const command = ClimateCommandRequest.decode(commandWrite!.subarray(3));
+        expect(command.key).toBe(9);
+        expect(command.hasPreset).toBe(true);
+        expect(command.preset).toBe(ClimatePreset.CLIMATE_PRESET_ECO);
+    });
+
+    it('replaces a retained component when an entity changes kind under the same key', async () => {
+        device = new EspDevice('localhost', '', 6053, { connection });
+        const objectId = 'morphing_entity';
+        const switchResponse = ListEntitiesSwitchResponse.encode({
+            ...ListEntitiesSwitchResponse.decode(new Uint8Array()),
+            objectId,
+            key: 9,
+            name: 'Morph',
+        }).finish();
+        const climateResponse = ListEntitiesClimateResponse.encode({
+            ...ListEntitiesClimateResponse.decode(new Uint8Array()),
+            objectId,
+            key: 9,
+            name: 'Morph',
+            supportsCurrentTemperature: true,
+            supportsAction: true,
+            supportedModes: [ClimateMode.CLIMATE_MODE_OFF, ClimateMode.CLIMATE_MODE_HEAT],
+            supportedPresets: [],
+            temperatureUnit: 0,
+        }).finish();
+
+        const complete = async (listType: MessageTypes, payload: Uint8Array): Promise<void> => {
+            server.connect();
+            await flush();
+            respond(server, MessageTypes.HelloResponse, hello(8));
+            await flush();
+            respond(server, MessageTypes.ConnectResponse, connectOk());
+            await flush();
+            respond(server, MessageTypes.DeviceInfoResponse, deviceInfo());
+            await flush();
+            respond(server, listType, payload);
+            respond(server, MessageTypes.ListEntitiesDoneResponse, ListEntitiesDoneResponse.encode({}).finish());
+            await flush();
+        };
+
+        await complete(MessageTypes.ListEntitiesSwitchResponse, switchResponse);
+        await expect(firstValueFrom(device.discovery$.pipe(filter(isTrue), take(1)))).resolves.toBe(true);
+        const retainedSwitch = device.components[objectId];
+        expect(retainedSwitch).toBeInstanceOf(SwitchComponent);
+
+        server.disconnect();
+        await flush();
+        await complete(MessageTypes.ListEntitiesClimateResponse, climateResponse);
+
+        // The object_id/key stayed stable, but the kind changed. The retained
+        // switch must not receive the climate entity or its state frames.
+        expect(device.components[objectId]).toBeInstanceOf(ClimateComponent);
+        expect(device.components[objectId]).not.toBe(retainedSwitch);
+    });
+
     it('preserves entity instances and routes state across reconnects with empty object IDs', async () => {
         device = new EspDevice('localhost', '', 6053, { connection });
         const respondEntities = (emptySwitchObjectId: boolean): void => {
@@ -529,6 +653,20 @@ describe('EspDevice protocol handling', () => {
                     supportedPresetModes: ['auto'],
                 }).finish(),
             );
+            respond(
+                server,
+                MessageTypes.ListEntitiesClimateResponse,
+                ListEntitiesClimateResponse.encode({
+                    ...ListEntitiesClimateResponse.decode(new Uint8Array()),
+                    key: 207,
+                    name: 'Climate',
+                    supportsCurrentTemperature: true,
+                    supportsAction: true,
+                    supportedModes: [ClimateMode.CLIMATE_MODE_OFF, ClimateMode.CLIMATE_MODE_COOL],
+                    supportedPresets: [],
+                    temperatureUnit: 0,
+                }).finish(),
+            );
             respond(server, MessageTypes.ListEntitiesDoneResponse, ListEntitiesDoneResponse.encode({}).finish());
         };
         const completeDiscovery = async (switchObjectIdEmpty: boolean): Promise<void> => {
@@ -556,6 +694,7 @@ describe('EspDevice protocol handling', () => {
                 fallbackEntityId(204),
                 fallbackEntityId(205),
                 fallbackEntityId(206),
+                fallbackEntityId(207),
             ].sort(),
         );
         const components = [
@@ -565,6 +704,7 @@ describe('EspDevice protocol handling', () => {
             initial[fallbackEntityId(204)] as LightComponent,
             initial[fallbackEntityId(205)] as SensorComponent,
             initial[fallbackEntityId(206)] as FanComponent,
+            initial[fallbackEntityId(207)] as ClimateComponent,
         ];
 
         server.disconnect();
@@ -577,7 +717,8 @@ describe('EspDevice protocol handling', () => {
         expect(device.components[fallbackEntityId(204)]).toBe(components[3]);
         expect(device.components[fallbackEntityId(205)]).toBe(components[4]);
         expect(device.components[fallbackEntityId(206)]).toBe(components[5]);
-        expect(Object.keys(device.components)).toHaveLength(6);
+        expect(device.components[fallbackEntityId(207)]).toBe(components[6]);
+        expect(Object.keys(device.components)).toHaveLength(7);
 
         const statePromises = components.map((component) => firstValueFrom(component.state$));
         respond(
@@ -635,6 +776,18 @@ describe('EspDevice protocol handling', () => {
                 presetMode: 'auto',
             }).finish(),
         );
+        respond(
+            server,
+            MessageTypes.ClimateStateResponse,
+            ClimateStateResponse.encode({
+                ...ClimateStateResponse.decode(new Uint8Array()),
+                key: 207,
+                mode: ClimateMode.CLIMATE_MODE_COOL,
+                currentTemperature: 25.5,
+                targetTemperature: 23,
+                action: ClimateAction.CLIMATE_ACTION_COOLING,
+            }).finish(),
+        );
         await flush();
         const states = await Promise.all(statePromises);
         expect((states[0] as BinarySensorStateResponse).key).toBe(201);
@@ -653,6 +806,11 @@ describe('EspDevice protocol handling', () => {
         expect((components[5] as FanComponent).oscillating).toBe(true);
         expect((components[5] as FanComponent).direction).toBe(FanDirection.FAN_DIRECTION_REVERSE);
         expect((components[5] as FanComponent).presetMode).toBe('auto');
+        expect((states[6] as ClimateStateResponse).key).toBe(207);
+        expect((states[6] as ClimateStateResponse).mode).toBe(ClimateMode.CLIMATE_MODE_COOL);
+        expect((components[6] as ClimateComponent).currentTemperature).toBeCloseTo(25.5);
+        expect((components[6] as ClimateComponent).targetTemperature).toBeCloseTo(23);
+        expect((components[6] as ClimateComponent).action).toBe(ClimateAction.CLIMATE_ACTION_COOLING);
     });
 
     it('re-arms auto-reconnect when provideRetryObservable is called after a password rejection', async () => {

@@ -5,6 +5,7 @@ import { isFalse, isTrue } from './booleans';
 import { MessageTypes } from './requestResponseMatching';
 import { BaseComponent } from '../components/base';
 import {
+    componentTypeForListType,
     decodeState,
     discover,
     isComponentListResponse,
@@ -318,8 +319,20 @@ export class EspDevice {
             this.components[result.id] = this.components[result.id] ?? result.component;
         } else {
             // Discovery resolves a known entity by its numeric key, retaining
-            // the original public id when object_id changes.
-            this.components[result.id]?.provideStateObservable(result.state$);
+            // the original public id when object_id changes. If the entity
+            // changed kind under the same key (e.g. a switch replaced by a
+            // climate with the same object_id after an OTA), the retained
+            // component is the wrong shape: replace it. The state router stays
+            // key-only because firmware keys are kind-independent.
+            const componentType = componentTypeForListType(data.type);
+            const component = this.components[result.id];
+            if (component === undefined || (componentType !== undefined && component.type !== componentType)) {
+                component?.terminate();
+                this.components[result.id] = result.create();
+                return;
+            }
+            component.provideStateObservable(result.state$);
+            component.provideListEntity(result.entity);
         }
     }
 }

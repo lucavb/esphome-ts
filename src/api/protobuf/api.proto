@@ -716,11 +716,16 @@ message CameraImageRequest {
 // ==================== CLIMATE ====================
 enum ClimateMode {
   CLIMATE_MODE_OFF = 0;
-  CLIMATE_MODE_AUTO = 1;
+  // Firmware that predates the heat/cool and auto split reported its
+  // automatic heat/cool mode with this wire value, so value 1 decodes as
+  // HEAT_COOL on old and new firmware alike.
+  CLIMATE_MODE_HEAT_COOL = 1;
   CLIMATE_MODE_COOL = 2;
   CLIMATE_MODE_HEAT = 3;
   CLIMATE_MODE_FAN_ONLY = 4;
   CLIMATE_MODE_DRY = 5;
+  // Older firmware does not know this value and ignores it in commands.
+  CLIMATE_MODE_AUTO = 6;
 }
 enum ClimateFanMode {
   CLIMATE_FAN_ON = 0;
@@ -732,6 +737,7 @@ enum ClimateFanMode {
   CLIMATE_FAN_MIDDLE = 6;
   CLIMATE_FAN_FOCUS = 7;
   CLIMATE_FAN_DIFFUSE = 8;
+  CLIMATE_FAN_QUIET = 9;
 }
 enum ClimateSwingMode {
   CLIMATE_SWING_OFF = 0;
@@ -747,6 +753,22 @@ enum ClimateAction {
   CLIMATE_ACTION_IDLE = 4;
   CLIMATE_ACTION_DRYING = 5;
   CLIMATE_ACTION_FAN = 6;
+  CLIMATE_ACTION_DEFROSTING = 7;
+}
+enum ClimatePreset {
+  CLIMATE_PRESET_NONE = 0;
+  CLIMATE_PRESET_HOME = 1;
+  CLIMATE_PRESET_AWAY = 2;
+  CLIMATE_PRESET_BOOST = 3;
+  CLIMATE_PRESET_COMFORT = 4;
+  CLIMATE_PRESET_ECO = 5;
+  CLIMATE_PRESET_SLEEP = 6;
+  CLIMATE_PRESET_ACTIVITY = 7;
+}
+enum TemperatureUnit {
+  TEMPERATURE_UNIT_CELSIUS = 0;
+  TEMPERATURE_UNIT_FAHRENHEIT = 1;
+  TEMPERATURE_UNIT_KELVIN = 2;
 }
 message ListEntitiesClimateResponse {
   option (id) = 46;
@@ -763,11 +785,31 @@ message ListEntitiesClimateResponse {
   repeated ClimateMode supported_modes = 7;
   float visual_min_temperature = 8;
   float visual_max_temperature = 9;
-  float visual_temperature_step = 10;
-  bool supports_away = 11;
+  float visual_target_temperature_step = 10;
+  // Only reported by firmware before API version 1.5; newer firmware
+  // advertises CLIMATE_PRESET_AWAY in supported_presets instead.
+  bool legacy_supports_away = 11;
   bool supports_action = 12;
   repeated ClimateFanMode supported_fan_modes = 13;
   repeated ClimateSwingMode supported_swing_modes = 14;
+  repeated string supported_custom_fan_modes = 15;
+  repeated ClimatePreset supported_presets = 16;
+  repeated string supported_custom_presets = 17;
+  float visual_current_temperature_step = 21;
+  bool supports_current_humidity = 22;
+  bool supports_target_humidity = 23;
+  float visual_min_humidity = 24;
+  float visual_max_humidity = 25;
+  TemperatureUnit temperature_unit = 28;
+  // Fields 18 (disabled_by_default), 19 (icon), 20 (entity_category), 26
+  // (device_id) and 27 (feature_flags) are intentionally not modelled: the
+  // first four are entity metadata, and this client addresses main-device
+  // entities only (sub-device climate entities are not routed). The feature
+  // flags carry no wire-command-relevant information the capability booleans
+  // do not — firmware still sends the booleans alongside them, folding the
+  // requires-two-point trait into supports_two_point_target_temperature — but
+  // the booleans are deprecated upstream in favour of feature_flags; revisit
+  // when firmware stops sending them.
 }
 message ClimateStateResponse {
   option (id) = 47;
@@ -781,10 +823,20 @@ message ClimateStateResponse {
   float target_temperature = 4;
   float target_temperature_low = 5;
   float target_temperature_high = 6;
-  bool away = 7;
+  // Only sent by firmware before API version 1.5; newer firmware reports
+  // the preset instead.
+  bool unused_legacy_away = 7;
   ClimateAction action = 8;
   ClimateFanMode fan_mode = 9;
   ClimateSwingMode swing_mode = 10;
+  string custom_fan_mode = 11;
+  ClimatePreset preset = 12;
+  string custom_preset = 13;
+  float current_humidity = 14;
+  float target_humidity = 15;
+  bool missing_state = 17;
+  // Field 16 (device_id) is intentionally not modelled: this client addresses
+  // main-device entities only, so sub-device states are not routed.
 }
 message ClimateCommandRequest {
   option (id) = 48;
@@ -801,10 +853,22 @@ message ClimateCommandRequest {
   float target_temperature_low = 7;
   bool has_target_temperature_high = 8;
   float target_temperature_high = 9;
-  bool has_away = 10;
-  bool away = 11;
+  // Legacy away toggle for firmware before API version 1.5; newer firmware
+  // takes has_preset with CLIMATE_PRESET_AWAY instead.
+  bool unused_has_legacy_away = 10;
+  bool unused_legacy_away = 11;
   bool has_fan_mode = 12;
   ClimateFanMode fan_mode = 13;
   bool has_swing_mode = 14;
   ClimateSwingMode swing_mode = 15;
+  bool has_custom_fan_mode = 16;
+  string custom_fan_mode = 17;
+  bool has_preset = 18;
+  ClimatePreset preset = 19;
+  bool has_custom_preset = 20;
+  string custom_preset = 21;
+  bool has_target_humidity = 22;
+  float target_humidity = 23;
+  // Field 24 (device_id) is intentionally not modelled: this client addresses
+  // main-device entities only, so sub-device commands are not routed.
 }

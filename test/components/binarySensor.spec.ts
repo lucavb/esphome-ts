@@ -48,4 +48,14 @@ describe('BinarySensorComponent', () => {
         delete withoutDeviceClass.deviceClass;
         expect(component.deviceClass).toEqual(BinarySensorTypes.NONE);
     });
+
+    it('exposes missingState while keeping the protobuf default status', () => {
+        const events: BinarySensorStateEvent[] = [];
+        component.state$.subscribe((event) => events.push(event));
+
+        stateObservable.next({ key: listEntity.key, state: false, missingState: true });
+
+        expect(component.status).toBe(false);
+        expect(events[events.length - 1]?.missingState).toBe(true);
+    });
 });

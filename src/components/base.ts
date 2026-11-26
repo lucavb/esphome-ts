@@ -34,7 +34,7 @@ export abstract class BaseComponent<L extends ListEntity = ListEntity, S extends
     protected readonly teardown = new Subject<void>();
 
     constructor(
-        protected readonly listEntity: L,
+        protected listEntity: L,
         state: Observable<S>,
         private readonly commandInterface: CommandInterface,
     ) {
@@ -68,6 +68,11 @@ export abstract class BaseComponent<L extends ListEntity = ListEntity, S extends
                 takeUntil(this.teardown),
             )
             .subscribe();
+    }
+
+    /** Refresh the capability data after a re-discovery (e.g. post-OTA). */
+    public provideListEntity(entity: L): void {
+        this.listEntity = entity;
     }
 
     public get ready(): boolean {

@@ -1,11 +1,13 @@
 export { BaseComponent } from './base';
 export { BinarySensorComponent } from './binarySensor';
 export { BinarySensorTypes } from './binarySensorTypes';
+export { ClimateComponent } from './climate';
 export { type CommandInterface } from './commandInterface';
 export { CoverComponent } from './cover';
 export { FanComponent } from './fan';
 export {
     type BinarySensorEntity,
+    type ClimateEntity,
     type ComponentType,
     type CoverEntity,
     type FanEntity,
@@ -18,6 +20,7 @@ export { LightComponent } from './light';
 export { SensorComponent } from './sensor';
 export {
     type BinarySensorStateEvent,
+    type ClimateStateEvent,
     type CoverStateEvent,
     type FanStateEvent,
     type LightStateEvent,
